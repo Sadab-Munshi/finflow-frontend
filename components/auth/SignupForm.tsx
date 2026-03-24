@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import TurnstileWidget from './TurnstileWidget'
+import TurnstileWidget, { TurnstileInstance } from './TurnstileWidget'
 import GoogleButton from './GoogleButton'
 
 const schema = z.object({
@@ -49,6 +49,9 @@ export default function SignupForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [turnstileError, setTurnstileError] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [termsError, setTermsError] = useState(false)
+  const turnstileRef = useRef<TurnstileInstance>(null)
   const router = useRouter()
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
@@ -62,6 +65,14 @@ export default function SignupForm() {
     // Reset turnstile error state
     setTurnstileError(false)
     
+    // Check terms agreement
+    if (!agreedToTerms) {
+      setTermsError(true)
+      toast.error('Please agree to the Privacy Policy, Terms of Service, and Disclaimer')
+      return
+    }
+    setTermsError(false)
+
     // Check if Turnstile is completed
     if (!turnstileToken) {
       setTurnstileError(true)
@@ -80,6 +91,8 @@ export default function SignupForm() {
       if (!success) {
         toast.error('Security check failed. Please try again.')
         setTurnstileError(true)
+        turnstileRef.current?.reset()
+        setTurnstileToken(null)
         return
       }
 
@@ -95,6 +108,8 @@ export default function SignupForm() {
 
       if (error) {
         toast.error(error.message)
+        turnstileRef.current?.reset()
+        setTurnstileToken(null)
         return
       }
 
@@ -117,6 +132,8 @@ export default function SignupForm() {
 
     } catch {
       toast.error('Something went wrong. Please try again.')
+      turnstileRef.current?.reset()
+      setTurnstileToken(null)
     } finally {
       setLoading(false)
     }
@@ -129,13 +146,21 @@ export default function SignupForm() {
 
   const handleTurnstileError = () => {
     setTurnstileToken(null)
-    setTurnstileError(false)
+    setTurnstileError(true)
   }
 
   const handleTurnstileExpire = () => {
     setTurnstileToken(null)
     setTurnstileError(false)
+    turnstileRef.current?.reset()
   }
+
+  const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAgreedToTerms(e.target.checked)
+    if (e.target.checked) setTermsError(false)
+  }
+
+  const linkClassName = 'text-cyan-500 underline hover:text-cyan-600'
 
   return (
     <div className="space-y-4">
@@ -220,6 +245,7 @@ export default function SignupForm() {
         {/* Turnstile */}
         <div>
           <TurnstileWidget
+            ref={turnstileRef}
             onSuccess={handleTurnstileSuccess}
             onError={handleTurnstileError}
             onExpire={handleTurnstileExpire}
@@ -229,10 +255,33 @@ export default function SignupForm() {
           )}
         </div>
 
+        {/* Terms Agreement */}
+        <div>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={handleTermsChange}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-black cursor-pointer shrink-0"
+            />
+            <span className="text-xs text-gray-700">
+              I agree to the{' '}
+              <Link href="/privacy" target="_blank" rel="noopener noreferrer" className={linkClassName}>Privacy Policy</Link>
+              {', '}
+              <Link href="/terms" target="_blank" rel="noopener noreferrer" className={linkClassName}>Terms of Service</Link>
+              {', and '}
+              <Link href="/disclaimer" target="_blank" rel="noopener noreferrer" className={linkClassName}>Disclaimer</Link>
+            </span>
+          </label>
+          {termsError && (
+            <p className="text-red-500 text-xs mt-1">You must agree to the terms before creating an account</p>
+          )}
+        </div>
+
         {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !agreedToTerms}
           className="w-full py-3 rounded-full font-semibold text-white bg-black hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Creating Account...' : 'Create Account'}
@@ -247,7 +296,7 @@ export default function SignupForm() {
       </div>
 
       {/* Google Button - Outside form to prevent validation */}
-      <GoogleButton />
+      <GoogleButton disabled={!agreedToTerms} />
 
       <p className="text-center text-gray-700 text-sm">
         Already have an account?{' '}
