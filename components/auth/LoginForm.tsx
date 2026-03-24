@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import TurnstileWidget from './TurnstileWidget'
+import TurnstileWidget, { TurnstileInstance } from './TurnstileWidget'
 import GoogleButton from './GoogleButton'
 
 const schema = z.object({
@@ -24,6 +24,7 @@ export default function LoginForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [turnstileError, setTurnstileError] = useState(false)
   const [loading, setLoading] = useState(false)
+  const turnstileRef = useRef<TurnstileInstance>(null)
   const router = useRouter()
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -52,6 +53,8 @@ export default function LoginForm() {
       if (!success) {
         toast.error('Security check failed. Please try again.')
         setTurnstileError(true)
+        turnstileRef.current?.reset()
+        setTurnstileToken(null)
         return
       }
 
@@ -63,6 +66,8 @@ export default function LoginForm() {
 
       if (error) {
         toast.error(error.message)
+        turnstileRef.current?.reset()
+        setTurnstileToken(null)
         return
       }
 
@@ -111,6 +116,8 @@ export default function LoginForm() {
       router.refresh()
     } catch {
       toast.error('Something went wrong. Please try again.')
+      turnstileRef.current?.reset()
+      setTurnstileToken(null)
     } finally {
       setLoading(false)
     }
@@ -123,12 +130,13 @@ export default function LoginForm() {
 
   const handleTurnstileError = () => {
     setTurnstileToken(null)
-    setTurnstileError(false)
+    setTurnstileError(true)
   }
 
   const handleTurnstileExpire = () => {
     setTurnstileToken(null)
     setTurnstileError(false)
+    turnstileRef.current?.reset()
   }
 
   return (
@@ -174,6 +182,7 @@ export default function LoginForm() {
         {/* Turnstile */}
         <div>
           <TurnstileWidget
+            ref={turnstileRef}
             onSuccess={handleTurnstileSuccess}
             onError={handleTurnstileError}
             onExpire={handleTurnstileExpire}

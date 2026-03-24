@@ -3,7 +3,11 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export default function GoogleButton() {
+interface GoogleButtonProps {
+  disabled?: boolean
+}
+
+export default function GoogleButton({ disabled }: GoogleButtonProps) {
   const [loading, setLoading] = useState(false)
 
   const handleGoogleLogin = async () => {
@@ -21,8 +25,8 @@ export default function GoogleButton() {
   return (
     <button
       onClick={handleGoogleLogin}
-      disabled={loading}
-      className="flex items-center justify-center gap-3 bg-black text-white rounded-2xl px-6 py-3 font-medium hover:bg-gray-900 transition-all mx-auto disabled:opacity-50"
+      disabled={loading || disabled}
+      className="flex items-center justify-center gap-3 bg-black text-white rounded-2xl px-6 py-3 font-medium hover:bg-gray-900 transition-all mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {/* Google SVG Icon */}
       <svg width="20" height="20" viewBox="0 0 24 24">
