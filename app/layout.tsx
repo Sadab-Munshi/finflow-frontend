@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { LanguageProvider } from '@/context/LanguageContext'
+import { UserProvider } from '@/context/UserContext'
 import AuthListener from '@/components/auth/AuthListener'
 import PostHogProvider from '@/components/PostHogProvider'
 import InstallPrompt from '@/components/ui/InstallPrompt'
@@ -64,6 +65,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className={inter.className}>
         <PostHogProvider>
           <LanguageProvider>
+            <UserProvider>
             <AuthListener />
             <UpdateNotification />
             <InstallPrompt />
@@ -76,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               error: { iconTheme: { primary: '#ef4444', secondary: '#0A0F1E' } },
             }}
           />
+        </UserProvider>
         </LanguageProvider>
         </PostHogProvider>
       </body>
