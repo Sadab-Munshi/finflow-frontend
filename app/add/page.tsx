@@ -6,17 +6,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
   PenLine, Sparkles, Mic, ScanLine,
-  Loader2, Camera, Upload,
+  Loader2, Camera, Upload, Check, AlertTriangle, Calendar, Tag, FileText, Pencil,
   UtensilsCrossed, Car, ShoppingBag, Zap, Film, Heart,
   GraduationCap, Home, Apple, Scissors, Wallet, Laptop,
   Briefcase, TrendingUp, Gift, MoreHorizontal
 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
+import Image from 'next/image'
 import { addTransaction } from '@/lib/db'
 import { categories, getCategoriesByType } from '@/lib/categories'
 import { posthog } from '@/lib/posthog'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import { Transaction, Category } from '@/lib/types'
+import { useUser } from '@/context/UserContext'
 
 /* ─── Constants ─── */
 const TEAL = '#00b894'
@@ -93,6 +95,277 @@ function WaveformBars() {
       ))}
     </div>
   )
+}
+
+/* ─── Image Compression ─── */
+function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promise<{ base64: string; previewUrl: string }> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      let w = img.width
+      let h = img.height
+      if (w > maxWidth) {
+        h = Math.round((h * maxWidth) / w)
+        w = maxWidth
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { reject(new Error('Failed to get canvas context')); return }
+      ctx.drawImage(img, 0, 0, w, h)
+      const previewUrl = canvas.toDataURL('image/jpeg', quality)
+      const base64 = previewUrl.split(',')[1]
+      URL.revokeObjectURL(url)
+      resolve({ base64, previewUrl })
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')) }
+    img.src = url
+  })
+}
+
+/* ─── Scan Progress Steps ─── */
+const SCAN_STEPS = [
+  { label: 'Reading image...' },
+  { label: 'Extracting text...' },
+  { label: 'Parsing details...' },
+  { label: 'Done!' },
+]
+
+function ScanProgress({ currentStep }: { currentStep: number }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '24px 0', fontFamily: FONT }}>
+      {/* Animated progress bar */}
+      <div style={{ width: '100%', height: 4, background: '#e5e7eb', borderRadius: 2, overflow: 'hidden' }}>
+        <motion.div
+          style={{ height: '100%', background: TEAL, borderRadius: 2 }}
+          initial={{ width: '0%' }}
+          animate={{ width: `${Math.min(((currentStep + 1) / SCAN_STEPS.length) * 100, 100)}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        />
+      </div>
+
+      {/* Animated scan icon */}
+      <motion.div
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <ScanLine size={40} color={TEAL} />
+      </motion.div>
+
+      <motion.p
+        key={currentStep}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ color: TEAL, fontWeight: 600, fontSize: 16 }}
+      >
+        {currentStep < SCAN_STEPS.length ? SCAN_STEPS[currentStep].label : 'Done!'}
+      </motion.p>
+
+      {/* Step list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 4 }}>
+        {SCAN_STEPS.map((step, i) => {
+          const done = i < currentStep || (i === SCAN_STEPS.length - 1 && currentStep >= SCAN_STEPS.length - 1)
+          const active = i === currentStep && currentStep < SCAN_STEPS.length - 1
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%',
+                background: done ? TEAL : active ? `${TEAL}20` : '#f3f4f6',
+                border: active ? `2px solid ${TEAL}` : 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.3s',
+              }}>
+                {done ? <Check size={14} color="#fff" /> : active ? (
+                  <motion.div
+                    style={{ width: 8, height: 8, borderRadius: '50%', background: TEAL }}
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                  />
+                ) : null}
+              </div>
+              <span style={{
+                fontSize: 14, fontWeight: done || active ? 600 : 400,
+                color: done ? TEAL : active ? '#374151' : '#9ca3af',
+                transition: 'all 0.3s',
+              }}>
+                {step.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Preview Card ─── */
+interface PreviewCardProps {
+  parsed: ParsedTransaction
+  onEdit: () => void
+  onConfirm: () => void
+  onDiscard: () => void
+  isSubmitting: boolean
+}
+
+function PreviewCard({ parsed, onEdit, onConfirm, onDiscard, isSubmitting }: PreviewCardProps) {
+  const confidence = parsed.confidence ?? 90
+  const confidenceColor = confidence >= 90 ? TEAL : confidence >= 70 ? '#f97316' : RED
+  const filledBars = Math.round((confidence / 100) * 10)
+  const Icon = categoryIconMap[parsed.category] || categoryIconMap[resolveStaticCategory(parsed.category)] || MoreHorizontal
+  const displayCategory = resolveStaticCategory(parsed.category)
+  const displayDate = parsed.date ? formatDateDisplay(parsed.date) : formatDateDisplay(getTodayIST())
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 60, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+      style={{
+        background: '#fff', borderRadius: 20, padding: 24,
+        border: `1.5px solid ${TEAL}30`,
+        boxShadow: `0 0 24px ${TEAL}18, 0 4px 24px rgba(0,0,0,0.06)`,
+        fontFamily: FONT,
+      }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+        <Sparkles size={18} color={TEAL} />
+        <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>AI understood this as:</span>
+      </div>
+
+      {/* Amount */}
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <span style={{
+          fontSize: 42, fontWeight: 700,
+          color: parsed.type === 'expense' ? RED : TEAL,
+          lineHeight: 1,
+        }}>
+          ₹{Number(parsed.amount).toLocaleString('en-IN')}
+        </span>
+      </div>
+
+      {/* Details */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+        {/* Category + Type */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Tag size={16} color="#6b7280" />
+            <Icon size={16} />
+            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>{displayCategory}</span>
+          </div>
+          <span style={{
+            fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
+            background: parsed.type === 'expense' ? `${RED}15` : `${TEAL}15`,
+            color: parsed.type === 'expense' ? RED : TEAL,
+            textTransform: 'capitalize',
+          }}>
+            {parsed.type}
+          </span>
+        </div>
+
+        {/* Date */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Calendar size={16} color="#6b7280" />
+          <span style={{ fontSize: 14, color: '#374151' }}>{displayDate}</span>
+        </div>
+
+        {/* Description */}
+        {(parsed.note || parsed.description) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FileText size={16} color="#6b7280" />
+            <span style={{ fontSize: 14, color: '#374151' }}>{parsed.note || parsed.description}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Confidence Bar */}
+      <div style={{
+        padding: '14px 16px', background: '#f9fafb', borderRadius: 12,
+        marginBottom: 20,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>AI Confidence</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: confidenceColor }}>{confidence}%</span>
+        </div>
+        <div style={{ display: 'flex', gap: 3 }}>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                flex: 1, height: 6, borderRadius: 3,
+                background: i < filledBars ? confidenceColor : '#e5e7eb',
+                transition: 'background 0.3s',
+              }}
+            />
+          ))}
+        </div>
+        {confidence < 70 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+            <AlertTriangle size={14} color={RED} />
+            <span style={{ fontSize: 12, color: RED, fontWeight: 500 }}>Please verify details</span>
+          </div>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', gap: 12 }}>
+        <button
+          onClick={onEdit}
+          style={{
+            flex: 1, padding: '14px 0',
+            background: '#fff', border: `1.5px solid #e5e7eb`, borderRadius: 14,
+            fontSize: 15, fontWeight: 600, color: '#374151',
+            cursor: 'pointer', fontFamily: FONT,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}
+        >
+          <Pencil size={16} /> Edit
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={isSubmitting}
+          style={{
+            flex: 2, padding: '14px 0',
+            background: isSubmitting ? '#d1d5db' : TEAL,
+            border: 'none', borderRadius: 14,
+            fontSize: 15, fontWeight: 600, color: '#fff',
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            fontFamily: FONT,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}
+        >
+          <Check size={16} /> Confirm Save
+        </button>
+      </div>
+
+      {/* Discard */}
+      <button
+        onClick={onDiscard}
+        style={{
+          width: '100%', padding: '10px', marginTop: 8,
+          background: 'transparent', color: '#9ca3af', border: 'none',
+          fontSize: 13, cursor: 'pointer', fontFamily: FONT,
+        }}
+      >
+        Discard
+      </button>
+    </motion.div>
+  )
+}
+
+/* static resolver (outside component) */
+function resolveStaticCategory(aiCategory: string): string {
+  if (!aiCategory) return 'Other'
+  const available = categories.map(c => c.name)
+  const match = available.find(c => c.toLowerCase() === aiCategory.toLowerCase().trim())
+  if (match) return match
+  const mappings: Record<string, string> = {
+    'health & medical': 'Health', 'housing & rent': 'Rent',
+    'business income': 'Business', 'groceries & essentials': 'Groceries',
+  }
+  return mappings[aiCategory.toLowerCase().trim()] || 'Other'
 }
 
 /* ─── Manual Form (shared by Manual, NLP confirm, Voice confirm, Scan confirm) ─── */
@@ -313,6 +586,7 @@ function ManualForm({
 function AddTransactionContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user: currentUser } = useUser()
 
   /* State */
   const [mounted, setMounted] = useState(false)
@@ -347,9 +621,14 @@ function AddTransactionContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const MAX_RECORDING_SECONDS = 15
 
-  // Scan refs
+  // Scan
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
+  const [scanStep, setScanStep] = useState(-1)
+  const [scanPreviewUrl, setScanPreviewUrl] = useState<string | null>(null)
+
+  // Preview card
+  const [showEditForm, setShowEditForm] = useState(false)
 
   /* Effects */
   useEffect(() => { setMounted(true) }, [])
@@ -466,12 +745,13 @@ function AddTransactionContent() {
   /* ─── Save Handlers ─── */
   const handleManualSave = () => {
     if (!validateForm()) return
-    fireAndForgetSave([{ amount: parseFloat(amount), type, category, note, date }])
+    fireAndForgetSave([{ user_id: currentUser?.userId, amount: parseFloat(amount), type, category, note, date }])
   }
 
   const handleConfirmSave = () => {
     if (!validateForm()) return
     fireAndForgetSave([{
+      user_id: currentUser?.userId,
       amount: parseFloat(amount), type, category, note,
       date: getTodayIST(),
     }])
@@ -479,6 +759,7 @@ function AddTransactionContent() {
 
   const handleConfirmAllSave = () => {
     const txs = parsedTransactions.map(p => ({
+      user_id: currentUser?.userId,
       amount: Number(p.amount) || 0,
       type: (p.type || 'expense') as 'income' | 'expense',
       category: resolveCategory(p.category),
@@ -499,9 +780,28 @@ function AddTransactionContent() {
     setCategoryError('')
   }
 
+  const handlePreviewConfirm = () => {
+    if (!parsedTransaction) return
+    fireAndForgetSave([{
+      user_id: currentUser?.userId,
+      amount: Number(parsedTransaction.amount) || 0,
+      type: parsedTransaction.type || 'expense',
+      category: resolveCategory(parsedTransaction.category),
+      note: parsedTransaction.note || parsedTransaction.description || '',
+      date: parsedTransaction.date || getTodayIST(),
+    }])
+  }
+
+  const handleEditFromPreview = () => {
+    if (parsedTransaction) fillFormFromParsed(parsedTransaction)
+    setShowEditForm(true)
+  }
+
   const discardParsed = () => {
     setParsedTransaction(null)
     setParsedTransactions([])
+    setShowEditForm(false)
+    setScanPreviewUrl(null)
     setAmount('')
     setCategory('')
     setNote('')
@@ -582,26 +882,52 @@ function AddTransactionContent() {
   /* ─── Scan Handler ─── */
   const handleFileUpload = async (file: File) => {
     setLoading(true)
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      try {
-        const base64 = (e.target?.result as string).split(',')[1]
-        const result = await callAI('/api/ai/parse-receipt', {
-          base64,
-          mimeType: file.type || 'image/jpeg',
+    setScanStep(0) // Reading image...
+    setScanPreviewUrl(null)
+
+    try {
+      // Step 0→1: Compress image
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+      let base64: string
+      let mimeType = file.type || 'image/jpeg'
+
+      if (!isPdf) {
+        const compressed = await compressImage(file, 1200, 0.8)
+        base64 = compressed.base64
+        mimeType = 'image/jpeg'
+        setScanPreviewUrl(compressed.previewUrl)
+      } else {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
         })
-        const txs: ParsedTransaction[] = result.transactions || [result]
-        if (txs.length === 1) {
-          fillFormFromParsed(txs[0])
-          setParsedTransaction(txs[0])
-        } else {
-          setParsedTransactions(txs)
-        }
-      } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : 'Failed to scan receipt')
-      } finally { setLoading(false) }
+        base64 = dataUrl.split(',')[1]
+      }
+
+      setScanStep(1) // Extracting text...
+      await new Promise(r => setTimeout(r, 100))
+      setScanStep(2) // Parsing details...
+
+      const result = await callAI('/api/ai/parse-receipt', { base64, mimeType })
+
+      setScanStep(3) // Done!
+      await new Promise(r => setTimeout(r, 300))
+
+      const txs: ParsedTransaction[] = result.transactions || [result]
+      if (txs.length === 1) {
+        fillFormFromParsed(txs[0])
+        setParsedTransaction(txs[0])
+      } else {
+        setParsedTransactions(txs)
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to scan receipt')
+    } finally {
+      setLoading(false)
+      setScanStep(-1)
     }
-    reader.readAsDataURL(file)
   }
 
   /* ─── Derived ─── */
@@ -654,7 +980,7 @@ function AddTransactionContent() {
           {/* ─── Tab Content ─── */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeTab + (parsedTransaction ? '-confirm' : '')}
+              key={activeTab + (parsedTransaction ? (showEditForm ? '-edit' : '-confirm') : '')}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -679,7 +1005,15 @@ function AddTransactionContent() {
 
               {/* ═══ NLP TAB ═══ */}
               {activeTab === 'nlp' && (
-                parsedTransaction ? (
+                parsedTransaction && !showEditForm ? (
+                  <PreviewCard
+                    parsed={parsedTransaction}
+                    onEdit={handleEditFromPreview}
+                    onConfirm={handlePreviewConfirm}
+                    onDiscard={discardParsed}
+                    isSubmitting={isSubmitting}
+                  />
+                ) : parsedTransaction && showEditForm ? (
                   <ManualForm
                     amount={amount} setAmount={setAmount}
                     type={type} setType={setType}
@@ -741,7 +1075,15 @@ function AddTransactionContent() {
 
               {/* ═══ VOICE TAB ═══ */}
               {activeTab === 'voice' && (
-                parsedTransaction ? (
+                parsedTransaction && !showEditForm ? (
+                  <PreviewCard
+                    parsed={parsedTransaction}
+                    onEdit={handleEditFromPreview}
+                    onConfirm={handlePreviewConfirm}
+                    onDiscard={discardParsed}
+                    isSubmitting={isSubmitting}
+                  />
+                ) : parsedTransaction && showEditForm ? (
                   <ManualForm
                     amount={amount} setAmount={setAmount}
                     type={type} setType={setType}
@@ -826,7 +1168,15 @@ function AddTransactionContent() {
 
               {/* ═══ SCAN TAB ═══ */}
               {activeTab === 'scan' && (
-                parsedTransaction ? (
+                parsedTransaction && !showEditForm ? (
+                  <PreviewCard
+                    parsed={parsedTransaction}
+                    onEdit={handleEditFromPreview}
+                    onConfirm={handlePreviewConfirm}
+                    onDiscard={discardParsed}
+                    isSubmitting={isSubmitting}
+                  />
+                ) : parsedTransaction && showEditForm ? (
                   <ManualForm
                     amount={amount} setAmount={setAmount}
                     type={type} setType={setType}
@@ -892,9 +1242,20 @@ function AddTransactionContent() {
                     gap: 24, paddingTop: 32, fontFamily: FONT,
                   }}>
                     {loading ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                        <Loader2 size={48} color={TEAL} className="animate-spin" />
-                        <p style={{ color: '#6b7280' }}>Analyzing receipt...</p>
+                      <div style={{ width: '100%' }}>
+                        {scanPreviewUrl && (
+                          <div style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden' }}>
+                            <Image
+                              src={scanPreviewUrl}
+                              alt="Receipt preview"
+                              width={400}
+                              height={200}
+                              unoptimized
+                              style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 12, opacity: 0.6 }}
+                            />
+                          </div>
+                        )}
+                        <ScanProgress currentStep={scanStep} />
                       </div>
                     ) : (
                       <>
