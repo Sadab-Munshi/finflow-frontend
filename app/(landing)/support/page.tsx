@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Mail, ChevronDown, ChevronUp } from 'lucide-react'
+import { Mail, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 interface FAQItemProps {
@@ -46,7 +46,17 @@ export default function SupportPage() {
 
   return (
     <>
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+
+      {/* ── back button ── */}
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors mb-8"
+      >
+        <ArrowLeft size={16} />
+        Back to Home
+      </Link>
+
       <div className="text-center mb-12">
         <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-4">
           Support
@@ -86,14 +96,13 @@ export default function SupportPage() {
             answer={
               <>
                 <p className="mb-3">
-                  Yes. By default, all your financial data is stored locally on your device. 
-                  This means your sensitive information never leaves your device unless you 
-                  explicitly choose to enable cloud synchronization.
+                  Yes. All your financial data is encrypted both in transit (TLS/SSL) and 
+                  at rest on our secure cloud infrastructure. Your sensitive information is 
+                  protected by industry-standard security measures at all times.
                 </p>
                 <p>
-                  When cloud sync is enabled, your data is encrypted before being transmitted 
-                  and stored on secure servers. We use industry-standard encryption to protect 
-                  your information.
+                  Your data is never sold, shared, or monetised. You can request full 
+                  deletion of your data from Settings at any time.
                 </p>
               </>
             }
@@ -120,15 +129,13 @@ export default function SupportPage() {
             answer={
               <>
                 <p className="mb-3">
-                  FinFlow supports voice input in multiple languages. Our AI can understand 
-                  and process spoken transactions in most major languages including English, 
-                  Spanish, French, German, Italian, Portuguese, Hindi, Arabic, Chinese, 
-                  Japanese, Korean, and many others.
+                  FinFlow supports voice input in English, Hindi, and Bengali. Simply speak 
+                  naturally in your preferred language, and FinFlow will transcribe and 
+                  process your transaction automatically.
                 </p>
                 <p>
-                  Simply speak naturally in your preferred language, and FinFlow will 
-                  transcribe and process your transaction. The accuracy may vary based on 
-                  accent and clarity of speech.
+                  Accuracy may vary depending on accent, background noise, and clarity of 
+                  speech. For best results, speak in a quiet environment.
                 </p>
               </>
             }
@@ -139,14 +146,13 @@ export default function SupportPage() {
               <>
                 <p className="mb-3">
                   You can delete your account at any time from within the app. Go to Settings, 
-                  then select Account, and choose Delete Account.
+                  scroll to the bottom, and select Delete Account.
                 </p>
                 <p className="mb-3">
                   When you delete your account:
                 </p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>All your data will be permanently deleted from our servers</li>
-                  <li>Local data on your device will be removed</li>
+                  <li>All your data is permanently removed from our systems</li>
                   <li>This action cannot be undone</li>
                 </ul>
                 <p className="mt-3">
@@ -161,8 +167,9 @@ export default function SupportPage() {
       <div className="mt-16 pt-8 border-t border-neutral-100">
         <Link
           href="/"
-          className="text-neutral-600 hover:text-neutral-900 transition-colors"
+          className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 transition-colors"
         >
+          <ArrowLeft size={16} />
           Back to Home
         </Link>
       </div>
