@@ -41,7 +41,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (data?.avatar_url) avatarUrl = data.avatar_url
     if (data?.name) userName = data.name
 
-    setUser(prev => prev ? { ...prev, userName, avatarUrl } : null)
+    setUser(prev => {
+      if (prev) return { ...prev, userName, avatarUrl }
+      return {
+        userId: authUser.id,
+        email: authUser.email || '',
+        userName,
+        avatarUrl,
+      }
+    })
   }, [])
 
   useEffect(() => {
