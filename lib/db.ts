@@ -15,10 +15,14 @@ export async function getTransactions(): Promise<Transaction[]> {
 }
 
 export async function addTransaction(transaction: Omit<Transaction, 'id' | 'created_at'>): Promise<Transaction | null> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    console.error('No user logged in')
-    return null
+  let userId = transaction.user_id
+  if (!userId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      console.error('No user logged in')
+      return null
+    }
+    userId = user.id
   }
   
   // Get current time in IST (Asia/Kolkata)
@@ -26,7 +30,7 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'crea
   const istDate = new Date(istNow)
   
   const payload = {
-    user_id: user.id,
+    user_id: userId,
     amount: Number(transaction.amount),
     type: transaction.type,
     category: transaction.category,
