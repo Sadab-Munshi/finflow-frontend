@@ -1,9 +1,9 @@
 'use client'
 
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Mail, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
+import { Mail, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import BackButton from '@/components/landing/BackButton'
 
 interface FAQItemProps {
   question: string
@@ -49,13 +49,7 @@ export default function SupportPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
 
       {/* ── back button ── */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors mb-8"
-      >
-        <ArrowLeft size={16} />
-        Back to Home
-      </Link>
+      <BackButton />
 
       <div className="text-center mb-12">
         <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-4">
@@ -165,13 +159,7 @@ export default function SupportPage() {
       </section>
 
       <div className="mt-16 pt-8 border-t border-neutral-100">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back to Home
-        </Link>
+        <BackButton />
       </div>
     </div>
     </>

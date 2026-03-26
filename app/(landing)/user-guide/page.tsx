@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
-import { ArrowLeft, MessageSquare, Camera, Mic, Bell, BarChart3, Brain, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { MessageSquare, Camera, Mic, Bell, BarChart3, Brain, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import BackButton from '@/components/landing/BackButton'
 
 /* ── collapsible section ── */
 interface GuideSectionProps {
@@ -69,24 +69,11 @@ export default function UserGuidePage() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
 
       {/* ── back button ── */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors mb-8"
-      >
-        <ArrowLeft size={16} />
-        Back to Home
-      </Link>
+      <BackButton />
 
       {/* ── header ── */}
       <div className="mb-10">
         <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-3">User Guide</h1>
-        <p className="text-neutral-500 text-sm">
-          Version 1.0 &middot; English &middot; 2026 &middot;{' '}
-          <a href="https://app.sadabmunshi.online" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
-            app.sadabmunshi.online
-          </a>
-        </p>
-        <p className="text-neutral-400 text-xs mt-1">&copy; 2026 FinFlow &middot; All Rights Reserved</p>
       </div>
 
       {/* ── quick-start banner ── */}
@@ -463,17 +450,6 @@ export default function UserGuidePage() {
         </GuideSection>
       </div>
 
-      {/* ── footer ── */}
-      <div className="mt-14 pt-8 border-t border-neutral-100 text-center">
-        <p className="text-neutral-700 font-semibold mb-1">Track smarter. Save more. Stress less.</p>
-        <p className="text-sm text-neutral-500 mb-4">
-          Start your journey at{' '}
-          <a href="https://app.sadabmunshi.online" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
-            app.sadabmunshi.online
-          </a>
-        </p>
-        <p className="text-xs text-neutral-400">&copy; 2026 FinFlow &middot; All Rights Reserved</p>
-      </div>
     </div>
   )
 }
