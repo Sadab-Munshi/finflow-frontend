@@ -3,18 +3,15 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Mic, ScanLine, Brain, FileText, PiggyBank, Shield, Play, Pause } from 'lucide-react'
+import { Mic, ScanLine, Brain, FileText, PiggyBank, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import PhoneSlider from '@/components/landing/PhoneSlider'
 
 export default function LandingPage() {
   const router = useRouter()
-  const videoRef        = useRef<HTMLVideoElement>(null)
-  const videoSectionRef = useRef<HTMLDivElement>(null)
-  const heroRef         = useRef<HTMLDivElement>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [hasInteracted, setHasInteracted] = useState(false)
+  const heroRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { document.title = 'FinFlow | Home' }, [])
 
@@ -26,44 +23,6 @@ export default function LandingPage() {
       if (session) router.push('/dashboard')
     }
     check()
-  }, [])
-
-
-  /* ── auto-play / pause when section enters viewport ── */
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const v = videoRef.current
-          if (!v) return
-          if (entry.isIntersecting) {
-            // Only auto-play if user hasn't manually paused
-            if (!hasInteracted) {
-              v.play().then(() => setIsPlaying(true)).catch(() => {})
-            }
-          } else {
-            v.pause()
-            if (!hasInteracted) setIsPlaying(false)
-          }
-        })
-      },
-      { threshold: 0.4 }
-    )
-    if (videoSectionRef.current) observer.observe(videoSectionRef.current)
-    return () => observer.disconnect()
-  }, [hasInteracted])
-
-  /* ── play/pause toggle ── */
-  const togglePlay = useCallback(() => {
-    const v = videoRef.current
-    if (!v) return
-    setHasInteracted(true)
-    if (v.paused) {
-      v.play().then(() => setIsPlaying(true)).catch(() => {})
-    } else {
-      v.pause()
-      setIsPlaying(false)
-    }
   }, [])
 
   /* ── scroll reveal ── */
@@ -141,76 +100,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── VIDEO SECTION ── */}
-        <section
-          ref={videoSectionRef}
-          style={{ position: 'relative', width: '100%', padding: '2rem 1rem', background: 'white' }}
-        >
-          {/* Inner wrapper */}
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '672px',
-              margin: '0 auto',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              backgroundColor: 'black',
-            }}
-          >
-            {/* Aspect ratio wrapper */}
-            <div style={{ paddingTop: '56.25%', position: 'relative', width: '100%' }}>
-              <video
-                ref={videoRef}
-                muted
-                playsInline
-                loop
-                controlsList="nodownload nofullscreen"
-                disablePictureInPicture
-                onContextMenu={(e) => e.preventDefault()}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              >
-                <source src="/finflow-intro.mp4" type="video/mp4" />
-              </video>
-
-              {/* Play / Pause overlay button */}
-              <button
-                onClick={togglePlay}
-                aria-label={isPlaying ? 'Pause video' : 'Play video'}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: isPlaying ? 0 : 1,
-                  transition: 'opacity 0.2s',
-                }}
-                onMouseEnter={(e) => isPlaying && (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={(e) => isPlaying && (e.currentTarget.style.opacity = '0')}
-              >
-                <span className="flex items-center justify-center w-14 h-14 rounded-full bg-white/90 shadow-lg backdrop-blur-sm hover:scale-105 transition-transform">
-                  {isPlaying
-                    ? <Pause className="w-6 h-6 text-gray-800 fill-gray-800" />
-                    : <Play  className="w-6 h-6 text-gray-800 fill-gray-800 ml-0.5" />
-                  }
-                </span>
-              </button>
-            </div>
-          </div>
-        </section>
+        {/* ── PHONE SLIDER ── */}
+        <PhoneSlider />
 
         {/* ── FEATURES ── */}
         <section className="py-24 bg-gradient-to-b from-[#f0f9f4] to-[#e8f4fd]">
