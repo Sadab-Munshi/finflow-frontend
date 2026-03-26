@@ -12,6 +12,7 @@ import {
   FileText,
   ShieldCheck,
   AlertCircle,
+  BookOpen,
 } from 'lucide-react'
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
@@ -125,6 +126,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 </p>
                 {[
                   { href: '/support',    label: 'Support',    Icon: HelpCircle  },
+                  { href: '/user-guide', label: 'User Guide', Icon: BookOpen    },
                   { href: '/privacy',    label: 'Privacy',    Icon: ShieldCheck },
                   { href: '/terms',      label: 'Terms',      Icon: FileText    },
                   { href: '/disclaimer', label: 'Disclaimer', Icon: AlertCircle },
@@ -156,8 +158,8 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             <div>
               <p className="text-white font-semibold text-sm mb-4">Navigate</p>
               <ul className="space-y-3 text-sm">
-                <li><a href="/" className="hover:text-white transition-colors">Home</a></li>
                 <li><a href="/support" className="hover:text-white transition-colors">Support</a></li>
+                <li><a href="/user-guide" className="hover:text-white transition-colors">User Guide</a></li>
                 <li><a href="https://sadabmunshi.online/blog/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Blog</a></li>
               </ul>
             </div>
