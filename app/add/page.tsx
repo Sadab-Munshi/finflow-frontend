@@ -2,22 +2,55 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { AlertCircle, AlertTriangle, Check, Loader2, Mic, Upload } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
+import {
+  PenLine, Sparkles, Mic, ScanLine,
+  Loader2, Camera, Upload,
+  UtensilsCrossed, Car, ShoppingBag, Zap, Film, Heart,
+  GraduationCap, Home, Apple, Scissors, Wallet, Laptop,
+  Briefcase, TrendingUp, Gift, MoreHorizontal
+} from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
 import { addTransaction } from '@/lib/db'
 import { categories, getCategoriesByType } from '@/lib/categories'
-import { cn, formatIndianCurrency, getTodayIndianDate } from '@/lib/utils'
-import LoadingScreen from '@/components/ui/LoadingScreen'
-import { Transaction } from '@/lib/types'
 import { posthog } from '@/lib/posthog'
+import LoadingScreen from '@/components/ui/LoadingScreen'
+import { Transaction, Category } from '@/lib/types'
 
+/* ─── Constants ─── */
+const TEAL = '#00b894'
+const RED  = '#ef4444'
+const GRAY = '#9ca3af'
+const FONT = '"DM Sans", "Inter", system-ui, sans-serif'
+
+const categoryIconMap: Record<string, React.ComponentType<{ size?: number }>> = {
+  'Food & Dining': UtensilsCrossed,
+  'Transport': Car,
+  'Shopping': ShoppingBag,
+  'Bills & Utilities': Zap,
+  'Entertainment': Film,
+  'Health': Heart,
+  'Education': GraduationCap,
+  'Rent': Home,
+  'Groceries': Apple,
+  'Personal Care': Scissors,
+  'Salary': Wallet,
+  'Freelance': Laptop,
+  'Business': Briefcase,
+  'Investment': TrendingUp,
+  'Gift': Gift,
+  'Other': MoreHorizontal,
+}
+
+const tabsConfig = [
+  { id: 'manual', label: 'Manual', Icon: PenLine },
+  { id: 'nlp',    label: 'NLP',    Icon: Sparkles },
+  { id: 'voice',  label: 'Voice',  Icon: Mic },
+  { id: 'scan',   label: 'Scan',   Icon: ScanLine },
+]
+
+/* ─── Types ─── */
 interface ParsedTransaction {
   amount: number
   type: 'income' | 'expense'
@@ -28,40 +61,297 @@ interface ParsedTransaction {
   confidence: number
 }
 
-// Always returns today's date in IST as YYYY-MM-DD
+/* ─── Helpers ─── */
 function getTodayIST(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
 }
 
+function formatDateDisplay(dateStr: string): string {
+  const today = getTodayIST()
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const formatted = `${d} ${months[m - 1]} ${y}`
+  return dateStr === today ? `Today, ${formatted}` : formatted
+}
+
+/* ─── Waveform Animation ─── */
+const WAVEFORM_BARS = Array.from({ length: 20 }).map((_, i) => ({
+  maxHeight: 20 + ((i * 7 + 3) % 20),
+  duration: 0.4 + ((i * 13 + 5) % 10) / 25,
+}))
+
+function WaveformBars() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: 40, marginTop: 16 }}>
+      {WAVEFORM_BARS.map((bar, i) => (
+        <motion.div
+          key={i}
+          style={{ width: 3, borderRadius: 2, backgroundColor: TEAL }}
+          animate={{ height: [8, bar.maxHeight, 8] }}
+          transition={{ duration: bar.duration, repeat: Infinity, ease: 'easeInOut', delay: i * 0.05 }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/* ─── Manual Form (shared by Manual, NLP confirm, Voice confirm, Scan confirm) ─── */
+interface ManualFormProps {
+  amount: string
+  setAmount: (v: string) => void
+  type: 'income' | 'expense'
+  setType: (v: 'income' | 'expense') => void
+  category: string
+  setCategory: (v: string) => void
+  note: string
+  setNote: (v: string) => void
+  date: string
+  setDate: (v: string) => void
+  amountError: string
+  setAmountError: (v: string) => void
+  categoryError: string
+  setCategoryError: (v: string) => void
+  availableCategories: Category[]
+  isSubmitting: boolean
+  onSave: () => void
+  onDiscard?: () => void
+  confirmMode?: boolean
+}
+
+function ManualForm({
+  amount, setAmount, type, setType, category, setCategory,
+  note, setNote, date, setDate, amountError, setAmountError,
+  categoryError, setCategoryError, availableCategories,
+  isSubmitting, onSave, onDiscard, confirmMode,
+}: ManualFormProps) {
+  const dateInputRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontFamily: FONT }}>
+      {/* Amount */}
+      <div style={{ textAlign: 'center', paddingTop: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{
+            fontSize: 48, fontWeight: 700,
+            color: type === 'expense' ? RED : TEAL,
+            lineHeight: 1,
+          }}>
+            ₹
+          </span>
+          <input
+            inputMode="decimal"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9.]/g, '')
+              setAmount(val)
+              if (val) setAmountError('')
+            }}
+            style={{
+              fontSize: 48, fontWeight: 700,
+              color: type === 'expense' ? RED : TEAL,
+              background: 'transparent', border: 'none', outline: 'none',
+              textAlign: 'center', width: '65%',
+              fontFamily: FONT, lineHeight: 1,
+            }}
+          />
+        </div>
+        {amountError && (
+          <p style={{ color: RED, fontSize: 13, marginTop: 6 }}>{amountError}</p>
+        )}
+      </div>
+
+      {/* Type Toggle */}
+      <div style={{
+        display: 'flex', background: '#f3f4f6', borderRadius: 12, padding: 4,
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <motion.div
+          layout
+          style={{
+            position: 'absolute', top: 4,
+            left: type === 'expense' ? 4 : '50%',
+            width: 'calc(50% - 4px)', height: 'calc(100% - 8px)',
+            background: type === 'expense' ? RED : TEAL,
+            borderRadius: 10,
+          }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        />
+        {(['expense', 'income'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => {
+              if (t !== type) { setType(t); setCategory('') }
+            }}
+            style={{
+              flex: 1, padding: '10px 0', background: 'none', border: 'none',
+              color: type === t ? '#fff' : '#6b7280',
+              fontWeight: 600, fontSize: 15, cursor: 'pointer',
+              position: 'relative', zIndex: 1, fontFamily: FONT,
+              transition: 'color 0.2s', textTransform: 'capitalize',
+            }}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Category Chips */}
+      <div>
+        <div
+          style={{
+            display: 'flex', overflowX: 'auto', gap: 8, paddingBottom: 4,
+            WebkitOverflowScrolling: 'touch' as React.CSSProperties['WebkitOverflowScrolling'],
+            scrollbarWidth: 'none' as React.CSSProperties['scrollbarWidth'],
+          }}
+          className="[&::-webkit-scrollbar]:hidden"
+        >
+          {availableCategories.map(cat => {
+            const Icon = categoryIconMap[cat.name] || MoreHorizontal
+            const selected = category === cat.name
+            return (
+              <button
+                key={cat.id}
+                onClick={() => { setCategory(cat.name); setCategoryError('') }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px', borderRadius: 20,
+                  border: selected ? `1.5px solid ${TEAL}` : '1.5px solid #e5e7eb',
+                  background: selected ? TEAL : '#fff',
+                  color: selected ? '#fff' : '#6b7280',
+                  fontSize: 13, fontWeight: selected ? 600 : 400,
+                  cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                  transition: 'all 0.2s', fontFamily: FONT,
+                }}
+              >
+                <Icon size={16} />
+                {cat.name}
+              </button>
+            )
+          })}
+        </div>
+        {categoryError && (
+          <p style={{ color: RED, fontSize: 13, marginTop: 8 }}>{categoryError}</p>
+        )}
+      </div>
+
+      {/* Description (optional) */}
+      <input
+        placeholder="What was this for? (optional)"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        style={{
+          width: '100%', padding: '14px 16px',
+          border: '1.5px solid #e5e7eb', borderRadius: 12,
+          fontSize: 15, outline: 'none', fontFamily: FONT,
+          transition: 'border-color 0.2s', boxSizing: 'border-box',
+        }}
+        onFocus={(e) => { e.target.style.borderColor = TEAL }}
+        onBlur={(e) => { e.target.style.borderColor = '#e5e7eb' }}
+      />
+
+      {/* Date */}
+      <div style={{ position: 'relative' }}>
+        <button
+          onClick={() => dateInputRef.current?.showPicker?.()}
+          style={{
+            width: '100%', padding: '14px 16px',
+            border: '1.5px solid #e5e7eb', borderRadius: 12,
+            fontSize: 15, background: '#fff', color: '#374151',
+            cursor: 'pointer', textAlign: 'left', fontFamily: FONT,
+          }}
+        >
+          {formatDateDisplay(date)}
+        </button>
+        <input
+          ref={dateInputRef}
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          style={{
+            position: 'absolute', top: 0, left: 0,
+            width: '100%', height: '100%', opacity: 0, cursor: 'pointer',
+          }}
+        />
+      </div>
+
+      {/* Save Button */}
+      <button
+        onClick={onSave}
+        disabled={isSubmitting}
+        style={{
+          width: '100%', padding: '16px',
+          background: isSubmitting ? '#d1d5db' : TEAL,
+          color: '#fff', border: 'none', borderRadius: 14,
+          fontSize: 16, fontWeight: 600,
+          cursor: isSubmitting ? 'not-allowed' : 'pointer',
+          fontFamily: FONT, transition: 'background 0.2s',
+        }}
+      >
+        {isSubmitting ? 'Saving...' : 'Save Transaction'}
+      </button>
+
+      {/* Discard (confirm mode only) */}
+      {confirmMode && onDiscard && (
+        <button
+          onClick={onDiscard}
+          style={{
+            width: '100%', padding: '12px',
+            background: 'transparent', color: '#6b7280',
+            border: '1.5px solid #e5e7eb', borderRadius: 14,
+            fontSize: 14, cursor: 'pointer', fontFamily: FONT,
+          }}
+        >
+          Discard
+        </button>
+      )}
+    </div>
+  )
+}
+
+/* ─── Main Component ─── */
 function AddTransactionContent() {
-  // ALL hooks must be here at the top - no exceptions
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { t } = useLanguage()
 
-  // ALL useState hooks
+  /* State */
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'manual')
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = searchParams.get('tab') || 'manual'
+    // Backward compat: old URLs used ?tab=text for NLP
+    return tab === 'text' ? 'nlp' : tab
+  })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [parsedTransaction, setParsedTransaction] = useState<ParsedTransaction | null>(null)
   const [parsedTransactions, setParsedTransactions] = useState<ParsedTransaction[]>([])
+
+  // Form
   const [amount, setAmount] = useState('')
   const [type, setType] = useState<'income' | 'expense'>('expense')
   const [category, setCategory] = useState('')
   const [note, setNote] = useState('')
   const [date, setDate] = useState(getTodayIST())
+  const [amountError, setAmountError] = useState('')
+  const [categoryError, setCategoryError] = useState('')
+
+  // NLP
   const [textInput, setTextInput] = useState('')
+
+  // Voice
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
   const recordingDurationRef = useRef(0)
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const MAX_RECORDING_SECONDS = 15
 
-  // ALL useEffect hooks
+  // Scan refs
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+
+  /* Effects */
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
@@ -70,14 +360,12 @@ function AddTransactionContent() {
     }
   }, [isListening, transcript])
 
-  // Auto stop recording at MAX_RECORDING_SECONDS
   useEffect(() => {
     if (isListening) {
       const timer = setInterval(() => {
         setRecordingTime(prev => {
           const newTime = prev + 1
           recordingDurationRef.current = newTime
-          console.log('Recording time:', newTime)
           if (newTime >= MAX_RECORDING_SECONDS) {
             handleVoiceStop()
             clearInterval(timer)
@@ -90,10 +378,12 @@ function AddTransactionContent() {
     } else {
       setRecordingTime(0)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening])
 
-  // Only AFTER all hooks can you have conditions, returns or JSX
   if (!mounted) return null
+
+  /* ─── API Logic (preserved from original) ─── */
 
   const callAI = async (endpoint: string, body: object) => {
     const res = await fetch(endpoint, {
@@ -108,13 +398,10 @@ function AddTransactionContent() {
     return res.json()
   }
 
-  // Normalize category name from AI to match our categories list
   const resolveCategory = (aiCategory: string): string => {
     if (!aiCategory) return 'Other'
     const available = categories.map(c => c.name)
-    const match = available.find(
-      c => c.toLowerCase() === aiCategory.toLowerCase().trim()
-    )
+    const match = available.find(c => c.toLowerCase() === aiCategory.toLowerCase().trim())
     if (match) return match
     const mappings: Record<string, string> = {
       'health & medical': 'Health',
@@ -127,65 +414,118 @@ function AddTransactionContent() {
 
   const checkBudgetAlert = async () => {
     try {
-      console.log('[checkBudgetAlert] Calling budget alert API...')
-      const res = await fetch('/api/notifications/budget-alert', {
-        method: 'POST',
-      })
-      const data = await res.json()
-      console.log('[checkBudgetAlert] Response:', data)
+      await fetch('/api/notifications/budget-alert', { method: 'POST' })
     } catch (e) {
       console.error('[checkBudgetAlert] Failed:', e)
     }
   }
 
-  // ✅ Manual save — user picked the date themselves
-  const handleManualSave = async () => {
+  /* ─── Fire and Forget Save ─── */
+  const fireAndForgetSave = (transactions: Array<Omit<Transaction, 'id' | 'created_at'>>) => {
     if (isSubmitting) return
-    if (!amount || !category || !note) { setError(t('errorOccurred')); return }
     setIsSubmitting(true)
-    try {
-      const tx: Omit<Transaction, 'id' | 'created_at'> = {
-        amount: parseFloat(amount),
-        type,
-        category,
-        note,
-        date, // user-selected date from date picker
-      }
-      await addTransaction(tx)
-      // Track transaction added event
-      posthog.capture('transaction_added', { 
-        type: tx.type, 
-        category: tx.category, 
-        amount: tx.amount 
-      })
-      console.log('Transaction saved, checking budget alert...')
+
+    const toastId = toast.loading('Saving...')
+    router.push('/history')
+
+    void (async () => {
       try {
-        await checkBudgetAlert()
-      } catch (e) {
-        console.error('Budget alert check failed:', e)
+        for (const tx of transactions) {
+          const result = await addTransaction(tx)
+          if (!result) throw new Error('Save failed')
+          posthog.capture('transaction_added', {
+            type: tx.type, category: tx.category, amount: tx.amount,
+          })
+        }
+        toast.success('Saved ✅', { id: toastId })
+        try { await checkBudgetAlert() } catch (e) { console.error('[checkBudgetAlert]', e) }
+      } catch {
+        toast.error('Failed, retry?', { id: toastId, duration: 5000 })
       }
-      router.push('/history')
-    } catch (e) {
-      console.error('Failed to save transaction:', e)
-      setError(t('errorOccurred'))
-      setIsSubmitting(false)
-    }
+    })()
   }
 
+  /* ─── Validation ─── */
+  const validateForm = (): boolean => {
+    let valid = true
+    setAmountError('')
+    setCategoryError('')
+
+    const parsed = parseFloat(amount)
+    if (!amount || isNaN(parsed) || parsed <= 0) {
+      setAmountError('Please enter an amount')
+      valid = false
+    }
+    if (!category) {
+      setCategoryError('Please select a category')
+      valid = false
+    }
+    return valid
+  }
+
+  /* ─── Save Handlers ─── */
+  const handleManualSave = () => {
+    if (!validateForm()) return
+    fireAndForgetSave([{ amount: parseFloat(amount), type, category, note, date }])
+  }
+
+  const handleConfirmSave = () => {
+    if (!validateForm()) return
+    fireAndForgetSave([{
+      amount: parseFloat(amount), type, category, note,
+      date: getTodayIST(),
+    }])
+  }
+
+  const handleConfirmAllSave = () => {
+    const txs = parsedTransactions.map(p => ({
+      amount: Number(p.amount) || 0,
+      type: (p.type || 'expense') as 'income' | 'expense',
+      category: resolveCategory(p.category),
+      note: p.note || p.description || '',
+      date: getTodayIST(),
+    }))
+    fireAndForgetSave(txs)
+  }
+
+  /* ─── Fill Form From Parsed ─── */
+  const fillFormFromParsed = (parsed: ParsedTransaction) => {
+    setAmount(String(parsed.amount || ''))
+    setType(parsed.type || 'expense')
+    setCategory(resolveCategory(parsed.category))
+    setNote(parsed.note || parsed.description || '')
+    setDate(getTodayIST())
+    setAmountError('')
+    setCategoryError('')
+  }
+
+  const discardParsed = () => {
+    setParsedTransaction(null)
+    setParsedTransactions([])
+    setAmount('')
+    setCategory('')
+    setNote('')
+    setType('expense')
+    setDate(getTodayIST())
+    setAmountError('')
+    setCategoryError('')
+  }
+
+  /* ─── NLP Handler ─── */
   const handleParseText = async () => {
     if (!textInput.trim()) return
-    setLoading(true); setError(null)
+    setLoading(true)
     try {
       const result = await callAI('/api/ai/parse-text', { text: textInput })
+      fillFormFromParsed(result)
       setParsedTransaction(result)
-    } catch (err: any) {
-      console.error('NLP parse error:', err)
-      setError(err?.message || 'Failed to parse. Please try again.')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to parse. Please try again.')
     } finally { setLoading(false) }
   }
 
+  /* ─── Voice Handlers ─── */
   const handleVoiceStart = async () => {
-    setError(null)
     setTranscript('')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -219,16 +559,19 @@ function AddTransactionContent() {
             throw new Error(errorData.error || `Parse failed (${mistralRes.status})`)
           }
           const parsed = await mistralRes.json()
+          fillFormFromParsed(parsed)
           setParsedTransaction(parsed)
-        } catch (err: any) { 
-          setError(err?.message || t('errorOccurred')) 
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : 'Voice processing failed')
         } finally { setLoading(false) }
       }
 
       recorder.start()
       setMediaRecorder(recorder)
       setIsListening(true)
-    } catch { setError('Microphone access denied') }
+    } catch {
+      toast.error('Microphone access denied')
+    }
   }
 
   const handleVoiceStop = () => {
@@ -236,19 +579,9 @@ function AddTransactionContent() {
     setIsListening(false)
   }
 
-  const handleParseVoice = async () => {
-    if (!transcript.trim()) return
-    setLoading(true); setError(null)
-    try {
-      const result = await callAI('/api/ai/parse-text', { text: transcript })
-      setParsedTransaction(result)
-    } catch (err: any) { 
-      setError(err?.message || t('errorOccurred')) 
-    } finally { setLoading(false) }
-  }
-
+  /* ─── Scan Handler ─── */
   const handleFileUpload = async (file: File) => {
-    setLoading(true); setError(null)
+    setLoading(true)
     const reader = new FileReader()
     reader.onload = async (e) => {
       try {
@@ -258,440 +591,383 @@ function AddTransactionContent() {
           mimeType: file.type || 'image/jpeg',
         })
         const txs: ParsedTransaction[] = result.transactions || [result]
-        if (txs.length === 1) setParsedTransaction(txs[0])
-        else setParsedTransactions(txs)
-      } catch (err: any) { 
-        setError(err?.message || t('errorOccurred')) 
+        if (txs.length === 1) {
+          fillFormFromParsed(txs[0])
+          setParsedTransaction(txs[0])
+        } else {
+          setParsedTransactions(txs)
+        }
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Failed to scan receipt')
       } finally { setLoading(false) }
     }
     reader.readAsDataURL(file)
   }
 
-  // ✅ AI confirm — ALWAYS use today's IST date, ignore AI's date field
-  const confirmParsed = async (
-    parsed: ParsedTransaction,
-    _source: 'nlp' | 'voice' | 'receipt' | 'pdf'
-  ) => {
-    if (isSubmitting) return
-    setIsSubmitting(true)
-    try {
-      const transaction = {
-        amount: Number(parsed.amount) || 0,
-        type: parsed.type || 'expense',
-        category: resolveCategory(parsed.category),
-        note: parsed.note || parsed.description || '',
-        date: getTodayIST(), // ✅ always today's IST date, never AI's date
-      }
-      const result = await addTransaction(transaction)
-      if (result) {
-        // Track transaction added event
-        posthog.capture('transaction_added', { 
-          type: transaction.type, 
-          category: transaction.category, 
-          amount: transaction.amount 
-        })
-        console.log('Transaction saved, checking budget alert...')
-        try {
-          await checkBudgetAlert()
-        } catch (e) {
-          console.error('Budget alert check failed:', e)
-        }
-        setParsedTransaction(null)
-        router.push('/history')
-      } else {
-        setError(t('errorOccurred'))
-        setIsSubmitting(false)
-      }
-    } catch (e) {
-      console.error('Failed to save transaction:', e)
-      setIsSubmitting(false)
-    }
-  }
+  /* ─── Derived ─── */
+  const availableCategories = getCategoriesByType(type)
 
-  // ✅ AI confirm all (scan) — ALWAYS use today's IST date
-  const confirmAllParsed = async () => {
-    if (isSubmitting) return
-    setIsSubmitting(true)
-    try {
-      for (const parsed of parsedTransactions) {
-        const transaction = {
-          amount: Number(parsed.amount) || 0,
-          type: parsed.type || 'expense',
-          category: resolveCategory(parsed.category),
-          note: parsed.note || parsed.description || '',
-          date: getTodayIST(), // ✅ always today's IST date
-        }
-        await addTransaction(transaction)
-      }
-      console.log('Transactions saved, checking budget alert...')
-      try {
-        await checkBudgetAlert()
-      } catch (e) {
-        console.error('Budget alert check failed:', e)
-      }
-      setParsedTransactions([])
-      router.push('/history')
-    } catch (e) {
-      console.error('Failed to save transactions:', e)
-      setIsSubmitting(false)
-    }
-  }
-
-  const PreviewCard = ({
-    parsed,
-    source,
-  }: {
-    parsed: ParsedTransaction
-    source: 'nlp' | 'voice' | 'receipt' | 'pdf'
-  }) => {
-    const cat = categories.find(
-      c => c.name.toLowerCase() === parsed.category?.toLowerCase?.()
-    )
-    return (
-      <Card className="border-2 border-teal-500">
-        <CardHeader>
-          <CardTitle className="text-lg text-gray-800">{t('transactionDetails')}</CardTitle>
-          {parsed.confidence < 0.7 && (
-            <div className="flex items-center gap-2 text-amber-600 text-sm">
-              <AlertTriangle className="w-4 h-4" />
-              {t('lowConfidence')}
-            </div>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">{t('amount')}</p>
-              <p className={cn(
-                "text-xl font-bold",
-                parsed.type === 'income' ? "text-emerald-600" : "text-rose-600"
-              )}>
-                {formatIndianCurrency(Number(parsed.amount))}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">{t('type')}</p>
-              <p className="font-medium capitalize">
-                {parsed.type === 'income' ? t('income') : t('expense')}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">{t('category')}</p>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat?.color || '#6b7280' }} />
-                <span>{resolveCategory(parsed.category)}</span>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">{t('date')}</p>
-              {/* ✅ Show today's IST date, not AI's date */}
-              <p>{getTodayIST()}</p>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">{t('description')}</p>
-            <p className="font-medium">{parsed.note || parsed.description}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">{t('confidence')}</p>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-              <div
-                className={cn(
-                  "h-2 rounded-full",
-                  parsed.confidence >= 0.8
-                    ? "bg-emerald-500"
-                    : parsed.confidence >= 0.6
-                    ? "bg-amber-500"
-                    : "bg-red-500"
-                )}
-                style={{ width: `${(parsed.confidence * 100).toFixed(0)}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {(parsed.confidence * 100).toFixed(0)}%
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => confirmParsed(parsed, source)}
-              disabled={isSubmitting}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-            >
-              {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('loading')}</> : <><Check className="w-4 h-4 mr-2" />{t('confirm')}</>}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setParsedTransaction(null)}
-              className="flex-1 border-gray-200"
-            >
-              {t('discard')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
+  /* ─── Render ─── */
   return (
     <Layout>
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-800">{t('addTransaction')}</h1>
+      <div style={{ background: '#ffffff', minHeight: '100dvh', fontFamily: FONT }}>
+        <div style={{ padding: '16px 16px 100px' }}>
 
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            {error}
-          </div>
-        )}
-
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full bg-gray-100">
-            {['manual', 'text', 'voice', 'scan'].map(tab => (
-              <TabsTrigger
-                key={tab}
-                value={tab}
-                className="flex-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white capitalize"
-              >
-                {t(tab)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {/* MANUAL TAB */}
-          <TabsContent value="manual" className="mt-4">
-            <Card className="border-gray-100">
-              <CardContent className="p-6 space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">{t('amount')}</label>
-                  <Input
-                    type="number"
-                    placeholder={t('amount')}
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="border-gray-200"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">{t('type')}</label>
-                  <div className="flex gap-2 mt-1">
-                    <Button
-                      type="button"
-                      variant={type === 'expense' ? 'default' : 'outline'}
-                      onClick={() => setType('expense')}
-                      className={cn("flex-1", type === 'expense' ? "bg-orange-500 hover:bg-orange-600" : "border-gray-200")}
-                    >
-                      {t('expense')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={type === 'income' ? 'default' : 'outline'}
-                      onClick={() => setType('income')}
-                      className={cn("flex-1", type === 'income' ? "bg-emerald-500 hover:bg-emerald-600" : "border-gray-200")}
-                    >
-                      {t('income')}
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">{t('category')}</label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="border-gray-200">
-                      <SelectValue placeholder={t('category')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getCategoriesByType(type).map(c => (
-                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">{t('description')}</label>
-                  <Input
-                    placeholder={t('description')}
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    className="border-gray-200"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">{t('date')}</label>
-                  {/* ✅ type="date" — browser gives YYYY-MM-DD, no format confusion */}
-                  <Input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="border-gray-200"
-                  />
-                </div>
-                <Button onClick={handleManualSave} disabled={isSubmitting} className="w-full bg-emerald-600 hover:bg-emerald-700">
-                  {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('loading')}</> : t('save')}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* TEXT / NLP TAB */}
-          <TabsContent value="text" className="mt-4">
-            {parsedTransaction ? (
-              <PreviewCard parsed={parsedTransaction} source="nlp" />
-            ) : (
-              <Card className="border-gray-100">
-                <CardContent className="p-6 space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">{t('description')}</label>
-                    <textarea
-                      className="w-full h-32 mt-1 p-3 border border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none resize-none"
-                      placeholder={t('typeHere')}
-                      value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
+          {/* ─── Tab Bar ─── */}
+          <div style={{
+            display: 'flex', position: 'relative',
+            borderBottom: '2px solid #f3f4f6', marginBottom: 24,
+          }}>
+            {tabsConfig.map(tab => {
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', gap: 6,
+                    padding: '12px 0', background: 'none', border: 'none',
+                    color: isActive ? TEAL : GRAY,
+                    fontWeight: isActive ? 700 : 400,
+                    fontSize: 14, cursor: 'pointer', fontFamily: FONT,
+                    position: 'relative', paddingBottom: 14,
+                  }}
+                >
+                  <tab.Icon size={18} />
+                  {tab.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabUnderline"
+                      style={{
+                        position: 'absolute', bottom: -2, left: 0, right: 0,
+                        height: 3, background: TEAL, borderRadius: 2,
+                      }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     />
-                  </div>
-                  <Button
-                    onClick={handleParseText}
-                    disabled={loading || !textInput.trim()}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {loading
-                      ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('loading')}</>
-                      : t('parseWithAI')}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                  )}
+                </button>
+              )
+            })}
+          </div>
 
-          {/* VOICE TAB */}
-          <TabsContent value="voice" className="mt-4">
-            {parsedTransaction ? (
-              <PreviewCard parsed={parsedTransaction} source="voice" />
-            ) : (
-              <Card className="border-gray-100">
-                <CardContent className="p-6 space-y-6">
-                  <div className="text-center">
+          {/* ─── Tab Content ─── */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab + (parsedTransaction ? '-confirm' : '')}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+
+              {/* ═══ MANUAL TAB ═══ */}
+              {activeTab === 'manual' && (
+                <ManualForm
+                  amount={amount} setAmount={setAmount}
+                  type={type} setType={setType}
+                  category={category} setCategory={setCategory}
+                  note={note} setNote={setNote}
+                  date={date} setDate={setDate}
+                  amountError={amountError} setAmountError={setAmountError}
+                  categoryError={categoryError} setCategoryError={setCategoryError}
+                  availableCategories={availableCategories}
+                  isSubmitting={isSubmitting}
+                  onSave={handleManualSave}
+                />
+              )}
+
+              {/* ═══ NLP TAB ═══ */}
+              {activeTab === 'nlp' && (
+                parsedTransaction ? (
+                  <ManualForm
+                    amount={amount} setAmount={setAmount}
+                    type={type} setType={setType}
+                    category={category} setCategory={setCategory}
+                    note={note} setNote={setNote}
+                    date={date} setDate={setDate}
+                    amountError={amountError} setAmountError={setAmountError}
+                    categoryError={categoryError} setCategoryError={setCategoryError}
+                    availableCategories={availableCategories}
+                    isSubmitting={isSubmitting}
+                    onSave={handleConfirmSave}
+                    onDiscard={discardParsed}
+                    confirmMode
+                  />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: FONT }}>
+                    <div style={{ position: 'relative' }}>
+                      <textarea
+                        rows={4}
+                        placeholder="e.g. spent 500 on food today"
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        style={{
+                          width: '100%', padding: '16px 48px 16px 16px',
+                          border: '1.5px solid #e5e7eb', borderRadius: 14,
+                          fontSize: 16, resize: 'none', outline: 'none',
+                          fontFamily: FONT, transition: 'border-color 0.2s',
+                          boxSizing: 'border-box',
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = TEAL }}
+                        onBlur={(e) => { e.target.style.borderColor = '#e5e7eb' }}
+                      />
+                      <Sparkles
+                        size={20}
+                        style={{ position: 'absolute', top: 16, right: 16, color: TEAL, opacity: 0.5 }}
+                      />
+                    </div>
                     <button
-                      onClick={isListening ? handleVoiceStop : handleVoiceStart}
-                      className={cn(
-                        "w-24 h-24 rounded-full flex items-center justify-center mx-auto transition-all",
-                        isListening
-                          ? "bg-red-500 animate-pulse"
-                          : "bg-emerald-600 hover:bg-emerald-700"
-                      )}
+                      onClick={handleParseText}
+                      disabled={loading || !textInput.trim()}
+                      style={{
+                        width: '100%', padding: '14px',
+                        background: (loading || !textInput.trim()) ? '#d1d5db' : TEAL,
+                        color: '#fff', border: 'none', borderRadius: 14,
+                        fontSize: 16, fontWeight: 600,
+                        cursor: (loading || !textInput.trim()) ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        fontFamily: FONT,
+                      }}
                     >
-                      <Mic className="w-10 h-10 text-white" />
+                      {loading
+                        ? <><Loader2 size={18} className="animate-spin" /> Parsing...</>
+                        : <><Sparkles size={18} /> Parse with AI</>
+                      }
                     </button>
-                    <p className="mt-4 text-gray-600">
-                      {isListening ? t('listening') : t('tapToSpeak')}
+                  </div>
+                )
+              )}
+
+              {/* ═══ VOICE TAB ═══ */}
+              {activeTab === 'voice' && (
+                parsedTransaction ? (
+                  <ManualForm
+                    amount={amount} setAmount={setAmount}
+                    type={type} setType={setType}
+                    category={category} setCategory={setCategory}
+                    note={note} setNote={setNote}
+                    date={date} setDate={setDate}
+                    amountError={amountError} setAmountError={setAmountError}
+                    categoryError={categoryError} setCategoryError={setCategoryError}
+                    availableCategories={availableCategories}
+                    isSubmitting={isSubmitting}
+                    onSave={handleConfirmSave}
+                    onDiscard={discardParsed}
+                    confirmMode
+                  />
+                ) : (
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    gap: 16, paddingTop: 32, fontFamily: FONT,
+                  }}>
+                    <motion.button
+                      onClick={isListening ? handleVoiceStop : handleVoiceStart}
+                      whileTap={{ scale: 0.9 }}
+                      style={{
+                        width: 96, height: 96, borderRadius: '50%',
+                        background: isListening ? RED : TEAL,
+                        border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: isListening ? `0 0 0 8px ${RED}30` : `0 0 0 8px ${TEAL}30`,
+                        transition: 'all 0.3s',
+                      }}
+                    >
+                      <Mic size={40} color="#fff" />
+                    </motion.button>
+
+                    <p style={{ color: isListening ? RED : '#6b7280', fontSize: 16, fontWeight: 500 }}>
+                      {isListening ? 'Listening... Tap to stop' : 'Tap to speak'}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p style={{ color: '#9ca3af', fontSize: 12 }}>
                       Supports Hindi, Bengali, Tamil, Telugu & more
                     </p>
+
                     {isListening && (
-                      <div className="text-center mt-3">
-                        <p className="text-sm text-red-500 font-medium">Recording: {recordingTime}s / {MAX_RECORDING_SECONDS}s</p>
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[200px] mx-auto">
-                          <div 
-                            className="bg-red-500 h-1.5 rounded-full transition-all"
-                            style={{ width: `${(recordingTime / MAX_RECORDING_SECONDS) * 100}%` }}
-                          />
+                      <>
+                        <WaveformBars />
+                        <div style={{ textAlign: 'center' }}>
+                          <p style={{ fontSize: 14, color: RED, fontWeight: 500 }}>
+                            {recordingTime}s / {MAX_RECORDING_SECONDS}s
+                          </p>
+                          <div style={{
+                            width: 200, height: 4, background: '#e5e7eb',
+                            borderRadius: 2, marginTop: 4,
+                          }}>
+                            <div style={{
+                              width: `${(recordingTime / MAX_RECORDING_SECONDS) * 100}%`,
+                              height: '100%', background: RED,
+                              borderRadius: 2, transition: 'width 0.3s',
+                            }} />
+                          </div>
                         </div>
+                      </>
+                    )}
+
+                    {loading && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEAL }}>
+                        <Loader2 size={18} className="animate-spin" />
+                        <span>Processing...</span>
+                      </div>
+                    )}
+
+                    {transcript && !loading && !parsedTransaction && (
+                      <div style={{
+                        width: '100%', padding: 16, background: '#f0fdf4',
+                        borderRadius: 12, marginTop: 8,
+                      }}>
+                        <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Transcript:</p>
+                        <p style={{ fontWeight: 500 }}>{transcript}</p>
                       </div>
                     )}
                   </div>
-                  {transcript && (
-                    <div className="space-y-4">
-                      <div className="p-4 bg-emerald-50 rounded-lg">
-                        <p className="text-sm text-gray-500">{t('description')}:</p>
-                        <p className="font-medium">{transcript}</p>
-                      </div>
-                      <Button
-                        onClick={handleParseVoice}
-                        disabled={loading}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700"
-                      >
-                        {loading
-                          ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('loading')}</>
-                          : t('parseWithAI')}
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                )
+              )}
 
-          {/* SCAN TAB */}
-          <TabsContent value="scan" className="mt-4">
-            {parsedTransaction ? (
-              <PreviewCard parsed={parsedTransaction} source="receipt" />
-            ) : parsedTransactions.length > 0 ? (
-              <Card className="border-gray-100">
-                <CardHeader>
-                  <CardTitle className="text-gray-800">{t('transactionDetails')}</CardTitle>
-                  <CardDescription>{parsedTransactions.length} transactions found</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {parsedTransactions.map((parsed, i) => {
-                    const cat = categories.find(c => c.name === parsed.category)
-                    return (
-                      <div key={i} className="p-4 border border-gray-100 rounded-lg flex items-center justify-between">
+              {/* ═══ SCAN TAB ═══ */}
+              {activeTab === 'scan' && (
+                parsedTransaction ? (
+                  <ManualForm
+                    amount={amount} setAmount={setAmount}
+                    type={type} setType={setType}
+                    category={category} setCategory={setCategory}
+                    note={note} setNote={setNote}
+                    date={date} setDate={setDate}
+                    amountError={amountError} setAmountError={setAmountError}
+                    categoryError={categoryError} setCategoryError={setCategoryError}
+                    availableCategories={availableCategories}
+                    isSubmitting={isSubmitting}
+                    onSave={handleConfirmSave}
+                    onDiscard={discardParsed}
+                    confirmMode
+                  />
+                ) : parsedTransactions.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontFamily: FONT }}>
+                    <p style={{ fontSize: 14, color: '#6b7280', fontWeight: 500 }}>
+                      {parsedTransactions.length} transactions found
+                    </p>
+                    {parsedTransactions.map((p, i) => (
+                      <div key={i} style={{
+                        padding: 16, border: '1.5px solid #e5e7eb', borderRadius: 12,
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      }}>
                         <div>
-                          <p className="font-medium">{parsed.note}</p>
-                          <p className="text-sm text-gray-500">
-                            {cat?.name} - {getTodayIST()}
-                          </p>
+                          <p style={{ fontWeight: 500 }}>{p.note || p.description}</p>
+                          <p style={{ fontSize: 12, color: '#9ca3af' }}>{resolveCategory(p.category)}</p>
                         </div>
-                        <p className={cn(
-                          "font-semibold",
-                          parsed.type === 'income' ? "text-green-600" : "text-rose-600"
-                        )}>
-                          {formatIndianCurrency(parsed.amount)}
+                        <p style={{ fontWeight: 600, color: p.type === 'income' ? TEAL : RED }}>
+                          ₹{Number(p.amount).toLocaleString('en-IN')}
                         </p>
                       </div>
-                    )
-                  })}
-                  <Button
-                    onClick={confirmAllParsed}
-                    disabled={isSubmitting}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('loading')}</> : <>{t('confirmAll')} ({parsedTransactions.length})</>}
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-gray-100">
-                <CardContent className="p-6">
-                  <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-colors">
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".jpg,.jpeg,.png,.webp,.heic,.pdf"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f) }}
-                    />
+                    ))}
+                    <button
+                      onClick={handleConfirmAllSave}
+                      disabled={isSubmitting}
+                      style={{
+                        width: '100%', padding: 14,
+                        background: isSubmitting ? '#d1d5db' : TEAL,
+                        color: '#fff', border: 'none', borderRadius: 14,
+                        fontSize: 16, fontWeight: 600,
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        fontFamily: FONT,
+                      }}
+                    >
+                      {isSubmitting ? 'Saving...' : `Save All (${parsedTransactions.length})`}
+                    </button>
+                    <button
+                      onClick={discardParsed}
+                      style={{
+                        width: '100%', padding: 12,
+                        background: 'transparent', color: '#6b7280',
+                        border: '1.5px solid #e5e7eb', borderRadius: 14,
+                        fontSize: 14, cursor: 'pointer', fontFamily: FONT,
+                      }}
+                    >
+                      Discard
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    gap: 24, paddingTop: 32, fontFamily: FONT,
+                  }}>
                     {loading ? (
-                      <>
-                        <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
-                        <p className="mt-3 text-gray-600">{t('analyzing')}</p>
-                      </>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                        <Loader2 size={48} color={TEAL} className="animate-spin" />
+                        <p style={{ color: '#6b7280' }}>Analyzing receipt...</p>
+                      </div>
                     ) : (
                       <>
-                        <Upload className="w-10 h-10 text-gray-400" />
-                        <p className="mt-3 text-gray-600">{t('uploadReceipt')}</p>
-                        <p className="text-xs text-gray-400 mt-1">JPG, PNG, PDF supported</p>
+                        <div style={{
+                          width: 96, height: 96, borderRadius: '50%',
+                          background: `${TEAL}15`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <ScanLine size={40} color={TEAL} />
+                        </div>
+
+                        <input
+                          ref={cameraInputRef}
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          style={{ display: 'none' }}
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f) }}
+                        />
+                        <input
+                          ref={galleryInputRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp,.heic,.pdf"
+                          style={{ display: 'none' }}
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f) }}
+                        />
+
+                        <button
+                          onClick={() => cameraInputRef.current?.click()}
+                          style={{
+                            width: '100%', padding: 14,
+                            background: TEAL, color: '#fff',
+                            border: 'none', borderRadius: 14,
+                            fontSize: 16, fontWeight: 600, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            fontFamily: FONT,
+                          }}
+                        >
+                          <Camera size={20} /> Open Camera
+                        </button>
+
+                        <button
+                          onClick={() => galleryInputRef.current?.click()}
+                          style={{
+                            width: '100%', padding: 12,
+                            background: 'transparent', color: '#6b7280',
+                            border: '1.5px solid #e5e7eb', borderRadius: 14,
+                            fontSize: 14, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            fontFamily: FONT,
+                          }}
+                        >
+                          <Upload size={18} /> Upload from Gallery
+                        </button>
+
+                        <p style={{ fontSize: 12, color: '#9ca3af' }}>
+                          JPG, PNG, PDF supported
+                        </p>
                       </>
                     )}
-                  </label>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+                  </div>
+                )
+              )}
+
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </Layout>
   )
 }
 
+/* ─── Export ─── */
 export default function AddPage() {
   return (
     <Suspense fallback={<LoadingScreen />}>
