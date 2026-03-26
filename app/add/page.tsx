@@ -113,7 +113,7 @@ function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promise<{ ba
       canvas.width = w
       canvas.height = h
       const ctx = canvas.getContext('2d')
-      if (!ctx) { reject(new Error('Canvas not supported')); return }
+      if (!ctx) { reject(new Error('Failed to get canvas context')); return }
       ctx.drawImage(img, 0, 0, w, h)
       const previewUrl = canvas.toDataURL('image/jpeg', quality)
       const base64 = previewUrl.split(',')[1]
@@ -887,7 +887,7 @@ function AddTransactionContent() {
 
     try {
       // Step 0→1: Compress image
-      const isPdf = file.type === 'application/pdf'
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
       let base64: string
       let mimeType = file.type || 'image/jpeg'
 
@@ -907,15 +907,13 @@ function AddTransactionContent() {
       }
 
       setScanStep(1) // Extracting text...
-
-      // Simulate brief pause so step 1 is visible
-      await new Promise(r => setTimeout(r, 300))
+      await new Promise(r => setTimeout(r, 100))
       setScanStep(2) // Parsing details...
 
       const result = await callAI('/api/ai/parse-receipt', { base64, mimeType })
 
       setScanStep(3) // Done!
-      await new Promise(r => setTimeout(r, 500))
+      await new Promise(r => setTimeout(r, 300))
 
       const txs: ParsedTransaction[] = result.transactions || [result]
       if (txs.length === 1) {
