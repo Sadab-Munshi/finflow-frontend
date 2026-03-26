@@ -318,6 +318,7 @@ function AddTransactionContent() {
   const [mounted, setMounted] = useState(false)
   const [activeTab, setActiveTab] = useState(() => {
     const tab = searchParams.get('tab') || 'manual'
+    // Backward compat: old URLs used ?tab=text for NLP
     return tab === 'text' ? 'nlp' : tab
   })
   const [loading, setLoading] = useState(false)
@@ -427,7 +428,7 @@ function AddTransactionContent() {
     const toastId = toast.loading('Saving...')
     router.push('/history')
 
-    ;(async () => {
+    void (async () => {
       try {
         for (const tx of transactions) {
           const result = await addTransaction(tx)
@@ -437,7 +438,7 @@ function AddTransactionContent() {
           })
         }
         toast.success('Saved ✅', { id: toastId })
-        try { await checkBudgetAlert() } catch {}
+        try { await checkBudgetAlert() } catch (e) { console.error('[checkBudgetAlert]', e) }
       } catch {
         toast.error('Failed, retry?', { id: toastId, duration: 5000 })
       }
@@ -450,7 +451,8 @@ function AddTransactionContent() {
     setAmountError('')
     setCategoryError('')
 
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+    const parsed = parseFloat(amount)
+    if (!amount || isNaN(parsed) || parsed <= 0) {
       setAmountError('Please enter an amount')
       valid = false
     }
