@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import BackButton from '@/components/landing/BackButton'
 
 export const metadata: Metadata = {
   title: 'FinFlow | Terms of Service',
@@ -11,13 +10,7 @@ export default function TermsOfServicePage() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
 
       {/* ── back button ── */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors mb-8"
-      >
-        <ArrowLeft size={16} />
-        Back to Home
-      </Link>
+      <BackButton />
 
       <div className="mb-12">
         <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-4">
@@ -196,13 +189,7 @@ export default function TermsOfServicePage() {
       </div>
 
       <div className="mt-12 pt-8 border-t border-neutral-100">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-neutral-900 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back to Home
-        </Link>
+        <BackButton />
       </div>
     </div>
   )
