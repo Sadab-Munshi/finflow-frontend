@@ -84,7 +84,7 @@ export default function LandingPage() {
     { title: 'AI Insights', description: 'Get personalized insights about your spending patterns and opportunities to save.', icon: Brain },
     { title: 'Monthly Reports', description: 'Beautiful, easy-to-understand reports delivered to you every month.', icon: FileText },
     { title: 'Budget Tracking', description: 'Set budgets for different categories and track your progress in real-time.', icon: PiggyBank },
-    { title: 'Your Data Your Device', description: 'All your financial data stays on your device. You have complete control and privacy.', icon: Shield },
+    { title: 'Secured Database', description: 'Your financial data is encrypted and stored securely in the cloud. Industry-standard protection keeps it safe at all times.', icon: Shield },
   ]
 
   const steps = [
@@ -122,7 +122,7 @@ export default function LandingPage() {
               more time living
             </h1>
             <p className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-10 reveal">
-              Track every rupee effortlessly. Voice, camera or text — in your language, on your device.
+              Track every rupee effortlessly. Voice, camera or text — in your language, backed by a secured database.
             </p>
             <div className="mt-8 flex flex-row items-center justify-center gap-3 flex-wrap">
               <Link href="/signup" className="bg-gray-900 text-white px-7 py-3 rounded-full text-sm font-medium hover:bg-gray-700 transition-all">
@@ -266,7 +266,7 @@ export default function LandingPage() {
               Ready to take control of your finances?
             </h2>
             <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto reveal">
-              Start tracking your finances smarter — effortlessly, in your language, on your device.
+              Start tracking your finances smarter — effortlessly, in your language, with your data securely stored.
             </p>
             <Button size="lg" className="px-8 bg-white text-teal-700 hover:bg-neutral-100 reveal" asChild>
               <Link href="/signup">Get Started</Link>

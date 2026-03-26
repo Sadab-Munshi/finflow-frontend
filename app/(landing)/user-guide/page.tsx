@@ -86,7 +86,23 @@ export default function UserGuidePage() {
             app.sadabmunshi.online
           </a>
         </p>
-        <p className="text-neutral-400 text-xs mt-1">&copy; 2026 FinFlow by Sadab &middot; All Rights Reserved</p>
+        <p className="text-neutral-400 text-xs mt-1">&copy; 2026 FinFlow &middot; All Rights Reserved</p>
+      </div>
+
+      {/* ── quick-start banner ── */}
+      <div className="mb-8 rounded-2xl bg-neutral-900 text-white px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex-1">
+          <p className="font-semibold text-base mb-1">New here? Start in 60 seconds.</p>
+          <p className="text-sm text-neutral-300">Sign up, add your first transaction, and let FinFlow do the rest.</p>
+        </div>
+        <a
+          href="https://app.sadabmunshi.online/signup"
+          target="_blank"
+          rel="noreferrer"
+          className="shrink-0 inline-flex items-center justify-center rounded-full bg-white text-neutral-900 text-sm font-medium px-5 py-2.5 hover:bg-neutral-100 transition-colors"
+        >
+          Get Started →
+        </a>
       </div>
 
       {/* ── sections ── */}
@@ -449,18 +465,14 @@ export default function UserGuidePage() {
 
       {/* ── footer ── */}
       <div className="mt-14 pt-8 border-t border-neutral-100 text-center">
-        <p className="text-neutral-700 font-medium mb-1">Track smarter. Save more. Stress less.</p>
-        <p className="text-sm text-neutral-500">
-          Web App:{' '}
+        <p className="text-neutral-700 font-semibold mb-1">Track smarter. Save more. Stress less.</p>
+        <p className="text-sm text-neutral-500 mb-4">
+          Start your journey at{' '}
           <a href="https://app.sadabmunshi.online" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
             app.sadabmunshi.online
           </a>
-          {' '}&middot; WhatsApp &amp; Telegram: type{' '}
-          <code className="bg-neutral-100 px-1.5 py-0.5 rounded text-xs">help</code> in the FinFlow chat
         </p>
-        <p className="text-xs text-neutral-400 mt-3">
-          Built by Sadab &middot; FinFlow Team &middot; Version 1.0 &middot; 2026 &middot; &copy; FinFlow. All Rights Reserved.
-        </p>
+        <p className="text-xs text-neutral-400">&copy; 2026 FinFlow &middot; All Rights Reserved</p>
       </div>
     </div>
   )
