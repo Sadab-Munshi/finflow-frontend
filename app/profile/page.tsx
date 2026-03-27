@@ -438,21 +438,20 @@ export default function ProfilePage() {
         {/* SECTION 2 — STATS ROW */}
         <div className="px-4 -mt-4 relative z-20">
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white rounded-2xl shadow-sm p-3 md:p-6 lg:p-8 flex flex-col items-center text-center">
+            <div className="bg-teal-50 rounded-2xl p-4 flex flex-col items-center text-center">
               <ClipboardList className="w-6 h-6 text-teal-600 mb-1" />
               <span className="text-lg font-bold text-gray-800">{String(totalEntries)}</span>
-              <span className="text-xs text-gray-400 mt-0.5">Total Entries</span>
+              <span className="text-xs text-gray-400 mt-0.5">Entries</span>
             </div>
-            <div className="bg-white rounded-2xl shadow-sm p-3 md:p-6 lg:p-8 flex flex-col items-center text-center">
+            <div className="bg-orange-50 rounded-2xl p-4 flex flex-col items-center text-center">
               <Flame className="w-6 h-6 text-orange-500 mb-1" />
               <span className="text-lg font-bold text-gray-800">{`${dayStreak}d`}</span>
-              <span className="text-xs text-gray-400 mt-0.5">Day Streak</span>
+              <span className="text-xs text-gray-400 mt-0.5">Streak</span>
             </div>
-            <div className="bg-white rounded-2xl shadow-sm p-3 md:p-6 lg:p-8 flex flex-col items-center text-center">
-              <TrendingDown className="w-6 h-6 text-teal-600 mb-1" />
+            <div className="bg-rose-50 rounded-2xl p-4 flex flex-col items-center text-center">
+              <TrendingDown className="w-6 h-6 text-rose-600 mb-1" />
               <span className="text-lg font-bold text-gray-800">{formatSpending(thisMonthSpending)}</span>
-              <span className="text-xs text-gray-400 mt-0.5">Spent This Month</span>
-              <span className="text-xs text-gray-400">Total expenses this month</span>
+              <span className="text-xs text-gray-400 mt-0.5">Spent</span>
             </div>
           </div>
         </div>
