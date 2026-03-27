@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Sparkles, Loader2, AlertCircle, BarChart2, Lightbulb, AlertTriangle, Trophy, TrendingUp, AlertOctagon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions } from '@/lib/db'
@@ -248,7 +247,8 @@ export default function InsightsPage() {
                 </p>
               </div>
             ) : (
-              /* Insight cards */
+              <>
+              {/* Insight cards */}
               <div className="grid md:grid-cols-2" style={{ gap: 10 }}>
                 {insights.map((insight, i) => {
                   const style = insightStyles[insight.type] || insightStyles.tip
@@ -317,6 +317,7 @@ export default function InsightsPage() {
                   AI-generated insights may not always be accurate. Always verify with a financial advisor before making major decisions.
                 </p>
               </div>
+              </>
             )}
           </>
         )}
