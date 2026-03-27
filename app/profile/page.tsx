@@ -686,7 +686,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-2xl shadow-sm md:shadow-md overflow-hidden">
               {[
                 { icon: Bell, label: 'Notifications', path: '/settings' },
-                { icon: Lock, label: 'Privacy & Security', path: '/settings' },
+                { icon: Lock, label: 'Privacy & Security', path: '/privacy-security' },
                 { icon: Database, label: 'Data Backup & Restore', path: '/backup-restore' },
               ].map((item, i) => (
                 <button
