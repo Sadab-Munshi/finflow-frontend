@@ -16,9 +16,7 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
       .body-text   { font-size:14px !important; }
       .step-text   { font-size:14px !important; }
       .feature-cell  { padding:10px 12px !important; }
-      .feature-icon  { width:28px !important; height:28px !important; }
-      .feature-title { font-size:14px !important; }
-      .feature-desc  { font-size:14px !important; }
+      .feature-icon  { width:24px !important; height:24px !important; }
       .cta-btn     { font-size:15px !important; padding:14px 20px !important; width:100% !important; display:block !important; text-align:center !important; box-sizing:border-box !important; }
       .pro-tip-cell  { padding:10px !important; }
       .pro-tip-text  { font-size:14px !important; }
@@ -26,6 +24,7 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
     }
     @media (max-width:480px) {
       .card-wrap    { width:100% !important; }
+      .feature-card-cell { display:block !important; width:100% !important; padding:0 0 8px 0 !important; }
       .guide-icon-cell { display:block !important; text-align:center !important; padding-right:0 !important; padding-bottom:12px !important; width:100% !important; }
       .guide-text-cell { display:block !important; width:100% !important; }
       .guide-inner  { width:100% !important; }
@@ -133,76 +132,48 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
           <tr>
             <td style="padding:0 24px 24px;">
               <table width="100%" cellpadding="0" cellspacing="0">
-
-                <!-- NLP Text Parsing -->
                 <tr>
-                  <td style="padding:0 0 10px 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3e8ff;border-radius:12px;" class="card-wrap">
+
+                  <!-- NLP Text Parsing -->
+                  <td valign="top" width="33%" class="feature-card-cell" style="padding-right:6px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#EDE9FE;border-radius:12px;">
                       <tr>
-                        <td style="padding:16px 18px;" class="feature-cell">
-                          <table cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td style="vertical-align:middle;padding-right:16px;">
-                                <img src="https://app.sadabmunshi.online/images/icon-nlp.png" alt="NLP Text Parsing" width="48" height="48" class="feature-icon" style="width:48px;height:48px;display:block;" />
-                              </td>
-                              <td style="vertical-align:middle;">
-                                <p style="margin:0;font-size:14px;font-weight:700;color:#111827;" class="feature-title">NLP Text Parsing</p>
-                                <p style="margin:4px 0 0;font-size:13px;color:#6b7280;" class="feature-desc">Type naturally, AI understands and categorizes</p>
-                              </td>
-                            </tr>
-                          </table>
+                        <td style="padding:10px 12px;" class="feature-cell" align="center">
+                          <img src="https://app.sadabmunshi.online/images/icon-nlp.png" alt="NLP Text Parsing" width="24" height="24" class="feature-icon" style="width:24px;height:24px;display:block;margin:0 auto 6px;" />
+                          <p style="margin:0;font-size:13px;font-weight:700;color:#111827;" class="feature-title">NLP Text Parsing</p>
+                          <p style="margin:4px 0 0;font-size:11px;color:#6b7280;" class="feature-desc">Type naturally, AI understands and categorizes</p>
                         </td>
                       </tr>
                     </table>
                   </td>
-                </tr>
 
-                <!-- Receipt Scan -->
-                <tr>
-                  <td style="padding:0 0 10px 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#dbeafe;border-radius:12px;" class="card-wrap">
+                  <!-- Receipt Scan -->
+                  <td valign="top" width="33%" class="feature-card-cell" style="padding-right:6px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#DBEAFE;border-radius:12px;">
                       <tr>
-                        <td style="padding:16px 18px;" class="feature-cell">
-                          <table cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td style="vertical-align:middle;padding-right:16px;">
-                                <img src="https://app.sadabmunshi.online/images/icon-receipt.png" alt="Receipt Scan" width="48" height="48" class="feature-icon" style="width:48px;height:48px;display:block;" />
-                              </td>
-                              <td style="vertical-align:middle;">
-                                <p style="margin:0;font-size:14px;font-weight:700;color:#111827;" class="feature-title">Receipt Scan</p>
-                                <p style="margin:4px 0 0;font-size:13px;color:#6b7280;" class="feature-desc">Snap a photo and let AI extract the details</p>
-                              </td>
-                            </tr>
-                          </table>
+                        <td style="padding:10px 12px;" class="feature-cell" align="center">
+                          <img src="https://app.sadabmunshi.online/images/icon-receipt.png" alt="Receipt Scan" width="24" height="24" class="feature-icon" style="width:24px;height:24px;display:block;margin:0 auto 6px;" />
+                          <p style="margin:0;font-size:13px;font-weight:700;color:#111827;" class="feature-title">Receipt Scan</p>
+                          <p style="margin:4px 0 0;font-size:11px;color:#6b7280;" class="feature-desc">Snap a photo and let AI extract the details</p>
                         </td>
                       </tr>
                     </table>
                   </td>
-                </tr>
 
-                <!-- AI Insights -->
-                <tr>
-                  <td style="padding:0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fce7f3;border-radius:12px;" class="card-wrap">
+                  <!-- AI Insights -->
+                  <td valign="top" width="34%" class="feature-card-cell">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#FCE7F3;border-radius:12px;">
                       <tr>
-                        <td style="padding:16px 18px;" class="feature-cell">
-                          <table cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td style="vertical-align:middle;padding-right:16px;">
-                                <img src="https://app.sadabmunshi.online/images/icon-insights.png" alt="AI Insights" width="48" height="48" class="feature-icon" style="width:48px;height:48px;display:block;" />
-                              </td>
-                              <td style="vertical-align:middle;">
-                                <p style="margin:0;font-size:14px;font-weight:700;color:#111827;" class="feature-title">AI Insights</p>
-                                <p style="margin:4px 0 0;font-size:13px;color:#6b7280;" class="feature-desc">Get smart spending patterns and tips</p>
-                              </td>
-                            </tr>
-                          </table>
+                        <td style="padding:10px 12px;" class="feature-cell" align="center">
+                          <img src="https://app.sadabmunshi.online/images/icon-insights.png" alt="AI Insights" width="24" height="24" class="feature-icon" style="width:24px;height:24px;display:block;margin:0 auto 6px;" />
+                          <p style="margin:0;font-size:13px;font-weight:700;color:#111827;" class="feature-title">AI Insights</p>
+                          <p style="margin:4px 0 0;font-size:11px;color:#6b7280;" class="feature-desc">Get smart spending patterns and tips</p>
                         </td>
                       </tr>
                     </table>
                   </td>
-                </tr>
 
+                </tr>
               </table>
             </td>
           </tr>
