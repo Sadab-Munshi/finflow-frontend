@@ -19,11 +19,11 @@ interface Insight {
 
 // Card type styles with left border colors and icon bg
 const insightStyles: Record<string, { borderColor: string; iconBg: string; iconColor: string; icon: React.ReactNode }> = {
-  tip:         { borderColor: '#00b894', iconBg: 'rgba(0,184,148,0.12)', iconColor: '#00b894', icon: <Lightbulb className="w-5 h-5" /> },
-  warning:     { borderColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)', iconColor: '#f59e0b', icon: <AlertTriangle className="w-5 h-5" /> },
-  achievement: { borderColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)', iconColor: '#10b981', icon: <Trophy className="w-5 h-5" /> },
-  trend:       { borderColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', iconColor: '#8b5cf6', icon: <TrendingUp className="w-5 h-5" /> },
-  alert:       { borderColor: '#ef4444', iconBg: 'rgba(239,68,68,0.12)',  iconColor: '#ef4444', icon: <AlertOctagon className="w-5 h-5" /> },
+  tip:         { borderColor: 'rgba(0,184,148,0.7)',   iconBg: 'rgba(0,184,148,0.07)',   iconColor: '#00b894', icon: <Lightbulb style={{ width: 18, height: 18 }} /> },
+  warning:     { borderColor: 'rgba(245,158,11,0.7)',  iconBg: 'rgba(245,158,11,0.07)',  iconColor: '#f59e0b', icon: <AlertTriangle style={{ width: 18, height: 18 }} /> },
+  achievement: { borderColor: 'rgba(16,185,129,0.7)',  iconBg: 'rgba(16,185,129,0.07)',  iconColor: '#10b981', icon: <Trophy style={{ width: 18, height: 18 }} /> },
+  trend:       { borderColor: 'rgba(139,92,246,0.7)',  iconBg: 'rgba(139,92,246,0.07)',  iconColor: '#8b5cf6', icon: <TrendingUp style={{ width: 18, height: 18 }} /> },
+  alert:       { borderColor: 'rgba(239,68,68,0.7)',   iconBg: 'rgba(239,68,68,0.07)',   iconColor: '#ef4444', icon: <AlertOctagon style={{ width: 18, height: 18 }} /> },
 }
 
 export default function InsightsPage() {
@@ -70,13 +70,16 @@ export default function InsightsPage() {
       onClick={handleGenerate}
       disabled={dataLoading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-white font-semibold text-base',
-        'w-full sm:w-auto transition-all duration-200',
-        dataLoading ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]'
+        'inline-flex items-center justify-center gap-2 rounded-xl text-white',
+        'w-full transition-all duration-200',
+        dataLoading ? 'opacity-70 cursor-not-allowed' : 'active:scale-[0.98]'
       )}
       style={{
-        background: dataLoading ? '#6b7280' : 'linear-gradient(135deg, #00b894 0%, #00a884 100%)',
-        animation: !dataLoading && insights.length === 0 ? 'pulse-btn 2s ease-in-out infinite' : undefined,
+        background: dataLoading ? '#6b7280' : '#00b894',
+        height: 48,
+        fontSize: 15,
+        fontWeight: 600,
+        boxShadow: dataLoading ? 'none' : '0 4px 12px rgba(0,184,148,0.25)',
       }}
     >
       {dataLoading ? (
@@ -119,7 +122,7 @@ export default function InsightsPage() {
         }
       `}</style>
 
-      <div className="space-y-6">
+      <div className="space-y-3 px-4">
         {/* Page Header */}
         <div>
           <div className="flex items-center gap-2">
@@ -131,7 +134,7 @@ export default function InsightsPage() {
 
         {/* Loading State - Full page skeleton */}
         {dataLoading ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Teal progress bar */}
             <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(0,184,148,0.15)' }}>
               <div
@@ -213,7 +216,7 @@ export default function InsightsPage() {
           <>
             {/* Generate button (shown when not loading) */}
             {!dataLoading && (
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div>
                 {generateButton}
               </div>
             )}
@@ -229,36 +232,35 @@ export default function InsightsPage() {
             {/* Empty state */}
             {insights.length === 0 ? (
               <div
-                className="rounded-xl border p-12 text-center"
+                className="rounded-xl border p-10 text-center"
                 style={{ borderColor: '#f3f4f6', background: '#fff' }}
               >
                 <div className="flex justify-center mb-4">
                   <BarChart2
-                    className="w-16 h-16"
-                    style={{ color: '#00b894', animation: 'pulse-icon 3s ease-in-out infinite' }}
+                    style={{ width: 48, height: 48, color: '#00b894' }}
                   />
                 </div>
                 <h3 className="text-lg font-bold mb-2" style={{ color: '#0d1117' }}>
                   Your financial story awaits
                 </h3>
-                <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: '#6b7280', lineHeight: 1.6 }}>
+                <p className="text-sm max-w-md mx-auto" style={{ color: '#6b7280', lineHeight: 1.6 }}>
                   Tap Generate Insights to get AI-powered analysis of your spending
                 </p>
-                {generateButton}
               </div>
             ) : (
               /* Insight cards */
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid md:grid-cols-2" style={{ gap: 10 }}>
                 {insights.map((insight, i) => {
                   const style = insightStyles[insight.type] || insightStyles.tip
                   return (
                     <div
                       key={i}
-                      className="rounded-xl border bg-white"
+                      className="rounded-xl"
                       style={{
-                        borderColor: '#e5e7eb',
-                        borderLeftWidth: '4px',
-                        borderLeftColor: style.borderColor,
+                        background: '#ffffff',
+                        border: '1px solid #f3f4f6',
+                        borderLeft: `3px solid ${style.borderColor}`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                         opacity: 0,
                         animation: `slideUp 0.4s ease forwards`,
                         animationDelay: `${i * 150}ms`,
@@ -270,22 +272,22 @@ export default function InsightsPage() {
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = 'none'
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'
                       }}
                     >
-                      <div className="p-6">
+                      <div style={{ padding: '14px 16px' }}>
                         <div className="flex items-start gap-3">
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: style.iconBg, color: style.iconColor }}
+                            className="rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ width: 36, height: 36, backgroundColor: style.iconBg, color: style.iconColor }}
                           >
                             {style.icon}
                           </div>
                           <div>
-                            <p className="font-bold" style={{ fontSize: '16px', color: '#0d1117' }}>
+                            <p className="font-bold" style={{ fontSize: 15, color: '#0d1117', marginBottom: 4 }}>
                               {insight.title}
                             </p>
-                            <p className="mt-1" style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.6 }}>
+                            <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.55 }}>
                               {insight.description}
                             </p>
                           </div>
