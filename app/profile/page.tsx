@@ -687,7 +687,7 @@ export default function ProfilePage() {
               {[
                 { icon: Bell, label: 'Notifications', path: '/settings' },
                 { icon: Lock, label: 'Privacy & Security', path: '/settings' },
-                { icon: Database, label: 'Data Backup & Restore', path: '/settings' },
+                { icon: Database, label: 'Data Backup & Restore', path: '/backup-restore' },
               ].map((item, i) => (
                 <button
                   key={item.label}
