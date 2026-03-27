@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import {
@@ -12,6 +12,7 @@ import {
 import Layout from '@/components/layout/Layout'
 import { getTransactions, getBudgets, getSettings, addTransaction, deleteBudget, upsertBudget, deleteTransactions } from '@/lib/db'
 import { useUser } from '@/context/UserContext'
+import { createClient } from '@/lib/supabase/client'
 import { Transaction, Budget } from '@/lib/types'
 import { categories } from '@/lib/categories'
 
@@ -105,16 +106,30 @@ function sanitize(value: string): string {
 export default function BackupRestorePage() {
   const router = useRouter()
   const { user } = useUser()
-
+  const [authChecked, setAuthChecked] = useState(false)
   const [isExportingCsv, setIsExportingCsv] = useState(false)
   const [isExportingJson, setIsExportingJson] = useState(false)
-
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
   const [parsedData, setParsedData] = useState<{ transactions: Transaction[]; budgets: Budget[] } | null>(null)
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge')
   const [isImporting, setIsImporting] = useState(false)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.replace('/login')
+        return
+      }
+      setAuthChecked(true)
+    }
+    checkAuth()
+  }, [router])
+
+  if (!authChecked) return null
 
   // ── Export CSV ──────────────────────────────────────────────────────────────
 
