@@ -9,19 +9,26 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
   <title>Welcome to FinFlow</title>
   <style>
     @media (max-width:600px) {
-      .outer-wrap  { padding:12px !important; }
+      .outer-wrap  { padding:16px 8px !important; }
       .inner-wrap  { width:100% !important; }
       .logo-img    { max-height:36px !important; height:36px !important; }
       .greeting    { font-size:20px !important; }
-      .body-text   { font-size:13px !important; }
+      .body-text   { font-size:14px !important; }
+      .step-text   { font-size:14px !important; }
       .feature-cell  { padding:10px 12px !important; }
       .feature-icon  { width:28px !important; height:28px !important; }
-      .feature-title { font-size:13px !important; }
-      .feature-desc  { font-size:12px !important; }
-      .cta-btn     { font-size:14px !important; padding:12px 20px !important; width:90% !important; display:block !important; text-align:center !important; box-sizing:border-box !important; }
+      .feature-title { font-size:14px !important; }
+      .feature-desc  { font-size:14px !important; }
+      .cta-btn     { font-size:15px !important; padding:14px 20px !important; width:100% !important; display:block !important; text-align:center !important; box-sizing:border-box !important; }
       .pro-tip-cell  { padding:10px !important; }
-      .pro-tip-text  { font-size:12px !important; }
-      .footer-text   { font-size:10px !important; }
+      .pro-tip-text  { font-size:14px !important; }
+      .footer-text   { font-size:11px !important; }
+    }
+    @media (max-width:480px) {
+      .card-wrap    { width:100% !important; }
+      .guide-icon-cell { display:block !important; text-align:center !important; padding-right:0 !important; padding-bottom:12px !important; width:100% !important; }
+      .guide-text-cell { display:block !important; width:100% !important; }
+      .guide-inner  { width:100% !important; }
     }
   </style>
 </head>
@@ -48,19 +55,81 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
           <!-- Greeting -->
           <tr>
             <td style="padding:28px 24px 4px;">
-              <p style="margin:0;font-size:22px;font-weight:700;color:#111827;" class="greeting">Hey <span style="color:#10b981;">${firstName}</span>, welcome to FinFlow! &#127881;</p>
+              <p style="margin:0;font-size:22px;font-weight:700;color:#111827;" class="greeting">Hey <span style="color:#10b981;">${firstName}</span>, you&#39;re in! &#127881;</p>
             </td>
           </tr>
 
           <!-- Intro -->
           <tr>
             <td style="padding:12px 24px 20px;">
-              <p style="margin:0 0 6px;font-size:15px;line-height:1.6;color:#374151;" class="body-text">You&#39;re all set to manage your finances effortlessly.</p>
-              <p style="margin:0;font-size:15px;line-height:1.6;color:#374151;" class="body-text">Here&#39;s how to get started:</p>
+              <p style="margin:0 0 6px;font-size:15px;line-height:1.6;color:#374151;" class="body-text">Welcome to FinFlow &#8212; your finances are about to get a whole lot smarter.</p>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#374151;" class="body-text">Here&#39;s where you are right now:</p>
             </td>
           </tr>
 
-          <!-- Features -->
+          <!-- Onboarding Steps -->
+          <tr>
+            <td style="padding:0 24px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+
+                <!-- Step 1 -->
+                <tr>
+                  <td style="padding:0 0 8px 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:10px;" class="card-wrap">
+                      <tr>
+                        <td style="padding:12px 16px;">
+                          <p style="margin:0;font-size:14px;color:#374151;" class="step-text">
+                            <span style="color:#10b981;font-weight:700;">&#10003; Step 1</span> &#8212; You&#39;re logged in
+                            <span style="color:#10b981;font-weight:600;">(done!)</span>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Step 2 -->
+                <tr>
+                  <td style="padding:0 0 8px 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border-radius:10px;" class="card-wrap">
+                      <tr>
+                        <td style="padding:12px 16px;">
+                          <p style="margin:0;font-size:14px;color:#374151;" class="step-text">
+                            <span style="color:#3b82f6;font-weight:700;">Step 2</span> &#8212; Add your first transaction
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Step 3 -->
+                <tr>
+                  <td style="padding:0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fdf4ff;border-radius:10px;" class="card-wrap">
+                      <tr>
+                        <td style="padding:12px 16px;">
+                          <p style="margin:0;font-size:14px;color:#374151;" class="step-text">
+                            <span style="color:#a855f7;font-weight:700;">Step 3</span> &#8212; Let AI analyse your spending
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <!-- Features heading -->
+          <tr>
+            <td style="padding:0 24px 12px;">
+              <p style="margin:0;font-size:15px;font-weight:700;color:#111827;" class="body-text">Here&#39;s what you can do with FinFlow:</p>
+            </td>
+          </tr>
+
+          <!-- Feature Cards -->
           <tr>
             <td style="padding:0 24px 24px;">
               <table width="100%" cellpadding="0" cellspacing="0">
@@ -68,7 +137,7 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
                 <!-- NLP Text Parsing -->
                 <tr>
                   <td style="padding:0 0 10px 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3e8ff;border-radius:12px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3e8ff;border-radius:12px;" class="card-wrap">
                       <tr>
                         <td style="padding:16px 18px;" class="feature-cell">
                           <table cellpadding="0" cellspacing="0">
@@ -88,33 +157,10 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
                   </td>
                 </tr>
 
-                <!-- Voice Input -->
-                <tr>
-                  <td style="padding:0 0 10px 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#d1fae5;border-radius:12px;">
-                      <tr>
-                        <td style="padding:16px 18px;" class="feature-cell">
-                          <table cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td style="vertical-align:middle;padding-right:16px;">
-                                <img src="https://app.sadabmunshi.online/images/icon-voice.png" alt="Voice Input" width="48" height="48" class="feature-icon" style="width:48px;height:48px;display:block;" />
-                              </td>
-                              <td style="vertical-align:middle;">
-                                <p style="margin:0;font-size:14px;font-weight:700;color:#111827;" class="feature-title">Voice Input</p>
-                                <p style="margin:4px 0 0;font-size:13px;color:#6b7280;" class="feature-desc">Add transactions just by speaking naturally</p>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-
                 <!-- Receipt Scan -->
                 <tr>
                   <td style="padding:0 0 10px 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#dbeafe;border-radius:12px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#dbeafe;border-radius:12px;" class="card-wrap">
                       <tr>
                         <td style="padding:16px 18px;" class="feature-cell">
                           <table cellpadding="0" cellspacing="0">
@@ -136,8 +182,8 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
 
                 <!-- AI Insights -->
                 <tr>
-                  <td style="padding:0 0 10px 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fce7f3;border-radius:12px;">
+                  <td style="padding:0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fce7f3;border-radius:12px;" class="card-wrap">
                       <tr>
                         <td style="padding:16px 18px;" class="feature-cell">
                           <table cellpadding="0" cellspacing="0">
@@ -157,30 +203,32 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
                   </td>
                 </tr>
 
-                <!-- Smart Budgets -->
-                <tr>
-                  <td style="padding:0;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef9c3;border-radius:12px;">
-                      <tr>
-                        <td style="padding:16px 18px;" class="feature-cell">
-                          <table cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td style="vertical-align:middle;padding-right:16px;">
-                                <img src="https://app.sadabmunshi.online/images/icon-budgets.png" alt="Smart Budgets" width="48" height="48" class="feature-icon" style="width:48px;height:48px;display:block;" />
-                              </td>
-                              <td style="vertical-align:middle;">
-                                <p style="margin:0;font-size:14px;font-weight:700;color:#111827;" class="feature-title">Smart Budgets</p>
-                                <p style="margin:4px 0 0;font-size:13px;color:#6b7280;" class="feature-desc">Set limits and get alerts before you overspend</p>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-
               </table>
+            </td>
+          </tr>
+
+          <!-- User Guide -->
+          <tr>
+            <td style="padding:0 24px 28px;">
+              <a href="https://app.sadabmunshi.online/user-guide" style="text-decoration:none;display:block;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="background:#e0f2fe;border-radius:12px;" class="card-wrap">
+                  <tr>
+                    <td style="padding:16px 18px;" class="feature-cell">
+                      <table cellpadding="0" cellspacing="0" class="guide-inner" style="width:100%;">
+                        <tr>
+                          <td style="vertical-align:middle;padding-right:16px;" class="guide-icon-cell">
+                            <img src="https://app.sadabmunshi.online/guide.png" alt="User Guide" width="64" height="64" class="guide-icon" style="width:64px;height:64px;display:block;" />
+                          </td>
+                          <td style="vertical-align:middle;" class="guide-text-cell">
+                            <p style="margin:0;font-size:14px;font-weight:700;color:#111827;" class="feature-title">New here? Read the User Guide</p>
+                            <p style="margin:4px 0 0;font-size:13px;color:#6b7280;" class="feature-desc">Learn how to add transactions, scan receipts, connect WhatsApp &amp; Telegram, and set smart budgets.</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </a>
             </td>
           </tr>
 
@@ -228,17 +276,8 @@ export async function sendWelcomeEmail(fullName: string, email: string): Promise
           <tr>
             <td style="padding:24px 24px 20px;">
               <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">
-                Warm regards,<br>
-                <strong style="color:#14b8a6;">Sadab</strong><br>
-                <span style="color:#6b7280;">FinFlow Team</span>
+                <strong style="color:#14b8a6;">The FinFlow Team</strong>
               </p>
-            </td>
-          </tr>
-
-          <!-- Hidden tracking link -->
-          <tr>
-            <td>
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sadabmunshi.online'}/user-guide" style="color:transparent;font-size:0;line-height:0;display:block;height:0;overflow:hidden;">user guide</a>
             </td>
           </tr>
 
