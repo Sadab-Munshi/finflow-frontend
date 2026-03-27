@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Upload, Trash2, LogOut, RefreshCw, Loader2, Bell, MessageCircle, Send, ExternalLink } from 'lucide-react'
+import { Download, Upload, Trash2, RefreshCw, Loader2, Bell } from 'lucide-react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,7 +12,6 @@ import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions, getBudgets, addTransaction, upsertBudget } from '@/lib/db'
 import { createClient } from '@/lib/supabase/client'
 import LoadingScreen from '@/components/ui/LoadingScreen'
-import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 function Toggle({
@@ -75,22 +74,6 @@ export default function SettingsPage() {
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'updating' | 'success' | 'latest' | 'error'>('idle')
   const [appVersion] = useState('1.0.0')
 
-  // AI usage
-  const [aiUsage, setAiUsage] = useState<any>(null)
-
-  // Telegram
-  const [telegramChatId, setTelegramChatId] = useState('')
-  const [telegramConnected, setTelegramConnected] = useState(false)
-  const [showTelegramDisconnectDialog, setShowTelegramDisconnectDialog] = useState(false)
-
-  // WhatsApp
-  const [whatsappConnected, setWhatsappConnected] = useState(false)
-  const [whatsappPolling, setWhatsappPolling] = useState(false)
-  const [showWhatsappDisconnectDialog, setShowWhatsappDisconnectDialog] = useState(false)
-
-  // Polling refs
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient()
@@ -114,10 +97,6 @@ export default function SettingsPage() {
           setMonthlyReport(data.monthly_report !== false)
           setBudgetAlerts(data.budget_alerts !== false)
           setNeedHelp(data.need_help !== false)
-          if (data.telegram_chat_id) {
-            setTelegramChatId(data.telegram_chat_id)
-            setTelegramConnected(true)
-          }
           // Load notification preferences
           setPushEnabled(data.push_enabled !== false)
           setNotifyBudgetAlerts(data.notify_budget_alerts !== false)
@@ -129,9 +108,6 @@ export default function SettingsPage() {
           setInappBudgetAlerts(data.inapp_budget_alerts !== false)
           setInappLargeTransactions(data.inapp_large_transactions !== false)
           setInappDailySummary(data.inapp_daily_summary === true)
-          if (data.whatsapp_phone) {
-            setWhatsappConnected(true)
-          }
         }
         
 
@@ -140,15 +116,6 @@ export default function SettingsPage() {
       setMounted(true)
     }
     load()
-
-    // Load AI usage stats
-    fetch('/api/ai/usage')
-      .then(res => res.json())
-      .then(data => {
-        console.log('AI usage data:', data)
-        setAiUsage(data)
-      })
-      .catch(err => console.error('AI usage fetch error:', err))
 
     // Check if app is installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -162,180 +129,8 @@ export default function SettingsPage() {
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-    }
-  }, [])
-
   if (loading) return <LoadingScreen />
   if (!mounted) return null
-
-  const connectTelegram = async () => {
-    if (!telegramChatId.trim()) return
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { error } = await supabase
-      .from('settings')
-      .upsert({
-        user_id: user.id,
-        telegram_chat_id: telegramChatId.trim(),
-        telegram_id: telegramChatId.trim(),
-      }, { onConflict: 'user_id' })
-
-    if (!error) {
-      setTelegramConnected(true)
-    } else {
-      alert('Failed to connect. Please try again.')
-    }
-  }
-
-  const disconnectTelegram = async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase.from('settings').upsert(
-      { user_id: user.id, telegram_chat_id: null, telegram_id: null },
-      { onConflict: 'user_id' }
-    )
-    setTelegramChatId('')
-    setTelegramConnected(false)
-    setShowTelegramDisconnectDialog(false)
-  }
-
-  const connectWhatsApp = async () => {
-    try {
-      setWhatsappPolling(true)
-
-      // Generate simple random code
-      const array = new Uint8Array(5)
-      crypto.getRandomValues(array)
-      const code = Array.from(array, b => b.toString(36)).join('')
-        .slice(0, 8)
-        .toUpperCase()
-
-      // Save code to Supabase BEFORE opening WhatsApp
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { error } = await supabase
-        .from('settings')
-        .update({ whatsapp_connect_code: code })
-        .eq('user_id', user.id)
-
-      if (error) {
-        toast.error('Failed to generate connect code')
-        setWhatsappPolling(false)
-        return
-      }
-
-      // Open WhatsApp with pre-filled message
-      const waUrl = `https://wa.me/919382988956?text=connect_${code}`
-      window.open(waUrl, '_blank')
-
-      // Start polling for connection
-      startPolling()
-
-    } catch (err) {
-      console.error('WhatsApp connect error:', err)
-      toast.error('Something went wrong. Please try again.')
-      setWhatsappPolling(false)
-    }
-  }
-
-  const startPolling = () => {
-    let attempts = 0
-    const maxAttempts = 12 // 60 seconds max
-
-    pollIntervalRef.current = setInterval(async () => {
-      attempts++
-
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-        return
-      }
-
-      const { data } = await supabase
-        .from('settings')
-        .select('whatsapp_phone')
-        .eq('user_id', user.id)
-        .single()
-
-      if (data?.whatsapp_phone) {
-        // Connected!
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-        setWhatsappConnected(true)
-        setWhatsappPolling(false)
-        toast.success('WhatsApp connected successfully!')
-      } else if (attempts >= maxAttempts) {
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-        setWhatsappPolling(false)
-        toast.error('Connection timed out. Please try again.')
-      }
-
-    }, 5000) // Check every 5 seconds
-  }
-
-  const cancelPolling = () => {
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-    setWhatsappPolling(false)
-  }
-
-  const disconnectWhatsapp = async () => {
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Get current phone before clearing
-      const { data: settings } = await supabase
-        .from('settings')
-        .select('whatsapp_phone, name')
-        .eq('user_id', user.id)
-        .single()
-
-      const currentPhone = settings?.whatsapp_phone
-      const settingsName = settings?.name || user.email || 'User'
-
-      // Clear whatsapp_phone and connect_code
-      await supabase
-        .from('settings')
-        .update({
-          whatsapp_phone: null,
-          whatsapp_connect_code: null
-        })
-        .eq('user_id', user.id)
-
-      // Notify bot to send disconnection message
-      // Fire and forget — never block UI
-      if (currentPhone) {
-        fetch('/api/whatsapp/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: currentPhone,
-            type: 'disconnected',
-            name: settingsName
-          })
-        }).catch(() => {})
-      }
-
-      setWhatsappConnected(false)
-      setShowWhatsappDisconnectDialog(false)
-      toast.success('WhatsApp disconnected')
-
-    } catch (err) {
-      console.error('Disconnect error:', err)
-      toast.error('Failed to disconnect. Please try again.')
-    }
-  }
 
   const saveNotificationSetting = async (key: string, value: boolean) => {
     if (key === 'monthly_report') setMonthlyReport(value)
@@ -350,12 +145,6 @@ export default function SettingsPage() {
       user_id: user.id,
       [key]: value
     }, { onConflict: 'user_id' })
-  }
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
   }
 
   const handleExport = async () => {
@@ -493,16 +282,10 @@ export default function SettingsPage() {
     }
   }
 
-  // AI usage combined bar
-  const totalAiUsed = aiUsage
-    ? (aiUsage.nlp?.used || 0) +
-      (aiUsage.voice?.used || 0) +
-      (aiUsage.receipt?.used || 0) +
-      (aiUsage.insights?.used || 0)
-    : 0
-  const totalAiLimit = 150
-  const aiPct = Math.round((totalAiUsed / totalAiLimit) * 100)
-  const aiBarColor = aiPct >= 100 ? '#dc2626' : aiPct >= 80 ? '#f59e0b' : '#0d9488'
+  // AI usage combined bar — Moved to Profile page
+  // Telegram / WhatsApp integrations — Moved to Profile page
+  // About section — Moved to Profile page
+  // Sign Out button — Moved to Profile page
 
   return (
     <Layout>
@@ -760,158 +543,9 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Telegram */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-4 shadow-sm">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-            <Send className="w-4 h-4 text-teal-600" /> Telegram
-          </h3>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-800">
-                {telegramConnected ? 'Connected' : 'Connect Telegram'}
-              </p>
-              <p className="text-xs text-gray-400">
-                {telegramConnected
-                  ? 'Your Telegram is linked to FinFlow'
-                  : 'Add transactions directly from Telegram bot'}
-              </p>
-            </div>
-            <Toggle
-              checked={telegramConnected}
-              onChange={() => {
-                if (telegramConnected) setShowTelegramDisconnectDialog(true)
-              }}
-            />
-          </div>
-
-          {telegramConnected ? (
-            <button
-              onClick={() => setShowTelegramDisconnectDialog(true)}
-              className="text-sm font-medium text-red-500"
-            >
-              Disconnect
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <ol className="text-sm text-gray-500 space-y-1 list-decimal list-inside">
-                <li>Open Telegram and search @FinFlowBot</li>
-                <li>Send /start to get your Chat ID</li>
-                <li>Enter your Chat ID below</li>
-              </ol>
-              <input
-                type="text"
-                placeholder="Enter your Telegram Chat ID"
-                value={telegramChatId}
-                onChange={e => setTelegramChatId(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-              <button
-                onClick={connectTelegram}
-                className="w-full py-2 rounded-xl text-sm font-semibold text-white"
-                style={{ background: '#0d9488' }}
-              >
-                Connect Telegram
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* WhatsApp */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-4 shadow-sm">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-teal-600" /> WhatsApp
-          </h3>
-
-          {whatsappPolling ? (
-            /* STATE 2 — Connecting (waiting for user to send) */
-            <>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Connecting...</p>
-                  <p className="text-xs text-gray-400">Waiting for WhatsApp confirmation...</p>
-                </div>
-                <Loader2 className="w-5 h-5 animate-spin text-teal-600" />
-              </div>
-              <button
-                onClick={cancelPolling}
-                className="text-sm font-medium text-gray-500"
-              >
-                Cancel
-              </button>
-            </>
-          ) : whatsappConnected ? (
-            /* STATE 3 — Connected */
-            <>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Connected</p>
-                  <p className="text-xs text-gray-400">Your WhatsApp is linked to FinFlow</p>
-                </div>
-                <Toggle
-                  checked={true}
-                  onChange={() => setShowWhatsappDisconnectDialog(true)}
-                />
-              </div>
-              <button
-                onClick={() => setShowWhatsappDisconnectDialog(true)}
-                className="text-sm font-medium text-red-500"
-              >
-                Disconnect
-              </button>
-            </>
-          ) : (
-            /* STATE 1 — Not connected, not connecting */
-            <>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Connect WhatsApp</p>
-                  <p className="text-xs text-gray-400">Add transactions directly from WhatsApp</p>
-                </div>
-                <Toggle
-                  checked={false}
-                  onChange={() => connectWhatsApp()}
-                />
-              </div>
-              <button
-                onClick={connectWhatsApp}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold text-white"
-                style={{ background: '#0d9488' }}
-              >
-                <ExternalLink className="w-4 h-4" /> Open WhatsApp →
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* AI Usage This Month */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            AI Usage This Month
-          </h2>
-          {aiUsage ? (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">{aiPct}% used</span>
-                <span className="text-xs text-gray-400">{totalAiUsed}/{totalAiLimit}</span>
-              </div>
-              <div style={{ background: '#f3f4f6', borderRadius: '99px', height: '10px' }}>
-                <div
-                  style={{
-                    width: `${Math.min(aiPct, 100)}%`,
-                    background: aiBarColor,
-                    borderRadius: '99px',
-                    height: '10px',
-                    transition: 'width 0.6s ease',
-                  }}
-                />
-              </div>
-              <p className="text-xs text-gray-400">Resets on 1st of next month</p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400">Loading usage...</p>
-          )}
-        </div>
+        {/* Telegram — Moved to Profile page */}
+        {/* WhatsApp — Moved to Profile page */}
+        {/* AI Usage This Month — Moved to Profile page */}
 
         {/* Backup */}
         <Card className="border-gray-100">
@@ -966,78 +600,9 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* About */}
-        <Card className="border-gray-100">
-          <CardHeader><CardTitle className="text-gray-800">About</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Version</span>
-              <span className="text-sm text-gray-400">1.0</span>
-            </div>
-            <Link href="/privacy" className="block text-sm text-teal-600">Privacy Policy</Link>
-            <Link href="/terms" className="block text-sm text-teal-600">Terms of Service</Link>
-            <Link href="/disclaimer" className="block text-sm text-teal-600">Disclaimer</Link>
-          </CardContent>
-        </Card>
-
-        {/* Logout */}
-        <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 text-red-500 border border-red-200 rounded-2xl py-3 text-sm font-medium">
-          <LogOut size={16} />
-          Sign Out
-        </button>
+        {/* About — Moved to Profile page */}
+        {/* Sign Out — Moved to Profile page */}
       </div>
-
-      {/* Telegram disconnect dialog */}
-      {showTelegramDisconnectDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-base font-semibold text-gray-900 mb-1">Disconnect Telegram?</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              You won&apos;t receive transactions on Telegram.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowTelegramDisconnectDialog(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={disconnectTelegram}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl"
-              >
-                Disconnect
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* WhatsApp disconnect dialog */}
-      {showWhatsappDisconnectDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-base font-semibold text-gray-900 mb-1">Disconnect WhatsApp?</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              You won&apos;t receive transactions on WhatsApp.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowWhatsappDisconnectDialog(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={disconnectWhatsapp}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl"
-              >
-                Disconnect
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </Layout>
   )
 }
