@@ -22,9 +22,13 @@ export default function AuthListener() {
         // This ensures the push subscription is always associated with the logged-in user
         import('@/lib/push').then(({ subscribeToPush, isPushSupported }) => {
           if (isPushSupported() && Notification.permission === 'granted') {
-            subscribeToPush().catch(() => {})
+            subscribeToPush().catch((err) => {
+              console.error('[Auth] Push re-subscribe on login failed:', err)
+            })
           }
-        }).catch(() => {})
+        }).catch((err) => {
+          console.error('[Auth] Failed to load push module:', err)
+        })
       }
       if (event === 'SIGNED_OUT') {
         router.push('/login')
