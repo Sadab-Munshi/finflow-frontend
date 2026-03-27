@@ -297,6 +297,26 @@ export default function InsightsPage() {
                   )
                 })}
               </div>
+
+              {/* AI disclaimer */}
+              <div
+                style={{
+                  marginTop: 16,
+                  marginBottom: 8,
+                  background: '#f9fafb',
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  border: '1px solid #e5e7eb',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                }}
+              >
+                <AlertTriangle style={{ width: 16, height: 16, color: '#9ca3af', flexShrink: 0, marginTop: 1 }} />
+                <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.5, margin: 0 }}>
+                  AI-generated insights may not always be accurate. Always verify with a financial advisor before making major decisions.
+                </p>
+              </div>
             )}
           </>
         )}
