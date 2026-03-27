@@ -59,8 +59,8 @@ export default function InsightsPage() {
           setSavedTimestamp(parsed.timestamp || null)
         }
       }
-    } catch {
-      // ignore parse errors
+    } catch (e) {
+      console.warn('Failed to load saved insights from localStorage', e)
     }
   }, [userId])
 
