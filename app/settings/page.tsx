@@ -2,77 +2,66 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download, Upload, Trash2, RefreshCw, Loader2, Bell } from 'lucide-react'
+import {
+  RefreshCw, Loader2, CheckCircle, XCircle,
+  Download, AlertTriangle, Trash2, ArrowLeft, X,
+} from 'lucide-react'
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
-import { getTransactions, getBudgets, addTransaction, upsertBudget } from '@/lib/db'
+import { Switch } from '@/components/ui/switch'
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog'
 import { createClient } from '@/lib/supabase/client'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
 
-function Toggle({
-  checked,
-  onChange,
-  disabled,
-}: {
-  checked: boolean
-  onChange: (v: boolean) => void
-  disabled?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => !disabled && onChange(!checked)}
-      disabled={disabled}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
-        checked ? 'bg-teal-600' : 'bg-gray-200'
-      } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-      aria-pressed={checked}
-    >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-          checked ? 'translate-x-6' : 'translate-x-1'
-        }`}
-      />
-    </button>
-  )
-}
-
 export default function SettingsPage() {
   const router = useRouter()
-  const { t } = useLanguage()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [deleteConfirmText, setDeleteConfirmText] = useState('')
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [importResult, setImportResult] = useState<string | null>(null)
 
   // Email notifications
-  const [monthlyReport, setMonthlyReport] = useState(true)
-  const [budgetAlerts, setBudgetAlerts] = useState(true)
-  const [needHelp, setNeedHelp] = useState(true)
+  const [emailMonthlyReport, setEmailMonthlyReport] = useState(true)
+  const [emailBudgetAlerts, setEmailBudgetAlerts] = useState(true)
+  const [emailTipsGuidance, setEmailTipsGuidance] = useState(true)
 
   // Push notifications
   const [pushEnabled, setPushEnabled] = useState(true)
-  const [notifyBudgetAlerts, setNotifyBudgetAlerts] = useState(true)
-  const [notifyLargeTransactions, setNotifyLargeTransactions] = useState(true)
-  const [notifyDailySummary, setNotifyDailySummary] = useState(false)
-  const [notifyReports, setNotifyReports] = useState(true)
-  const [notifySystem, setNotifySystem] = useState(true)
-  const [inappNotifications, setInappNotifications] = useState(true)
-  const [inappBudgetAlerts, setInappBudgetAlerts] = useState(true)
-  const [inappLargeTransactions, setInappLargeTransactions] = useState(true)
-  const [inappDailySummary, setInappDailySummary] = useState(false)
+  const [pushBudgetAlerts, setPushBudgetAlerts] = useState(true)
+  const [pushLargeTransactions, setPushLargeTransactions] = useState(true)
+  const [pushDailySummary, setPushDailySummary] = useState(false)
+
+  // In-app notifications
+  const [inAppEnabled, setInAppEnabled] = useState(true)
+  const [inAppBudgetAlerts, setInAppBudgetAlerts] = useState(true)
+  const [inAppLargeTransactions, setInAppLargeTransactions] = useState(true)
+  const [inAppDailySummary, setInAppDailySummary] = useState(false)
 
   // App install / update
   const [installPrompt, setInstallPrompt] = useState<any>(null)
-  const [isInstalled, setIsInstalled] = useState(false)
-  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'updating' | 'success' | 'latest' | 'error'>('idle')
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'updating' | 'latest' | 'error'>('idle')
   const [appVersion] = useState('1.0.0')
+
+  // Delete dialog state
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteStep, setDeleteStep] = useState(1)
+  const [typedValue, setTypedValue] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const resetDelete = () => {
+    setTimeout(() => {
+      setDeleteStep(1)
+      setTypedValue('')
+      setIsDeleting(false)
+    }, 300)
+  }
+
+  const handleClose = () => {
+    setDeleteOpen(false)
+    resetDelete()
+  }
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -91,36 +80,26 @@ export default function SettingsPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-
         const { data } = await supabase.from('settings').select('*').eq('user_id', user.id).single()
         if (data) {
-          setMonthlyReport(data.monthly_report !== false)
-          setBudgetAlerts(data.budget_alerts !== false)
-          setNeedHelp(data.need_help !== false)
-          // Load notification preferences
+          setEmailMonthlyReport(data.monthly_report !== false)
+          setEmailBudgetAlerts(data.budget_alerts !== false)
+          setEmailTipsGuidance(data.need_help !== false)
           setPushEnabled(data.push_enabled !== false)
-          setNotifyBudgetAlerts(data.notify_budget_alerts !== false)
-          setNotifyLargeTransactions(data.notify_large_transactions !== false)
-          setNotifyDailySummary(data.notify_daily_summary === true)
-          setNotifyReports(data.notify_reports !== false)
-          setNotifySystem(data.notify_system !== false)
-          setInappNotifications(data.inapp_notifications !== false)
-          setInappBudgetAlerts(data.inapp_budget_alerts !== false)
-          setInappLargeTransactions(data.inapp_large_transactions !== false)
-          setInappDailySummary(data.inapp_daily_summary === true)
+          setPushBudgetAlerts(data.notify_budget_alerts !== false)
+          setPushLargeTransactions(data.notify_large_transactions !== false)
+          setPushDailySummary(data.notify_daily_summary === true)
+          setInAppEnabled(data.inapp_notifications !== false)
+          setInAppBudgetAlerts(data.inapp_budget_alerts !== false)
+          setInAppLargeTransactions(data.inapp_large_transactions !== false)
+          setInAppDailySummary(data.inapp_daily_summary === true)
         }
-        
-
       }
       setLoading(false)
       setMounted(true)
     }
     load()
 
-    // Check if app is installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true)
-    }
     const handler = (e: any) => {
       e.preventDefault()
       setInstallPrompt(e)
@@ -133,99 +112,17 @@ export default function SettingsPage() {
   if (!mounted) return null
 
   const saveNotificationSetting = async (key: string, value: boolean) => {
-    if (key === 'monthly_report') setMonthlyReport(value)
-    if (key === 'budget_alerts') setBudgetAlerts(value)
-    if (key === 'need_help') setNeedHelp(value)
-    
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    
-    await supabase.from('settings').upsert({
-      user_id: user.id,
-      [key]: value
-    }, { onConflict: 'user_id' })
-  }
-
-  const handleExport = async () => {
-    const transactions = await getTransactions()
-    const budgets = await getBudgets()
-    const exportData = {
-      exportDate: new Date().toISOString(),
-      transactions,
-      budgets
-    }
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `finflow-backup-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    
-    try {
-      const text = await file.text()
-      const data = JSON.parse(text)
-      
-      const transactions = data.transactions || []
-      const budgets = data.budgets || []
-      
-      let successCount = 0
-      for (const t of transactions) {
-        const result = await addTransaction({
-          amount: Number(t.amount),
-          type: t.type,
-          category: t.category || 'Other',
-          note: t.note || '',
-          date: t.date,
-        })
-        if (result) successCount++
-      }
-      
-      for (const b of budgets) {
-        await upsertBudget({
-          category: b.category,
-          amount: Number(b.amount),
-          month: b.month,
-        })
-      }
-      
-      setImportResult(`Imported ${successCount} transactions and ${budgets.length} budgets successfully`)
-    } catch {
-      setImportResult(t('errorOccurred'))
-    }
+    await supabase.from('settings').upsert({ user_id: user.id, [key]: value }, { onConflict: 'user_id' })
   }
 
   const handleInstallApp = async () => {
     if (!installPrompt) return
     installPrompt.prompt()
     const { outcome } = await installPrompt.userChoice
-    if (outcome === 'accepted') setIsInstalled(true)
     setInstallPrompt(null)
-  }
-
-  const handleDeleteAll = async () => {
-    if (deleteConfirmText !== 'Confirm') {
-      alert('Please type Confirm exactly to proceed')
-      return
-    }
-    
-    const { createClient } = await import('@/lib/supabase/client')
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    
-    await supabase.from('transactions').delete().eq('user_id', user.id)
-    await supabase.from('budgets').delete().eq('user_id', user.id)
-    
-    setDeleteConfirmText('')
-    setShowDeleteModal(false)
-    alert('All data deleted successfully')
   }
 
   const checkForUpdates = async () => {
@@ -234,9 +131,7 @@ export default function SettingsPage() {
       setTimeout(() => setUpdateStatus('idle'), 3000)
       return
     }
-
     setUpdateStatus('checking')
-
     try {
       const registration = await navigator.serviceWorker.getRegistration()
       if (!registration) {
@@ -244,16 +139,11 @@ export default function SettingsPage() {
         setTimeout(() => setUpdateStatus('idle'), 3000)
         return
       }
-
       await registration.update()
-
-      // Wait briefly for update detection
       await new Promise((resolve) => setTimeout(resolve, 1500))
-
       if (registration.waiting) {
         setUpdateStatus('updating')
         registration.waiting.postMessage({ type: 'SKIP_WAITING' })
-        // Reload after a short delay to let SW activate
         setTimeout(() => window.location.reload(), 1000)
       } else {
         setUpdateStatus('latest')
@@ -265,152 +155,158 @@ export default function SettingsPage() {
     }
   }
 
-  const getUpdateButtonContent = () => {
+  const getUpdateButton = () => {
     switch (updateStatus) {
       case 'checking':
-        return <><Loader2 className="w-4 h-4 animate-spin" /> Checking...</>
+        return { icon: <Loader2 className="animate-spin w-4 h-4" />, label: 'Checking...' }
       case 'updating':
-        return <><Loader2 className="w-4 h-4 animate-spin" /> Installing update...</>
-      case 'success':
-        return <>Updated!</>
+        return { icon: <Download className="w-4 h-4" />, label: 'Update Available' }
       case 'latest':
-        return <>You&apos;re on the latest version!</>
-      case 'error':
-        return <>Couldn&apos;t check for updates</>
+        return { icon: <CheckCircle className="w-4 h-4 text-green-500" />, label: "You're up to date" }
       default:
-        return <><RefreshCw className="w-4 h-4" /> Check for Updates</>
+        return { icon: <RefreshCw className="w-4 h-4" />, label: 'Check for Updates' }
     }
   }
 
-  // AI usage combined bar — Moved to Profile page
-  // Telegram / WhatsApp integrations — Moved to Profile page
-  // About section — Moved to Profile page
-  // Sign Out button — Moved to Profile page
+  const deleteAllData = async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+    await supabase.from('transactions').delete().eq('user_id', user.id)
+    await supabase.from('budgets').delete().eq('user_id', user.id)
+    await supabase.from('settings').delete().eq('user_id', user.id)
+  }
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true)
+    try {
+      await deleteAllData()
+      handleClose()
+      toast.success('All data deleted successfully')
+      router.push('/dashboard')
+    } catch {
+      setIsDeleting(false)
+      toast.error('Something went wrong. Please try again.')
+    }
+  }
+
+  const updateBtn = getUpdateButton()
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
+      <div className="w-full max-w-2xl mx-auto px-4 pb-24">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Settings</h1>
 
-        {/* App Install Section */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            App
-          </h2>
-          {isInstalled ? (
-            <div className="flex items-center gap-3 py-2">
-              <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
-                <Image src="/icons/icon-72x72.png" alt="FinFlow" width={24} height={24} className="rounded-md" />
+        {/* ── SECTION 1: PWA INSTALL BANNER ── */}
+        {installPrompt && (
+          <div className="bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl p-4 flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Image src="/icons/icon-72x72.png" alt="FinFlow" width={28} height={28} className="rounded-md" />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">FinFlow is Installed</p>
-                <p className="text-xs text-gray-400">You can open it from your home screen</p>
+              <div>
+                <p className="text-sm font-semibold text-white">Install FinFlow App</p>
+                <p className="text-xs text-white/80">Add to home screen for quick access</p>
               </div>
-              <span className="text-xs bg-teal-50 text-teal-700 font-semibold px-2 py-1 rounded-full">
-                ✓ Installed
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 py-2">
-              <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
-                <Image src="/icons/icon-72x72.png" alt="FinFlow" width={24} height={24} className="rounded-md" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">Install FinFlow</p>
-                <p className="text-xs text-gray-400">Add to home screen for quick access</p>
-              </div>
-              <button
-                onClick={handleInstallApp}
-                className="text-sm font-semibold px-4 py-2 rounded-xl text-white"
-                style={{ background: '#0d9488' }}
-              >
-                Install
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* App Updates */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            App Updates
-          </h2>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Current Version</span>
-              <span className="text-sm font-medium text-gray-800">{appVersion}</span>
             </div>
             <button
-              onClick={checkForUpdates}
-              disabled={updateStatus === 'checking' || updateStatus === 'updating'}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{
-                background: updateStatus === 'latest' ? '#ecfdf5' :
-                  updateStatus === 'error' ? '#fef2f2' :
-                    '#f0fdfa',
-                color: updateStatus === 'latest' ? '#059669' :
-                  updateStatus === 'error' ? '#dc2626' :
-                    '#0d9488',
-              }}
+              onClick={handleInstallApp}
+              className="bg-white text-teal-600 font-semibold rounded-full px-4 py-1.5 text-sm shrink-0"
             >
-              {getUpdateButtonContent()}
+              Install
             </button>
-            <p className="text-xs text-gray-400 text-center">
-              Updates install automatically. Use this button to check manually if you need the latest features.
-            </p>
           </div>
+        )}
+
+        {/* ── SECTION 2: APP UPDATES ── */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1 mt-5">
+          APP UPDATES
+        </p>
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+          <div className="flex items-center justify-between py-1">
+            <span className="text-sm text-gray-600">Current Version</span>
+            <span className="text-sm font-medium text-gray-800">v{appVersion}</span>
+          </div>
+          <hr className="border-gray-100 my-2" />
+          <button
+            onClick={checkForUpdates}
+            disabled={updateStatus === 'checking' || updateStatus === 'updating'}
+            className="w-full border border-teal-500 text-teal-600 rounded-xl py-2.5 font-medium text-sm flex items-center justify-center gap-2 mt-3 hover:bg-teal-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {updateBtn.icon}
+            {updateBtn.label}
+          </button>
+          <p className="text-xs text-gray-400 text-center mt-2">
+            Updates install automatically. Check manually for latest features.
+          </p>
         </div>
 
-        {/* Email Notifications */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-4 shadow-sm">
-          <h3 className="font-semibold text-gray-800">Email Notifications</h3>
-          <div className="flex items-center justify-between">
-            <div>
+        {/* ── SECTION 3: EMAIL NOTIFICATIONS ── */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1 mt-5">
+          EMAIL NOTIFICATIONS
+        </p>
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+          {/* Monthly Report */}
+          <div className="flex items-start justify-between py-3 border-b border-gray-50">
+            <div className="flex-1 pr-4">
               <p className="text-sm font-medium text-gray-800">Monthly Report</p>
-              <p className="text-xs text-gray-400">Receive monthly summary by email</p>
+              <p className="text-xs text-gray-400 mt-0.5">Receive monthly summary by email</p>
             </div>
-            <Toggle
-              checked={monthlyReport}
-              onChange={v => saveNotificationSetting('monthly_report', v)}
+            <Switch
+              checked={emailMonthlyReport}
+              onCheckedChange={v => {
+                setEmailMonthlyReport(v)
+                saveNotificationSetting('monthly_report', v)
+              }}
+              className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
             />
           </div>
-          <div className="flex items-center justify-between">
-            <div>
+          {/* Budget Alerts */}
+          <div className="flex items-start justify-between py-3 border-b border-gray-50">
+            <div className="flex-1 pr-4">
               <p className="text-sm font-medium text-gray-800">Budget Alerts</p>
-              <p className="text-xs text-gray-400">Get notified when budget limit is near</p>
+              <p className="text-xs text-gray-400 mt-0.5">Get notified when budget limit is near</p>
             </div>
-            <Toggle
-              checked={budgetAlerts}
-              onChange={v => saveNotificationSetting('budget_alerts', v)}
+            <Switch
+              checked={emailBudgetAlerts}
+              onCheckedChange={v => {
+                setEmailBudgetAlerts(v)
+                saveNotificationSetting('budget_alerts', v)
+              }}
+              className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
             />
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-800">Need Help</p>
-              <p className="text-xs text-gray-400">Get tips and guidance by email</p>
+          {/* Tips & Guidance */}
+          <div className="flex items-start justify-between py-3">
+            <div className="flex-1 pr-4">
+              <p className="text-sm font-medium text-gray-800">Tips &amp; Guidance</p>
+              <p className="text-xs text-gray-400 mt-0.5">Receive helpful tips and guidance by email</p>
             </div>
-            <Toggle
-              checked={needHelp}
-              onChange={v => saveNotificationSetting('need_help', v)}
+            <Switch
+              checked={emailTipsGuidance}
+              onCheckedChange={v => {
+                setEmailTipsGuidance(v)
+                saveNotificationSetting('need_help', v)
+              }}
+              className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
             />
           </div>
         </div>
 
-        {/* Push & In-App Notifications */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 space-y-4 shadow-sm">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-teal-600" /> Notifications
-          </h3>
-
-          {/* Browser Push master */}
-          <div className="flex items-center justify-between">
-            <div>
+        {/* ── SECTION 4: PUSH NOTIFICATIONS ── */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1 mt-5">
+          PUSH NOTIFICATIONS
+        </p>
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+          {/* Parent row */}
+          <div className="flex items-start justify-between py-3 border-b border-gray-50 last:border-0">
+            <div className="flex-1 pr-4">
               <p className="text-sm font-medium text-gray-800">Browser Push Notifications</p>
-              <p className="text-xs text-gray-400">Receive alerts even when app is closed</p>
+              <p className="text-xs text-gray-400 mt-0.5">Receive alerts even when app is closed</p>
             </div>
-            <Toggle
+            <Switch
               checked={pushEnabled}
-              onChange={async v => {
+              onCheckedChange={async v => {
                 setPushEnabled(v)
                 saveNotificationSetting('push_enabled', v)
                 if (v) {
@@ -418,190 +314,279 @@ export default function SettingsPage() {
                   await subscribeToPush()
                 }
               }}
+              className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
             />
           </div>
 
-          {/* Browser Push sub-toggles */}
-          <div
-            className={`pl-3 border-l-2 border-gray-100 space-y-3 transition-opacity duration-200 ${
-              pushEnabled ? 'opacity-100' : 'opacity-30 pointer-events-none'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Budget Alerts</p>
-                <p className="text-xs text-gray-400">Notify when spending reaches 80% of budget</p>
+          {/* Amber banner when disabled */}
+          {!pushEnabled && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 mx-1 mb-2">
+              <p className="text-xs text-amber-700 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                Enable push notifications to configure alerts below
+              </p>
+            </div>
+          )}
+
+          {/* Child rows */}
+          <div className={`ml-3 pl-3 border-l-2 border-teal-100 space-y-0 ${!pushEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
+            <div className="flex items-start justify-between py-3 border-b border-gray-50 last:border-0">
+              <div className="flex-1 pr-4">
+                <p className="text-sm font-medium text-gray-800">Budget Alerts</p>
+                <p className="text-xs text-gray-400 mt-0.5">Notify when spending reaches 80% of budget</p>
               </div>
-              <Toggle
-                checked={notifyBudgetAlerts}
-                disabled={!pushEnabled}
-                onChange={v => {
-                  setNotifyBudgetAlerts(v)
+              <Switch
+                checked={pushBudgetAlerts}
+                onCheckedChange={v => {
+                  setPushBudgetAlerts(v)
                   saveNotificationSetting('notify_budget_alerts', v)
                 }}
+                className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
               />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Large Transactions</p>
-                <p className="text-xs text-gray-400">Alert for transactions above &#8377;10,000</p>
+            <div className="flex items-start justify-between py-3 border-b border-gray-50 last:border-0">
+              <div className="flex-1 pr-4">
+                <p className="text-sm font-medium text-gray-800">Large Transactions</p>
+                <p className="text-xs text-gray-400 mt-0.5">Alert for transactions above ₹10,000</p>
               </div>
-              <Toggle
-                checked={notifyLargeTransactions}
-                disabled={!pushEnabled}
-                onChange={v => {
-                  setNotifyLargeTransactions(v)
+              <Switch
+                checked={pushLargeTransactions}
+                onCheckedChange={v => {
+                  setPushLargeTransactions(v)
                   saveNotificationSetting('notify_large_transactions', v)
                 }}
+                className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
               />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Daily Summary</p>
-                <p className="text-xs text-gray-400">Daily spending digest</p>
+            <div className="flex items-start justify-between py-3">
+              <div className="flex-1 pr-4">
+                <p className="text-sm font-medium text-gray-800">Daily Summary</p>
+                <p className="text-xs text-gray-400 mt-0.5">Daily spending digest</p>
               </div>
-              <Toggle
-                checked={notifyDailySummary}
-                disabled={!pushEnabled}
-                onChange={v => {
-                  setNotifyDailySummary(v)
+              <Switch
+                checked={pushDailySummary}
+                onCheckedChange={v => {
+                  setPushDailySummary(v)
                   saveNotificationSetting('notify_daily_summary', v)
                 }}
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-gray-100" />
-
-          {/* In-App master */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-800">In-App Notifications</p>
-              <p className="text-xs text-gray-400">Show notification bell icon alerts</p>
-            </div>
-            <Toggle
-              checked={inappNotifications}
-              onChange={v => {
-                setInappNotifications(v)
-                saveNotificationSetting('inapp_notifications', v)
-              }}
-            />
-          </div>
-
-          {/* In-App sub-toggles */}
-          <div
-            className={`pl-3 border-l-2 border-gray-100 space-y-3 transition-opacity duration-200 ${
-              inappNotifications ? 'opacity-100' : 'opacity-30 pointer-events-none'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Budget Alerts</p>
-                <p className="text-xs text-gray-400">In-app alert when budget limit is near</p>
-              </div>
-              <Toggle
-                checked={inappBudgetAlerts}
-                disabled={!inappNotifications}
-                onChange={v => {
-                  setInappBudgetAlerts(v)
-                  saveNotificationSetting('inapp_budget_alerts', v)
-                }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Large Transactions</p>
-                <p className="text-xs text-gray-400">In-app alert for transactions above &#8377;10,000</p>
-              </div>
-              <Toggle
-                checked={inappLargeTransactions}
-                disabled={!inappNotifications}
-                onChange={v => {
-                  setInappLargeTransactions(v)
-                  saveNotificationSetting('inapp_large_transactions', v)
-                }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Daily Summary</p>
-                <p className="text-xs text-gray-400">Daily spending digest in-app</p>
-              </div>
-              <Toggle
-                checked={inappDailySummary}
-                disabled={!inappNotifications}
-                onChange={v => {
-                  setInappDailySummary(v)
-                  saveNotificationSetting('inapp_daily_summary', v)
-                }}
+                className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
               />
             </div>
           </div>
         </div>
 
-        {/* Telegram — Moved to Profile page */}
-        {/* WhatsApp — Moved to Profile page */}
-        {/* AI Usage This Month — Moved to Profile page */}
+        {/* ── SECTION 5: IN-APP NOTIFICATIONS ── */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1 mt-5">
+          IN-APP NOTIFICATIONS
+        </p>
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+          {/* Parent row */}
+          <div className="flex items-start justify-between py-3 border-b border-gray-50 last:border-0">
+            <div className="flex-1 pr-4">
+              <p className="text-sm font-medium text-gray-800">In-App Notifications</p>
+              <p className="text-xs text-gray-400 mt-0.5">Show notification bell icon alerts</p>
+            </div>
+            <Switch
+              checked={inAppEnabled}
+              onCheckedChange={v => {
+                setInAppEnabled(v)
+                saveNotificationSetting('inapp_notifications', v)
+              }}
+              className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
+            />
+          </div>
 
-        {/* Backup */}
-        <Card className="border-gray-100">
-          <CardHeader><CardTitle className="text-gray-800">{t('backup')}</CardTitle></CardHeader>
-          <CardContent>
-            <Button onClick={handleExport} variant="outline" className="w-full border-gray-200 text-gray-700">
-              <Download className="w-4 h-4 mr-2" />{t('exportData')}
-            </Button>
-          </CardContent>
-        </Card>
+          {/* Amber banner when disabled */}
+          {!inAppEnabled && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 mx-1 mb-2">
+              <p className="text-xs text-amber-700 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                Enable in-app notifications to configure alerts below
+              </p>
+            </div>
+          )}
 
-        {/* Restore */}
-        <Card className="border-gray-100">
-          <CardHeader><CardTitle className="text-gray-800">{t('restore')}</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <label className="block">
-              <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-              <div className="w-full p-4 border-2 border-dashed border-gray-200 rounded-lg text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-colors">
-                <Upload className="w-6 h-6 mx-auto text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600">{t('importData')}</p>
+          {/* Child rows */}
+          <div className={`ml-3 pl-3 border-l-2 border-teal-100 space-y-0 ${!inAppEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
+            <div className="flex items-start justify-between py-3 border-b border-gray-50 last:border-0">
+              <div className="flex-1 pr-4">
+                <p className="text-sm font-medium text-gray-800">Budget Alerts</p>
+                <p className="text-xs text-gray-400 mt-0.5">In-app alert when budget limit is near</p>
               </div>
-            </label>
-            {importResult && <p className="text-sm text-emerald-700 bg-emerald-50 p-3 rounded-lg">{importResult}</p>}
-          </CardContent>
-        </Card>
+              <Switch
+                checked={inAppBudgetAlerts}
+                onCheckedChange={v => {
+                  setInAppBudgetAlerts(v)
+                  saveNotificationSetting('inapp_budget_alerts', v)
+                }}
+                className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
+              />
+            </div>
+            <div className="flex items-start justify-between py-3 border-b border-gray-50 last:border-0">
+              <div className="flex-1 pr-4">
+                <p className="text-sm font-medium text-gray-800">Large Transactions</p>
+                <p className="text-xs text-gray-400 mt-0.5">In-app alert for transactions above ₹10,000</p>
+              </div>
+              <Switch
+                checked={inAppLargeTransactions}
+                onCheckedChange={v => {
+                  setInAppLargeTransactions(v)
+                  saveNotificationSetting('inapp_large_transactions', v)
+                }}
+                className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
+              />
+            </div>
+            <div className="flex items-start justify-between py-3">
+              <div className="flex-1 pr-4">
+                <p className="text-sm font-medium text-gray-800">Daily Summary</p>
+                <p className="text-xs text-gray-400 mt-0.5">Daily spending digest in-app</p>
+              </div>
+              <Switch
+                checked={inAppDailySummary}
+                onCheckedChange={v => {
+                  setInAppDailySummary(v)
+                  saveNotificationSetting('inapp_daily_summary', v)
+                }}
+                className="data-[state=checked]:bg-teal-500 shrink-0 mt-0.5"
+              />
+            </div>
+          </div>
+        </div>
 
-        {/* Danger Zone */}
-        <Card className="border-red-200">
-          <CardHeader><CardTitle className="text-red-500">{t('dangerZone')}</CardTitle></CardHeader>
-          <CardContent>
-            <Button variant="destructive" className="w-full" onClick={() => setShowDeleteModal(true)}>
-              <Trash2 className="w-4 h-4 mr-2" />{t('deleteAllData')}
-            </Button>
-            {showDeleteModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('deleteAllData')}</h3>
-                  <p className="text-sm text-gray-600 mb-4">This will permanently delete all your transactions and budgets. Type Confirm to proceed.</p>
-                  <Input
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    placeholder="Type Confirm"
-                    className="border-gray-200 mb-4"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}>{t('cancel')}</Button>
-                    <Button variant="destructive" onClick={handleDeleteAll}>{t('delete')}</Button>
-                  </div>
+        {/* ── SECTION 6: DANGER ZONE ── */}
+        <p className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 px-1 mt-5">
+          DANGER ZONE
+        </p>
+        <div className="border border-red-100 rounded-2xl p-4 bg-white mb-3">
+          <p className="text-sm text-gray-500 mb-3">
+            Permanently deletes all transactions, budgets, categories, and settings. Cannot be undone.
+          </p>
+          <button
+            onClick={() => setDeleteOpen(true)}
+            className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-3 font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete All Data
+          </button>
+        </div>
+
+        {/* ── DELETE CONFIRMATION DIALOG ── */}
+        <Dialog open={deleteOpen} onOpenChange={(open) => { if (!open) handleClose() }}>
+          <DialogContent showCloseButton={false} className="max-w-sm">
+            {/* STEP 1: Warning */}
+            {deleteStep === 1 && (
+              <div className="flex flex-col items-center text-center">
+                <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+                <h2 className="text-xl font-bold text-center">Delete All Data?</h2>
+                <p className="text-sm text-gray-500 text-center mt-1 mb-4">
+                  The following will be permanently deleted:
+                </p>
+                <ul className="space-y-2 text-sm text-gray-600 w-full text-left">
+                  {[
+                    'All transactions & entries',
+                    'Budget settings & limits',
+                    'Categories & custom tags',
+                    'All preferences & settings',
+                  ].map(item => (
+                    <li key={item} className="flex items-center gap-2 text-red-600">
+                      <X className="w-4 h-4 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-red-500 font-medium text-center mt-4">
+                  This action is permanent and cannot be undone.
+                </p>
+                <div className="flex gap-2 w-full mt-5">
+                  <button
+                    onClick={handleClose}
+                    className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-2.5 font-medium text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => setDeleteStep(2)}
+                    className="flex-1 bg-red-50 text-red-600 border border-red-200 rounded-xl py-2.5 font-medium text-sm hover:bg-red-100 transition-colors"
+                  >
+                    I understand, continue →
+                  </button>
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
 
-        {/* About — Moved to Profile page */}
-        {/* Sign Out — Moved to Profile page */}
+            {/* STEP 2: Type DELETE */}
+            {deleteStep === 2 && (
+              <div className={isDeleting ? 'pointer-events-none' : ''}>
+                <button
+                  onClick={() => setDeleteStep(1)}
+                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
+                </button>
+                <h2 className="text-lg font-bold text-center mt-2">Confirm Deletion</h2>
+                <p className="text-sm text-gray-500 text-center mt-1">
+                  Type{' '}
+                  <span className="font-mono font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+                    DELETE
+                  </span>{' '}
+                  to confirm
+                </p>
+                <input
+                  type="text"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="Type DELETE to confirm"
+                  value={typedValue}
+                  onChange={e => setTypedValue(e.target.value)}
+                  className={`w-full border-2 rounded-xl px-4 py-3 text-center font-mono font-bold tracking-widest text-lg mt-4 outline-none transition-all ${
+                    typedValue === 'DELETE'
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : typedValue.length > 0
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200'
+                  }`}
+                />
+                <p className="text-xs text-gray-400 text-right mt-1">{typedValue.length}/6</p>
+                {typedValue.length > 0 && (
+                  typedValue === 'DELETE' ? (
+                    <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Confirmed
+                    </p>
+                  ) : (
+                    <p className="text-xs text-red-400 flex items-center gap-1 mt-1">
+                      <XCircle className="w-3.5 h-3.5" />
+                      Must type DELETE exactly
+                    </p>
+                  )
+                )}
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={typedValue !== 'DELETE' || isDeleting}
+                  className={`w-full rounded-xl py-3 font-semibold text-sm flex items-center justify-center gap-2 transition-all mt-4 ${
+                    typedValue === 'DELETE' && !isDeleting
+                      ? 'bg-red-500 hover:bg-red-600 text-white cursor-pointer'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="animate-spin w-4 h-4" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Delete All Data
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   )
