@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Camera, Pencil, Check, Bell, Lock, Database, HelpCircle,
   ChevronRight, LogOut, Send, MessageCircle, ExternalLink, Loader2, Star,
+  ClipboardList, Flame, TrendingDown,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -362,11 +363,11 @@ export default function ProfilePage() {
 
   return (
     <Layout>
-      <div className="max-w-[430px] mx-auto pb-10">
+      <div className="w-full max-w-2xl mx-auto pb-10">
 
         {/* SECTION 1 — HERO HEADER */}
         <div
-          className="relative overflow-hidden"
+          className="relative overflow-hidden md:rounded-2xl md:mx-4"
           style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)' }}
         >
           {/* Geometric pattern overlay */}
@@ -412,30 +413,9 @@ export default function ProfilePage() {
             </div>
             {uploading && <p className="text-xs text-white/70 mt-2 animate-pulse">Uploading...</p>}
 
-            {/* Display name with inline edit */}
+            {/* Display name — static */}
             <div className="mt-4">
-              {editingName ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    value={name}
-                    onChange={(e) => e.target.value.length <= 20 && setName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && saveName()}
-                    maxLength={20}
-                    className="text-center text-xl font-semibold border-b border-white/60 bg-transparent outline-none px-2 py-1 text-white placeholder-white/50"
-                    autoFocus
-                  />
-                  <button onClick={saveName} className="p-1">
-                    <Check size={18} className="text-white" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-semibold text-white">{name}</h2>
-                  <button onClick={() => setEditingName(true)} className="p-1">
-                    <Pencil size={14} className="text-white/70" />
-                  </button>
-                </div>
-              )}
+              <h2 className="text-2xl font-semibold text-white text-center">{name}</h2>
             </div>
 
             {/* Gold "Member since" badge */}
@@ -458,17 +438,22 @@ export default function ProfilePage() {
         {/* SECTION 2 — STATS ROW */}
         <div className="px-4 -mt-4 relative z-20">
           <div className="grid grid-cols-3 gap-2">
-            {[
-              { icon: '📋', value: String(totalEntries), label: 'Total Entries' },
-              { icon: '🔥', value: `${dayStreak}d`, label: 'Day Streak' },
-              { icon: '💸', value: formatSpending(thisMonthSpending), label: 'This Month' },
-            ].map((stat, i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-sm p-3 flex flex-col items-center text-center">
-                <span className="text-xl mb-1">{stat.icon}</span>
-                <span className="text-lg font-bold text-gray-800">{stat.value}</span>
-                <span className="text-xs text-gray-400 mt-0.5">{stat.label}</span>
-              </div>
-            ))}
+            <div className="bg-white rounded-2xl shadow-sm p-3 md:p-6 lg:p-8 flex flex-col items-center text-center">
+              <ClipboardList className="w-6 h-6 text-teal-600 mb-1" />
+              <span className="text-lg font-bold text-gray-800">{String(totalEntries)}</span>
+              <span className="text-xs text-gray-400 mt-0.5">Total Entries</span>
+            </div>
+            <div className="bg-white rounded-2xl shadow-sm p-3 md:p-6 lg:p-8 flex flex-col items-center text-center">
+              <Flame className="w-6 h-6 text-orange-500 mb-1" />
+              <span className="text-lg font-bold text-gray-800">{`${dayStreak}d`}</span>
+              <span className="text-xs text-gray-400 mt-0.5">Day Streak</span>
+            </div>
+            <div className="bg-white rounded-2xl shadow-sm p-3 md:p-6 lg:p-8 flex flex-col items-center text-center">
+              <TrendingDown className="w-6 h-6 text-teal-600 mb-1" />
+              <span className="text-lg font-bold text-gray-800">{formatSpending(thisMonthSpending)}</span>
+              <span className="text-xs text-gray-400 mt-0.5">Spent This Month</span>
+              <span className="text-xs text-gray-400">Total expenses this month</span>
+            </div>
           </div>
         </div>
 
@@ -477,16 +462,49 @@ export default function ProfilePage() {
           {/* SECTION 3 — ACCOUNT INFO */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</p>
-            <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
-              {/* Email */}
+            <div className="bg-white rounded-2xl shadow-sm md:shadow-md p-4 space-y-3">
+              {/* Name */}
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Email</p>
-                  <p className="text-sm font-medium text-gray-800">{email}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 mb-0.5">Name</p>
+                  {editingName ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={name}
+                        onChange={(e) => e.target.value.length <= 20 && setName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && saveName()}
+                        maxLength={20}
+                        className="text-base font-medium border-b border-gray-300 outline-none flex-1 min-w-0"
+                        autoFocus
+                      />
+                      <button
+                        onClick={saveName}
+                        className="px-3 py-1 text-xs font-semibold text-white bg-teal-600 rounded-lg shrink-0"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-medium text-gray-800">{name}</p>
+                  )}
                 </div>
-                <button className="p-2 rounded-xl text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors">
-                  <Pencil size={14} />
-                </button>
+                {!editingName && (
+                  <button
+                    onClick={() => setEditingName(true)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="border-t border-gray-100" />
+
+              {/* Email — read-only */}
+              <div>
+                <p className="text-xs text-gray-400 mb-0.5">Email</p>
+                <p className="text-sm font-medium text-gray-800">{email}</p>
+                <p className="text-xs text-gray-400 mt-0.5">(cannot be changed)</p>
               </div>
 
               <div className="border-t border-gray-100" />
@@ -527,7 +545,7 @@ export default function ProfilePage() {
           {/* SECTION 4 — INTEGRATIONS */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Integrations</p>
-            <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
+            <div className="bg-white rounded-2xl shadow-sm md:shadow-md p-4 space-y-4">
 
               {/* Telegram */}
               <div>
@@ -641,7 +659,7 @@ export default function ProfilePage() {
           {/* SECTION 5 — AI USAGE */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Usage</p>
-            <div className="bg-white rounded-2xl shadow-sm p-4">
+            <div className="bg-white rounded-2xl shadow-sm md:shadow-md p-4">
               <p className="text-sm font-semibold text-gray-800 mb-3">AI Usage This Month</p>
               {aiUsage ? (
                 <div className="space-y-2">
@@ -666,19 +684,16 @@ export default function ProfilePage() {
           {/* SECTION 6 — SETTINGS LIST */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Preferences</p>
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm md:shadow-md overflow-hidden">
               {[
                 { icon: Bell, label: 'Notifications', path: '/settings' },
                 { icon: Lock, label: 'Privacy & Security', path: '/settings' },
                 { icon: Database, label: 'Data Backup & Restore', path: '/settings' },
-                { icon: HelpCircle, label: 'Help & Support', path: '/settings' },
-              ].map((item, i, arr) => (
+              ].map((item, i) => (
                 <button
                   key={item.label}
                   onClick={() => router.push(item.path)}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors ${
-                    i < arr.length - 1 ? 'border-b border-gray-100' : ''
-                  }`}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100"
                 >
                   <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
                     <item.icon size={15} className="text-teal-600" />
@@ -687,13 +702,25 @@ export default function ProfilePage() {
                   <ChevronRight size={16} className="text-gray-300" />
                 </button>
               ))}
+              <Link
+                href="https://app.sadabmunshi.online/support"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <HelpCircle size={15} className="text-teal-600" />
+                </div>
+                <span className="flex-1 text-sm font-medium text-gray-800 text-left">Help &amp; Support</span>
+                <ChevronRight size={16} className="text-gray-300" />
+              </Link>
             </div>
           </div>
 
           {/* SECTION 7 — ABOUT */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">About</p>
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm md:shadow-md overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
                 <span className="text-sm text-gray-600">Version</span>
                 <span className="text-sm text-gray-400">1.0</span>
