@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Sparkles, Loader2, AlertCircle, BarChart2, Lightbulb, AlertTriangle, Trophy, TrendingUp, AlertOctagon } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
+import { useUser } from '@/context/UserContext'
 import { getTransactions } from '@/lib/db'
 import { cn } from '@/lib/utils'
 import LoadingScreen from '@/components/ui/LoadingScreen'
@@ -16,19 +17,21 @@ interface Insight {
   description: string
 }
 
-// Card type styles with left border colors and icon bg
-const insightStyles: Record<string, { borderColor: string; iconBg: string; iconColor: string; icon: React.ReactNode }> = {
-  tip:         { borderColor: 'rgba(0,184,148,0.7)',   iconBg: 'rgba(0,184,148,0.07)',   iconColor: '#00b894', icon: <Lightbulb style={{ width: 18, height: 18 }} /> },
-  warning:     { borderColor: 'rgba(245,158,11,0.7)',  iconBg: 'rgba(245,158,11,0.07)',  iconColor: '#f59e0b', icon: <AlertTriangle style={{ width: 18, height: 18 }} /> },
-  achievement: { borderColor: 'rgba(16,185,129,0.7)',  iconBg: 'rgba(16,185,129,0.07)',  iconColor: '#10b981', icon: <Trophy style={{ width: 18, height: 18 }} /> },
-  trend:       { borderColor: 'rgba(139,92,246,0.7)',  iconBg: 'rgba(139,92,246,0.07)',  iconColor: '#8b5cf6', icon: <TrendingUp style={{ width: 18, height: 18 }} /> },
-  alert:       { borderColor: 'rgba(239,68,68,0.7)',   iconBg: 'rgba(239,68,68,0.07)',   iconColor: '#ef4444', icon: <AlertOctagon style={{ width: 18, height: 18 }} /> },
+// Card type styles with left border colors, card bg, and icon color
+const insightStyles: Record<string, { bgColor: string; borderColor: string; iconColor: string; icon: React.ReactNode }> = {
+  tip:         { bgColor: '#f0fdf9', borderColor: '#00b894', iconColor: '#00b894', icon: <Lightbulb style={{ width: 20, height: 20 }} /> },
+  warning:     { bgColor: '#fff5f5', borderColor: '#ef4444', iconColor: '#ef4444', icon: <AlertTriangle style={{ width: 20, height: 20 }} /> },
+  achievement: { bgColor: '#f0fdf4', borderColor: '#10b981', iconColor: '#10b981', icon: <Trophy style={{ width: 20, height: 20 }} /> },
+  trend:       { bgColor: '#faf5ff', borderColor: '#8b5cf6', iconColor: '#8b5cf6', icon: <TrendingUp style={{ width: 20, height: 20 }} /> },
+  alert:       { bgColor: '#fff5f5', borderColor: '#ef4444', iconColor: '#ef4444', icon: <AlertOctagon style={{ width: 20, height: 20 }} /> },
 }
 
 export default function InsightsPage() {
   const { t } = useLanguage()
+  const { userId } = useUser()
   const [mounted, setMounted] = useState(false)
   const [insights, setInsights] = useState<Insight[]>([])
+  const [savedTimestamp, setSavedTimestamp] = useState<string | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
@@ -44,6 +47,23 @@ export default function InsightsPage() {
     load()
   }, [])
 
+  // Load saved insights from localStorage once userId is available
+  useEffect(() => {
+    if (!userId) return
+    try {
+      const saved = localStorage.getItem('finflow_insights_' + userId)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.insights && Array.isArray(parsed.insights)) {
+          setInsights(parsed.insights)
+          setSavedTimestamp(parsed.timestamp || null)
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load saved insights from localStorage', e)
+    }
+  }, [userId])
+
   if (loading) return <LoadingScreen />
   if (!mounted) return null
 
@@ -58,7 +78,15 @@ export default function InsightsPage() {
         throw new Error(errorData.error || `Insights generation failed (${res.status})`)
       }
       const result = await res.json()
+      const timestamp = new Date().toLocaleString('en-IN')
       setInsights(result)
+      setSavedTimestamp(timestamp)
+      if (userId) {
+        localStorage.setItem(
+          'finflow_insights_' + userId,
+          JSON.stringify({ insights: result, timestamp })
+        )
+      }
     } catch (err: any) { 
       setError(err?.message || t('errorOccurred')) 
     } finally { setDataLoading(false) }
@@ -220,6 +248,13 @@ export default function InsightsPage() {
               </div>
             )}
 
+            {/* Timestamp */}
+            {savedTimestamp && !dataLoading && (
+              <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
+                Last generated: {savedTimestamp}
+              </p>
+            )}
+
             {/* Error message */}
             {error && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2">
@@ -249,7 +284,7 @@ export default function InsightsPage() {
             ) : (
               <>
               {/* Insight cards */}
-              <div className="grid md:grid-cols-2" style={{ gap: 10 }}>
+              <div className="grid md:grid-cols-2" style={{ gap: 12 }}>
                 {insights.map((insight, i) => {
                   const style = insightStyles[insight.type] || insightStyles.tip
                   return (
@@ -257,10 +292,11 @@ export default function InsightsPage() {
                       key={i}
                       className="rounded-xl"
                       style={{
-                        background: '#ffffff',
-                        border: '1px solid #f3f4f6',
+                        background: style.bgColor,
+                        border: 'none',
                         borderLeft: `3px solid ${style.borderColor}`,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        borderRadius: 12,
+                        padding: 16,
                         opacity: 0,
                         animation: `slideUp 0.4s ease forwards`,
                         animationDelay: `${i * 150}ms`,
@@ -272,25 +308,20 @@ export default function InsightsPage() {
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'
+                        e.currentTarget.style.boxShadow = 'none'
                       }}
                     >
-                      <div style={{ padding: '14px 16px' }}>
-                        <div className="flex items-start gap-3">
-                          <div
-                            className="rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ width: 36, height: 36, backgroundColor: style.iconBg, color: style.iconColor }}
-                          >
-                            {style.icon}
-                          </div>
-                          <div>
-                            <p className="font-bold" style={{ fontSize: 15, color: '#0d1117', marginBottom: 4 }}>
-                              {insight.title}
-                            </p>
-                            <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.55 }}>
-                              {insight.description}
-                            </p>
-                          </div>
+                      <div className="flex items-start gap-3">
+                        <div style={{ color: style.iconColor, flexShrink: 0, marginTop: 1 }}>
+                          {style.icon}
+                        </div>
+                        <div>
+                          <p className="font-bold" style={{ fontSize: 15, color: '#0d1117', marginBottom: 4 }}>
+                            {insight.title}
+                          </p>
+                          <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.55 }}>
+                            {insight.description}
+                          </p>
                         </div>
                       </div>
                     </div>
