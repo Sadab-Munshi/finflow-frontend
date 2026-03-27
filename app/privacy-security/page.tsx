@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Lock, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { createClient } from '@/lib/supabase/client'
-import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
 
 export default function PrivacySecurityPage() {
@@ -32,7 +31,7 @@ export default function PrivacySecurityPage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/login')
+        router.replace('/login')
         return
       }
       setLoading(false)
@@ -41,7 +40,7 @@ export default function PrivacySecurityPage() {
     checkAuth()
   }, [router])
 
-  if (loading) return <LoadingScreen />
+  if (loading) return null
   if (!mounted) return null
 
   const handleChangePassword = async (e: React.FormEvent) => {
