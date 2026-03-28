@@ -133,7 +133,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed left-0 top-0 h-screen max-w-[280px] w-full bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
+              className="fixed left-0 top-0 h-screen w-[75%] max-w-[260px] bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
             >
               {/* Close button */}
               <button
@@ -145,15 +145,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
               {/* Logo */}
               <div className="h-16 flex items-center px-6 flex-shrink-0">
-                <Image
-                  src="/images/finflow-logo.png"
-                  alt="FinFlow"
-                  width={120}
-                  height={40}
-                  style={{ objectFit: 'contain', pointerEvents: 'none' }}
-                  draggable={false}
-                  onContextMenu={(e) => e.preventDefault()}
-                />
+                <div className="rounded-xl p-2" style={{ backgroundColor: '#D9FAF7' }}>
+                  <Image
+                    src="/images/finflow-logo.png"
+                    alt="FinFlow"
+                    width={120}
+                    height={40}
+                    style={{ objectFit: 'contain', pointerEvents: 'none' }}
+                    draggable={false}
+                    onContextMenu={(e) => e.preventDefault()}
+                  />
+                </div>
               </div>
 
               {/* Divider */}
@@ -169,7 +171,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     className={cn(
                       'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
                       pathname === item.path
-                        ? 'bg-[#7C3AED] text-white shadow-lg'
+                        ? 'bg-[#0F766E] text-white shadow-lg'
                         : 'text-white/80 hover:bg-white/10'
                     )}
                   >
@@ -188,7 +190,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <AvatarCircle size={44} />
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-bold text-sm truncate">{userName}</p>
-                      <p className="text-white/70 text-xs truncate mt-0.5">{email}</p>
                     </div>
                   </div>
                 )}
@@ -235,7 +236,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           />
         </div>
 
-        {/* Nav Items */}
+        {/* Add Button */}
+        <div className="px-3 pb-3">
+          <button
+            onClick={() => router.push('/add')}
+            className="flex items-center justify-center gap-2 w-full bg-white text-teal-700 rounded-xl py-2.5 font-semibold hover:bg-teal-50 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Add</span>
+          </button>
+        </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
           {sidebarNavItems.map(item => (
             <Link
@@ -244,7 +254,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
                 pathname === item.path
-                  ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20'
+                  ? 'bg-[#0F766E] text-white shadow-lg shadow-teal-900/20'
                   : 'text-teal-200 hover:bg-white/10 hover:text-white'
               )}
             >
