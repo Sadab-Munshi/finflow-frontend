@@ -19,6 +19,7 @@ import { Transaction, Budget } from '@/lib/types'
 
 interface ImportPreview {
   fileName: string
+  fileSize: number
   fileType: 'csv' | 'json'
   transactionCount: number
   budgetCount: number
@@ -57,6 +58,12 @@ interface SanitizedImport {
 function formatDateForFilename(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function triggerDownload(content: string, filename: string, mimeType: string): void {
@@ -180,46 +187,94 @@ function sanitizeImportedJSON(raw: string): SanitizedImport {
   return { transactions: sanitizedTransactions, budgets: sanitizedBudgets }
 }
 
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = []
+  let current = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"'
+          i++ // skip escaped quote
+        } else {
+          inQuotes = false
+        }
+      } else {
+        current += ch
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true
+      } else if (ch === ',') {
+        fields.push(current)
+        current = ''
+      } else {
+        current += ch
+      }
+    }
+  }
+  fields.push(current)
+  return fields
+}
+
 function sanitizeImportedCSV(raw: string): SanitizedImport {
-  const lines = raw.trim().split('\n')
+  // 1. Normalize line endings
+  const normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const lines = normalized.trim().split('\n')
   if (lines.length < 2) {
     throw new Error('CSV file is empty or has no data rows')
   }
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''))
+  // 2. Parse headers: case-insensitive, trimmed, unquoted
+  const headers = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, '').trim().toLowerCase())
   const requiredHeaders = ['date', 'type', 'category', 'amount']
   const missingHeaders = requiredHeaders.filter(h => !headers.includes(h))
   if (missingHeaders.length > 0) {
     throw new Error(`Missing columns: ${missingHeaders.join(', ')}`)
   }
 
-  const transactions: SanitizedTransaction[] = lines
-    .slice(1)
-    .filter(line => line.trim())
-    .slice(0, MAX_TRANSACTIONS)
-    .map((line, index) => {
-      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
-      const row: Record<string, string> = {}
-      headers.forEach((h, i) => { row[h] = cols[i] || '' })
+  const hasNoteColumn = headers.includes('note')
 
-      const amount = Number(row.amount)
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error(`Invalid amount on row ${index + 2}`)
-      }
-      if (!VALID_TYPES.includes(row.type as 'income' | 'expense')) {
-        throw new Error(`Invalid type on row ${index + 2}`)
-      }
-      if (!DATE_REGEX.test(row.date)) {
-        throw new Error(`Invalid date on row ${index + 2}`)
-      }
-      return {
-        amount,
-        type: row.type as 'income' | 'expense',
-        category: row.category || 'Other',
-        note: sanitizeText(row.note),
-        date: row.date,
-      }
+  const transactions: SanitizedTransaction[] = []
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i]
+    // 3. Skip completely empty rows
+    if (!line.trim()) continue
+    if (transactions.length >= MAX_TRANSACTIONS) break
+
+    // 4. Parse with quoted field support
+    const cols = parseCSVLine(line).map(c => c.trim().replace(/^"|"$/g, '').trim())
+    const row: Record<string, string> = {}
+    headers.forEach((h, idx) => { row[h] = cols[idx] || '' })
+
+    const amount = Number(row.amount)
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error(`Invalid amount on row ${i + 1}`)
+    }
+    if (!VALID_TYPES.includes(row.type as 'income' | 'expense')) {
+      throw new Error(`Invalid type on row ${i + 1}`)
+    }
+    if (!DATE_REGEX.test(row.date)) {
+      throw new Error(`Invalid date on row ${i + 1}`)
+    }
+
+    transactions.push({
+      amount,
+      type: row.type as 'income' | 'expense',
+      category: row.category || 'Other',
+      // 5. Default note to empty string if column missing
+      note: sanitizeText(hasNoteColumn ? row.note : ''),
+      date: row.date,
     })
+  }
+
+  // 8. Error if zero valid rows
+  if (transactions.length === 0) {
+    throw new Error('No valid transactions found in this CSV file.')
+  }
 
   return { transactions, budgets: [] }
 }
@@ -232,6 +287,8 @@ export default function BackupRestorePage() {
   const [authChecked, setAuthChecked] = useState(false)
   const [isExportingCsv, setIsExportingCsv] = useState(false)
   const [isExportingJson, setIsExportingJson] = useState(false)
+  const [csvExportSuccess, setCsvExportSuccess] = useState(false)
+  const [jsonExportSuccess, setJsonExportSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
   const [parsedData, setParsedData] = useState<{ transactions: Transaction[]; budgets: Budget[] } | null>(null)
@@ -274,9 +331,10 @@ export default function BackupRestorePage() {
       ])
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
       triggerDownload(csv, `finflow-backup-${formatDateForFilename()}.csv`, 'text/csv;charset=utf-8;')
-      toast.success('CSV exported successfully')
+      setCsvExportSuccess(true)
+      setTimeout(() => setCsvExportSuccess(false), 2000)
     } catch {
-      toast.error('Export failed. Please try again.')
+      toast.error('Export failed, try again.')
     } finally {
       setIsExportingCsv(false)
     }
@@ -308,9 +366,10 @@ export default function BackupRestorePage() {
         })),
       }
       triggerDownload(JSON.stringify(sanitizedExport, null, 2), `finflow-backup-${formatDateForFilename()}.json`, 'application/json')
-      toast.success('JSON exported successfully')
+      setJsonExportSuccess(true)
+      setTimeout(() => setJsonExportSuccess(false), 2000)
     } catch {
-      toast.error('Export failed. Please try again.')
+      toast.error('Export failed, try again.')
     } finally {
       setIsExportingJson(false)
     }
@@ -375,6 +434,7 @@ export default function BackupRestorePage() {
       setParsedData({ transactions: txns, budgets: bgts })
       setImportPreview({
         fileName: file.name,
+        fileSize: file.size,
         fileType: ext as 'csv' | 'json',
         transactionCount: txns.length,
         budgetCount: bgts.length,
@@ -511,31 +571,39 @@ export default function BackupRestorePage() {
             {/* Export CSV */}
             <button
               onClick={handleExportCsv}
-              disabled={isExportingCsv}
+              disabled={isExportingCsv || csvExportSuccess}
               className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-2xl hover:border-teal-400 hover:bg-teal-50 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isExportingCsv ? (
                 <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
+              ) : csvExportSuccess ? (
+                <CheckCircle className="w-8 h-8 text-green-500" />
               ) : (
                 <FileSpreadsheet className="w-8 h-8 text-teal-500" />
               )}
-              <span className="text-sm font-semibold text-gray-700">Export CSV</span>
-              <span className="text-xs text-gray-400 text-center">Transactions only</span>
+              <span className="text-sm font-semibold text-gray-700">
+                {isExportingCsv ? 'Exporting...' : csvExportSuccess ? 'Downloaded!' : 'Export CSV'}
+              </span>
+              <span className="text-xs text-gray-400 text-center">Transactions &amp; budgets as spreadsheet</span>
             </button>
 
             {/* Export JSON */}
             <button
               onClick={handleExportJson}
-              disabled={isExportingJson}
+              disabled={isExportingJson || jsonExportSuccess}
               className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-2xl hover:border-teal-400 hover:bg-teal-50 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isExportingJson ? (
                 <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
+              ) : jsonExportSuccess ? (
+                <CheckCircle className="w-8 h-8 text-green-500" />
               ) : (
                 <FileJson className="w-8 h-8 text-teal-500" />
               )}
-              <span className="text-sm font-semibold text-gray-700">Export JSON</span>
-              <span className="text-xs text-gray-400 text-center">Transactions &amp; budgets</span>
+              <span className="text-sm font-semibold text-gray-700">
+                {isExportingJson ? 'Exporting...' : jsonExportSuccess ? 'Downloaded!' : 'Export JSON'}
+              </span>
+              <span className="text-xs text-gray-400 text-center">Transactions &amp; budgets as JSON file</span>
             </button>
           </div>
         </div>
@@ -564,11 +632,11 @@ export default function BackupRestorePage() {
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
                   isDraggingOver
-                    ? 'border-teal-400 bg-teal-50'
-                    : 'border-gray-200 hover:border-teal-400 hover:bg-teal-50'
+                    ? 'border-teal-500 bg-[#ECFDF5]'
+                    : 'border-gray-200 hover:border-teal-400 hover:bg-[#ECFDF5]'
                 }`}
               >
-                <Upload className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <Upload className={`w-10 h-10 text-gray-300 mx-auto mb-3 transition-transform ${isDraggingOver ? 'scale-110 text-teal-400' : ''}`} />
                 <p className="text-sm font-medium text-gray-600">Drop your backup file here</p>
                 <p className="text-xs text-gray-400 mt-1">Supports .csv and .json files</p>
                 <button
@@ -578,6 +646,10 @@ export default function BackupRestorePage() {
                 >
                   Browse File
                 </button>
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <span className="text-xs text-gray-500 bg-gray-100 rounded-full px-2.5 py-0.5">.json</span>
+                  <span className="text-xs text-gray-500 bg-gray-100 rounded-full px-2.5 py-0.5">.csv</span>
+                </div>
               </div>
               <input
                 ref={fileInputRef}
@@ -610,7 +682,7 @@ export default function BackupRestorePage() {
                   Change
                 </button>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{importPreview.fileName}</p>
+              <p className="text-xs text-gray-400 mt-0.5 truncate">{importPreview.fileName} · {formatFileSize(importPreview.fileSize)}</p>
 
               {/* Preview stats */}
               <div className="grid grid-cols-2 gap-2 mt-3">
@@ -689,6 +761,14 @@ export default function BackupRestorePage() {
                     {importMode === 'merge' ? 'Merge & Import Data' : 'Replace & Import Data'}
                   </>
                 )}
+              </button>
+
+              {/* Cancel link */}
+              <button
+                onClick={resetImport}
+                className="w-full text-center text-xs text-gray-400 hover:text-gray-600 mt-3 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           )}
