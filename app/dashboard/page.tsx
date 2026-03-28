@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { HelpCircle, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
+import { Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
@@ -218,19 +218,22 @@ export default function DashboardPage() {
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-2">
           {/* Income Card */}
-          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center" style={{ background: '#EFFEF5' }}>
+          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
             <span className="text-xs text-gray-500 mb-1">Income</span>
             <span className="text-sm font-bold text-green-600">₹{totalIncome.toLocaleString('en-IN')}</span>
           </div>
           {/* Expense Card */}
-          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center" style={{ background: '#FFF7F8' }}>
+          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
             <span className="text-xs text-gray-500 mb-1">Expense</span>
             <span className="text-sm font-bold text-red-500">₹{totalExpenses.toLocaleString('en-IN')}</span>
           </div>
           {/* Savings Card */}
           <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
-            <span className="text-xs text-gray-500 mb-1 flex items-center gap-0.5">Savings <HelpCircle className="w-3 h-3 text-gray-400" /></span>
-            <span className="text-sm font-bold text-purple-600">{savingsRate}%</span>
+            <span className="text-xs text-gray-500 mb-1">Savings</span>
+            <span className={cn(
+              "text-sm font-bold",
+              savingsRate >= 0 ? "text-green-600" : "text-red-500"
+            )}>{savingsRate}%</span>
             <span className={cn(
               "text-[10px] mt-0.5",
               savingsRate < 0 ? "text-red-400" : "text-green-500"
@@ -245,8 +248,8 @@ export default function DashboardPage() {
           {[
             { icon: Mic, label: t('voice'), tab: 'voice', color: '#9333EA', bg: '#F3E8FF' },
             { icon: Camera, label: t('scan'), tab: 'scan', color: '#2563EB', bg: '#DBEAFE' },
-            { icon: PenLine, label: t('manual'), tab: 'manual', color: '#D97706', bg: '#FEF3C7' },
-            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#0D9488', bg: '#ECFDF5' },
+            { icon: PenLine, label: t('manual'), tab: 'manual', color: '#16A34A', bg: '#DCFCE7' },
+            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#0D9488', bg: '#FFB3BA' },
           ].map((action) => (
             <button
               key={action.label}
@@ -269,48 +272,29 @@ export default function DashboardPage() {
           <CardContent className="p-2 md:p-6 pt-0">
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weeklyData || []} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0d9488" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#0d9488" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
+                <BarChart data={weeklyData || []} margin={{ top: 5, right: 5, left: -20, bottom: 5 }} barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#6b7280' }} />
+                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} />
                   <YAxis
                     tick={{ fontSize: 10, fill: '#6b7280' }}
-                    tickFormatter={(v) => v === 0 ? '0' : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
+                    tickFormatter={(v) => {
+                      if (v === 0) return '0'
+                      if (v >= 100000) return `${(v / 100000).toFixed(0)}L`
+                      if (v >= 1000) return `${(v / 1000).toFixed(0)}k`
+                      return `${v}`
+                    }}
                     width={40}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <Tooltip
                     formatter={(value) => formatIndianCurrency(Number(value))}
                     contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Area
-                    type="monotone"
-                    dataKey="income"
-                    name={t('income')}
-                    stroke="#0d9488"
-                    strokeWidth={2}
-                    fill="url(#incomeGradient)"
-                    dot={{ r: 3, fill: '#0d9488', strokeWidth: 0 }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expense"
-                    name={t('expense')}
-                    stroke="#f43f5e"
-                    strokeWidth={2}
-                    fill="url(#expenseGradient)"
-                    dot={{ r: 3, fill: '#f43f5e', strokeWidth: 0 }}
-                  />
-                </AreaChart>
+                  <Bar dataKey="income" name={t('income')} fill="#0D9488" barSize={8} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="expense" name={t('expense')} fill="#F43F5E" barSize={8} radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
