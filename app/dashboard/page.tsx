@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, TrendingDown, PiggyBank, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, ArrowUpRight, ArrowDownRight, HelpCircle } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
+import { TrendingUp, TrendingDown, PiggyBank, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot } from 'lucide-react'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
@@ -73,7 +73,6 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
-  const [showSavingsTooltip, setShowSavingsTooltip] = useState(false)
   const [pieChartHeight, setPieChartHeight] = useState(250)
   const [isDesktop, setIsDesktop] = useState(false)
 
@@ -205,65 +204,47 @@ export default function DashboardPage() {
 
         {/* Balance Card */}
         <Card className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800 text-white border-0 shadow-xl overflow-hidden relative">
-          <CardContent className="p-4 md:p-6 relative flex items-center justify-between">
-            <div>
-              <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
-              <p className={cn(
-                "text-2xl md:text-4xl font-bold mt-1 md:mt-2 tracking-tight",
-                balance >= 0 ? "text-white" : "text-red-300"
-              )}>
-                {formatIndianCurrency(balance)}
-              </p>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1.5">
-                <ArrowUpRight className="w-3.5 h-3.5 text-white" />
-                <span className="text-xs text-white">Income</span>
-                <span className="text-xs font-semibold text-white ml-auto">{formatIndianCurrency(totalIncome)}</span>
-              </div>
-              <div className="flex items-center gap-1.5 opacity-70">
-                <ArrowDownRight className="w-3.5 h-3.5 text-white" />
-                <span className="text-xs text-white">Expense</span>
-                <span className="text-xs font-semibold text-white ml-auto">{formatIndianCurrency(totalExpenses)}</span>
-              </div>
-            </div>
+          <CardContent className="p-4 md:p-6 relative">
+            <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
+            <p className={cn(
+              "text-2xl md:text-4xl font-bold mt-1 md:mt-2 tracking-tight",
+              balance >= 0 ? "text-white" : "text-red-300"
+            )}>
+              {formatIndianCurrency(balance)}
+            </p>
           </CardContent>
         </Card>
 
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex flex-col items-center text-center">
-            <span className="text-xs text-gray-400 mb-1">Income</span>
+          {/* Income Card */}
+          <div className="bg-green-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
+            <div className="absolute -top-4 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shadow-sm" aria-hidden="true">
+              <TrendingUp className="w-4 h-4 text-green-600" />
+            </div>
+            <span className="text-xs text-gray-500 mb-1">Income</span>
             <span className="text-sm font-bold text-green-600">₹{totalIncome.toLocaleString('en-IN')}</span>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex flex-col items-center text-center">
-            <span className="text-xs text-gray-400 mb-1">Expense</span>
+          {/* Expense Card */}
+          <div className="bg-red-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
+            <div className="absolute -top-4 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shadow-sm" aria-hidden="true">
+              <TrendingDown className="w-4 h-4 text-red-500" />
+            </div>
+            <span className="text-xs text-gray-500 mb-1">Expense</span>
             <span className="text-sm font-bold text-red-500">₹{totalExpenses.toLocaleString('en-IN')}</span>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex flex-col items-center text-center relative">
-            <div className="flex items-center gap-1 mb-1">
-              <span className="text-xs text-gray-400">Savings</span>
-              <button
-                onClick={() => setShowSavingsTooltip(!showSavingsTooltip)}
-                className="text-gray-300 hover:text-gray-500"
-              >
-                <HelpCircle className="w-3 h-3" />
-              </button>
+          {/* Savings Card */}
+          <div className="bg-purple-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
+            <div className="absolute -top-4 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center shadow-sm" aria-hidden="true">
+              <PiggyBank className="w-4 h-4 text-purple-600" />
             </div>
-            {showSavingsTooltip && (
-              <div role="tooltip" className="absolute bottom-full mb-1 bg-gray-800 text-white text-[10px] rounded-lg px-2 py-1 whitespace-nowrap z-10 shadow-lg">
-                (Income - Expense) ÷ Income × 100
-              </div>
-            )}
+            <span className="text-xs text-gray-500 mb-1">Savings</span>
+            <span className="text-sm font-bold text-purple-600">{savingsRate}%</span>
             <span className={cn(
-              "text-sm font-bold",
-              savingsRate < 0 ? "text-red-500" : "text-green-600"
-            )}>{savingsRate}%</span>
-            <span className={cn(
-              "text-xs mt-0.5",
+              "text-[10px] mt-0.5",
               savingsRate < 0 ? "text-red-400" : "text-green-500"
             )}>
-              {savingsRate < 0 ? "Spent more than earned" : "Great job!"}
+              {savingsRate < 0 ? "Over budget" : "Great job!"}
             </span>
           </div>
         </div>
@@ -271,18 +252,18 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-4 gap-2 md:gap-3">
           {[
-            { icon: Mic, label: t('voice'), tab: 'voice', color: '#7c3aed', bg: 'bg-violet-50' },
-            { icon: Camera, label: t('scan'), tab: 'scan', color: '#0d9488', bg: 'bg-teal-50' },
-            { icon: PenLine, label: t('manual'), tab: 'manual', color: '#2563eb', bg: 'bg-blue-50' },
-            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#059669', bg: 'bg-emerald-50' },
+            { icon: Mic, label: t('voice'), tab: 'voice', color: '#7c3aed', bg: 'bg-purple-100' },
+            { icon: Camera, label: t('scan'), tab: 'scan', color: '#2563eb', bg: 'bg-blue-100' },
+            { icon: PenLine, label: t('manual'), tab: 'manual', color: '#ea580c', bg: 'bg-orange-100' },
+            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#0d9488', bg: 'bg-teal-100' },
           ].map((action) => (
             <button
               key={action.label}
               onClick={() => router.push(`/add?tab=${action.tab}`)}
               className="flex flex-col items-center gap-1.5 p-2.5 md:p-4 rounded-xl bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all border border-gray-100"
             >
-              <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center", action.bg)}>
-                <action.icon className="w-4 h-4 md:w-5 md:h-5" style={{ color: action.color }} />
+              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", action.bg)}>
+                <action.icon className="w-5 h-5" style={{ color: action.color }} />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 font-medium">{action.label}</span>
             </button>
@@ -297,12 +278,22 @@ export default function DashboardPage() {
           <CardContent className="p-2 md:p-6 pt-0">
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <AreaChart data={weeklyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0d9488" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#0d9488" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#6b7280' }} />
                   <YAxis
                     tick={{ fontSize: 10, fill: '#6b7280' }}
-                    tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
+                    tickFormatter={(v) => v === 0 ? '0' : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
                     width={40}
                   />
                   <Tooltip
@@ -310,9 +301,25 @@ export default function DashboardPage() {
                     contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="income" name={t('income')} fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expense" name={t('expense')} fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <Area
+                    type="monotone"
+                    dataKey="income"
+                    name={t('income')}
+                    stroke="#0d9488"
+                    strokeWidth={2}
+                    fill="url(#incomeGradient)"
+                    dot={{ r: 3, fill: '#0d9488', strokeWidth: 0 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expense"
+                    name={t('expense')}
+                    stroke="#f43f5e"
+                    strokeWidth={2}
+                    fill="url(#expenseGradient)"
+                    dot={{ r: 3, fill: '#f43f5e', strokeWidth: 0 }}
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
