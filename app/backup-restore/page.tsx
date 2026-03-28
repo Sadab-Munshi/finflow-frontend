@@ -654,7 +654,8 @@ export default function BackupRestorePage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.json"
+                accept=".csv,.json,text/csv,application/json,text/plain,application/vnd.ms-excel"
+                capture={false}
                 className="hidden"
                 onChange={handleFileSelect}
               />
