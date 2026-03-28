@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, TrendingDown, PiggyBank, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot } from 'lucide-react'
+import { TrendingUp, TrendingDown, PiggyBank, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, ArrowUpRight, ArrowDownRight, HelpCircle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import Layout from '@/components/layout/Layout'
@@ -73,6 +73,9 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [showSavingsTooltip, setShowSavingsTooltip] = useState(false)
+  const [pieChartHeight, setPieChartHeight] = useState(250)
+  const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -90,6 +93,25 @@ export default function DashboardPage() {
     }
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
+  useEffect(() => {
+    const updateSize = () => {
+      const w = window.innerWidth
+      if (w >= 1024) {
+        setPieChartHeight(380)
+        setIsDesktop(true)
+      } else if (w >= 768) {
+        setPieChartHeight(320)
+        setIsDesktop(false)
+      } else {
+        setPieChartHeight(250)
+        setIsDesktop(false)
+      }
+    }
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
   }, [])
 
   if (loading) return <LoadingScreen />
@@ -183,14 +205,28 @@ export default function DashboardPage() {
 
         {/* Balance Card */}
         <Card className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800 text-white border-0 shadow-xl overflow-hidden relative">
-          <CardContent className="p-4 md:p-6 relative">
-            <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
-            <p className={cn(
-              "text-2xl md:text-4xl font-bold mt-1 md:mt-2 tracking-tight",
-              balance >= 0 ? "text-white" : "text-red-300"
-            )}>
-              {formatIndianCurrency(balance)}
-            </p>
+          <CardContent className="p-4 md:p-6 relative flex items-center justify-between">
+            <div>
+              <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
+              <p className={cn(
+                "text-2xl md:text-4xl font-bold mt-1 md:mt-2 tracking-tight",
+                balance >= 0 ? "text-white" : "text-red-300"
+              )}>
+                {formatIndianCurrency(balance)}
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <ArrowUpRight className="w-3.5 h-3.5 text-white" />
+                <span className="text-xs text-white">Income</span>
+                <span className="text-xs font-semibold text-white ml-auto">{formatIndianCurrency(totalIncome)}</span>
+              </div>
+              <div className="flex items-center gap-1.5 opacity-70">
+                <ArrowDownRight className="w-3.5 h-3.5 text-white" />
+                <span className="text-xs text-white">Expense</span>
+                <span className="text-xs font-semibold text-white ml-auto">{formatIndianCurrency(totalExpenses)}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -204,9 +240,31 @@ export default function DashboardPage() {
             <span className="text-xs text-gray-400 mb-1">Expense</span>
             <span className="text-sm font-bold text-red-500">₹{totalExpenses.toLocaleString('en-IN')}</span>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex flex-col items-center text-center">
-            <span className="text-xs text-gray-400 mb-1">Savings</span>
-            <span className="text-sm font-bold text-gray-800">{savingsRate}%</span>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex flex-col items-center text-center relative">
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-xs text-gray-400">Savings</span>
+              <button
+                onClick={() => setShowSavingsTooltip(!showSavingsTooltip)}
+                className="text-gray-300 hover:text-gray-500"
+              >
+                <HelpCircle className="w-3 h-3" />
+              </button>
+            </div>
+            {showSavingsTooltip && (
+              <div role="tooltip" className="absolute bottom-full mb-1 bg-gray-800 text-white text-[10px] rounded-lg px-2 py-1 whitespace-nowrap z-10 shadow-lg">
+                (Income - Expense) ÷ Income × 100
+              </div>
+            )}
+            <span className={cn(
+              "text-sm font-bold",
+              savingsRate < 0 ? "text-red-500" : "text-green-600"
+            )}>{savingsRate}%</span>
+            <span className={cn(
+              "text-xs mt-0.5",
+              savingsRate < 0 ? "text-red-400" : "text-green-500"
+            )}>
+              {savingsRate < 0 ? "Spent more than earned" : "Great job!"}
+            </span>
           </div>
         </div>
 
@@ -216,7 +274,7 @@ export default function DashboardPage() {
             { icon: Mic, label: t('voice'), tab: 'voice', color: '#7c3aed', bg: 'bg-violet-50' },
             { icon: Camera, label: t('scan'), tab: 'scan', color: '#0d9488', bg: 'bg-teal-50' },
             { icon: PenLine, label: t('manual'), tab: 'manual', color: '#2563eb', bg: 'bg-blue-50' },
-            { icon: Sparkles, label: 'NLP', tab: 'text', color: '#059669', bg: 'bg-emerald-50' },
+            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#059669', bg: 'bg-emerald-50' },
           ].map((action) => (
             <button
               key={action.label}
@@ -268,14 +326,14 @@ export default function DashboardPage() {
               <CardDescription className="text-xs text-gray-500">This month by category</CardDescription>
             </CardHeader>
             <CardContent className="p-2 md:p-6 pt-0">
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="h-48 w-48 flex-shrink-0">
+              <div className={cn("flex items-center gap-4", isDesktop ? "flex-row" : "flex-col")}>
+                <div className="relative flex-shrink-0" style={{ height: pieChartHeight, width: isDesktop ? pieChartHeight : '100%' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={pieData}
                         cx="50%" cy="50%"
-                        innerRadius={40} outerRadius={70}
+                        innerRadius={pieChartHeight * 0.22} outerRadius={pieChartHeight * 0.38}
                         paddingAngle={3}
                         dataKey="value"
                         stroke="none"
@@ -288,6 +346,10 @@ export default function DashboardPage() {
                       />
                     </PieChart>
                   </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-sm md:text-base font-bold text-gray-800">{formatIndianCurrency(thisMonthExpense)}</span>
+                    <span className="text-[10px] md:text-xs text-gray-400">Spent</span>
+                  </div>
                 </div>
                 <div className="flex-1 w-full space-y-2">
                   {pieData.map((cat, i) => (
@@ -346,7 +408,7 @@ export default function DashboardPage() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="font-medium text-gray-800 text-sm truncate">{tx.note}</p>
+                        <p className="font-medium text-gray-800 text-sm truncate">{tx.note || tx.category}</p>
                         <p className="text-xs text-gray-500">
                           {tx.created_at ? formatIST(tx.created_at) : tx.date} · {cat?.name}
                         </p>
