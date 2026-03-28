@@ -20,9 +20,9 @@ function formatINR(amount: number): string {
   }).format(amount)
 }
 
-// Use ₹ symbol for PDF output
+// Use Rs. prefix for PDF output (Helvetica does not support the ₹ glyph)
 function pdfRs(amount: number): string {
-  return '\u20B9' + new Intl.NumberFormat('en-IN', {
+  return 'Rs.' + new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
@@ -171,7 +171,11 @@ function generatePDF(params: {
     pdf.setFontSize(7.5)
     pdf.setFont('helvetica', 'normal')
     pdf.setTextColor(13, 148, 136)
-    pdf.text(`FinFlow \u00B7 ${monthName}`, PW - M, 7, { align: 'right' })
+    pdf.text(`FinFlow \u00B7 ${monthName}`, M, 7)
+    pdf.text(`Page ${page}`, PW - M, 7, { align: 'right' })
+    pdf.setDrawColor(13, 148, 136)
+    pdf.setLineWidth(0.3)
+    pdf.line(M, 9, PW - M, 9)
   }
 
   const newPage = () => {
@@ -240,7 +244,7 @@ function generatePDF(params: {
   pdf.setFontSize(7.5)
   pdf.setFont('helvetica', 'italic')
   pdf.setTextColor(140, 140, 140)
-  pdf.text('All amounts in Indian Rupees (\u20B9)', PW - M, y, { align: 'right' })
+  pdf.text('All amounts in Indian Rupees (Rs.)', PW - M, y, { align: 'right' })
   y += 8
 
   // ── SECTION 2: AI FINANCIAL SUMMARY ──
@@ -253,8 +257,10 @@ function generatePDF(params: {
     y += 8
 
     // Render summary with keyword highlighting
+    // Sanitize summary text: replace ₹ with Rs. for Helvetica compatibility
+    const sanitizedSummary = aiSummary.replace(/\u20B9/g, 'Rs.')
     pdf.setFontSize(10)
-    const summaryLines = pdf.splitTextToSize(aiSummary, CW - 4)
+    const summaryLines = pdf.splitTextToSize(sanitizedSummary, CW - 4)
     const lh = 5.2
 
     const tealKeywords = AI_SUMMARY_TEAL_KEYWORDS
@@ -311,7 +317,7 @@ function generatePDF(params: {
   pdf.setFontSize(10)
   pdf.setFont('helvetica', 'bold')
   pdf.setTextColor(13, 148, 136)
-  pdf.text('\u2728 AI FINANCIAL SUMMARY & KEY METRICS', M, y)
+  pdf.text('AI FINANCIAL SUMMARY & KEY METRICS', M, y)
   y += 3
   pdf.setDrawColor(13, 148, 136)
   pdf.setLineWidth(0.5)
@@ -329,11 +335,6 @@ function generatePDF(params: {
   pdf.setDrawColor(13, 148, 136)
   pdf.setLineWidth(0.4)
   pdf.roundedRect(box1X, y, boxW, boxH, 2, 2, 'FD')
-  // Arrow up icon indicator
-  pdf.setFontSize(8)
-  pdf.setFont('helvetica', 'normal')
-  pdf.setTextColor(5, 150, 105)
-  pdf.text('\u2191', box1X + 4, y + 7)
   // Label
   pdf.setFontSize(7)
   pdf.setFont('helvetica', 'normal')
@@ -353,11 +354,6 @@ function generatePDF(params: {
   pdf.setDrawColor(220, 38, 38)
   pdf.setLineWidth(0.4)
   pdf.roundedRect(box2X, y, boxW, boxH, 2, 2, 'FD')
-  // Arrow down icon
-  pdf.setFontSize(8)
-  pdf.setFont('helvetica', 'normal')
-  pdf.setTextColor(220, 38, 38)
-  pdf.text('\u2193', box2X + 4, y + 7)
   // Label
   pdf.setFontSize(7)
   pdf.setFont('helvetica', 'normal')
@@ -745,7 +741,7 @@ export async function POST(req: NextRequest) {
         const userName  = userSettings.name?.trim()
           || user.user_metadata?.full_name?.trim()
           || user.user_metadata?.name?.trim()
-          || user.email.split('@')[0]
+          || user.email
         const firstName = userName.split(' ')[0]
 
         const { data: transactions, error: txError } = await supabase
