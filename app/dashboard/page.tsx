@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { HelpCircle, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot } from 'lucide-react'
+import { HelpCircle, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import Layout from '@/components/layout/Layout'
@@ -269,7 +269,7 @@ export default function DashboardPage() {
           <CardContent className="p-2 md:p-6 pt-0">
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weeklyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <AreaChart data={weeklyData || []} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#0d9488" stopOpacity={0.3} />
