@@ -56,14 +56,18 @@ export default function PrivacySecurityPage() {
   if (loading) return null
   if (!mounted) return null
 
+  // ── Shared regex patterns ──
+  const SPECIAL_CHAR_RE = /[!@#$%^&*]/
+  const DIGIT_RE = /[0-9]/
+
   // ── Fix 1: Password strength ──
   const getStrength = (pwd: string) => {
     if (pwd.length === 0) return null
     if (pwd.length < 6)
       return { label: 'Weak', color: 'bg-red-400', text: 'text-red-500', width: 'w-1/3' }
-    if (pwd.length >= 6 && !/[!@#$%^&*]/.test(pwd))
+    if (pwd.length >= 6 && !SPECIAL_CHAR_RE.test(pwd))
       return { label: 'Medium', color: 'bg-amber-400', text: 'text-amber-500', width: 'w-2/3' }
-    if (pwd.length >= 8 && /[!@#$%^&*]/.test(pwd) && /[0-9]/.test(pwd))
+    if (pwd.length >= 8 && SPECIAL_CHAR_RE.test(pwd) && DIGIT_RE.test(pwd))
       return { label: 'Strong', color: 'bg-green-500', text: 'text-green-600', width: 'w-full' }
     return { label: 'Medium', color: 'bg-amber-400', text: 'text-amber-500', width: 'w-2/3' }
   }
@@ -72,8 +76,8 @@ export default function PrivacySecurityPage() {
 
   // ── Fix 2: Inline validation helpers ──
   const hasMinLength = newPassword.length >= 8
-  const hasNumber = /[0-9]/.test(newPassword)
-  const hasSpecial = /[!@#$%^&*]/.test(newPassword)
+  const hasNumber = DIGIT_RE.test(newPassword)
+  const hasSpecial = SPECIAL_CHAR_RE.test(newPassword)
   const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword
   const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword
 
