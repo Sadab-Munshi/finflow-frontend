@@ -751,7 +751,6 @@ function buildEmail(params: {
   savings: number
   savingsRate: number
   topCategories: { name: string; amount: number; percentage: number }[]
-  aiSummary: string | null
   appUrl: string
 }): string {
   const { firstName, monthName, totalIncome, totalExpense, savings, savingsRate, appUrl } = params
@@ -991,7 +990,6 @@ export async function POST(req: NextRequest) {
           savings,
           savingsRate,
           topCategories: expenseBreakdown.slice(0, 5),
-          aiSummary,
           appUrl,
         })
 
