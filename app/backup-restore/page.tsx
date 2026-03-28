@@ -86,6 +86,11 @@ const VALID_CATEGORIES = [
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const MONTH_REGEX = /^\d{4}-\d{2}$/
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024   // 5 MB
+const MAX_AMOUNT = 10_000_000
+const MAX_TRANSACTIONS = 10_000
+const MAX_BUDGETS = 100
+
 const DANGEROUS_KEYS = [
   'user_id', 'is_admin', 'avatar_url',
   'telegram', 'whatsapp', 'settings',
@@ -96,9 +101,10 @@ const DANGEROUS_KEYS = [
 function sanitizeText(str: unknown): string {
   if (!str) return ''
   return String(str)
-    .replace(/<[^>]*>/g, '')       // strip HTML tags
-    .replace(/[<>"'`]/g, '')       // strip dangerous chars
+    .replace(/[<>"'`]/g, '')       // strip all HTML-bracket and quote chars
     .replace(/javascript:/gi, '')  // strip js: protocol
+    .replace(/vbscript:/gi, '')    // strip vbscript: protocol
+    .replace(/data:/gi, '')        // strip data: protocol
     .trim()
     .slice(0, 200)                 // max 200 chars
 }
@@ -125,10 +131,10 @@ function sanitizeImportedJSON(raw: string): SanitizedImport {
   const sanitizedTransactions: SanitizedTransaction[] = (
     Array.isArray(parsed.transactions) ? parsed.transactions : []
   )
-    .slice(0, 10000)
+    .slice(0, MAX_TRANSACTIONS)
     .map((t: Record<string, unknown>, index: number) => {
       const amount = Number(t.amount)
-      if (isNaN(amount) || amount <= 0 || amount > 10000000) {
+      if (isNaN(amount) || amount <= 0 || amount > MAX_AMOUNT) {
         throw new Error(`Invalid amount at transaction ${index + 1}`)
       }
       if (!VALID_TYPES.includes(t.type as 'income' | 'expense')) {
@@ -152,10 +158,10 @@ function sanitizeImportedJSON(raw: string): SanitizedImport {
   const sanitizedBudgets: SanitizedBudget[] = (
     Array.isArray(parsed.budgets) ? parsed.budgets : []
   )
-    .slice(0, 100)
+    .slice(0, MAX_BUDGETS)
     .map((b: Record<string, unknown>, index: number) => {
       const amount = Number(b.amount)
-      if (isNaN(amount) || amount <= 0 || amount > 10000000) {
+      if (isNaN(amount) || amount <= 0 || amount > MAX_AMOUNT) {
         throw new Error(`Invalid budget amount at index ${index + 1}`)
       }
       if (!VALID_CATEGORIES.includes(b.category as string)) {
@@ -190,7 +196,7 @@ function sanitizeImportedCSV(raw: string): SanitizedImport {
   const transactions: SanitizedTransaction[] = lines
     .slice(1)
     .filter(line => line.trim())
-    .slice(0, 10000)
+    .slice(0, MAX_TRANSACTIONS)
     .map((line, index) => {
       const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
       const row: Record<string, string> = {}
@@ -210,7 +216,7 @@ function sanitizeImportedCSV(raw: string): SanitizedImport {
         amount,
         type: row.type as 'income' | 'expense',
         category: row.category || 'Other',
-        note: (row.note || '').replace(/<[^>]*>/g, '').slice(0, 200),
+        note: sanitizeText(row.note),
         date: row.date,
       }
     })
@@ -313,7 +319,7 @@ export default function BackupRestorePage() {
   // ── File parsing ─────────────────────────────────────────────────────────────
 
   async function parseAndPreviewFile(file: File) {
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE) {
       toast.error('File too large. Maximum size is 5MB.')
       return
     }
