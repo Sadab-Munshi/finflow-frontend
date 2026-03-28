@@ -133,7 +133,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed left-0 top-0 h-screen w-72 bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
+              className="fixed left-0 top-0 h-screen max-w-[280px] w-full bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
             >
               {/* Close button */}
               <button
@@ -143,24 +143,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <X className="w-5 h-5" />
               </button>
 
-              {/* Profile Section at top */}
-              <Link
-                href="/profile"
-                onClick={() => setSidebarOpen(false)}
-                className="block p-5 pb-4 hover:bg-white/5 transition-colors"
-              >
-                {loading ? (
-                  <ProfileSkeleton showEmail />
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <AvatarCircle size={44} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-bold text-sm truncate">{userName}</p>
-                      <p className="text-teal-200/70 text-xs truncate mt-0.5">{email}</p>
-                    </div>
-                  </div>
-                )}
-              </Link>
+              {/* Logo */}
+              <div className="h-16 flex items-center px-6 flex-shrink-0">
+                <Image
+                  src="/images/finflow-logo.png"
+                  alt="FinFlow"
+                  width={120}
+                  height={40}
+                  style={{ objectFit: 'contain', pointerEvents: 'none' }}
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              </div>
 
               {/* Divider */}
               <div className="mx-4 border-t border-teal-600/50" />
@@ -175,8 +169,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     className={cn(
                       'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
                       pathname === item.path
-                        ? 'bg-white text-teal-700 shadow-lg'
-                        : 'text-white hover:bg-white/10'
+                        ? 'bg-[#7C3AED] text-white shadow-lg'
+                        : 'text-white/80 hover:bg-white/10'
                     )}
                   >
                     <item.icon className="w-5 h-5" />
@@ -184,6 +178,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </Link>
                 ))}
               </nav>
+
+              {/* User Info — pinned to bottom, display only */}
+              <div className="mt-auto p-5 pt-4 border-t border-teal-600/50 flex-shrink-0">
+                {loading ? (
+                  <ProfileSkeleton showEmail />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <AvatarCircle size={44} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-sm truncate">{userName}</p>
+                      <p className="text-white/70 text-xs truncate mt-0.5">{email}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </motion.div>
           </div>
         )}
