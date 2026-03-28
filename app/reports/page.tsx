@@ -29,9 +29,9 @@ interface PdfData {
   userName: string;
 }
 
-// Use ₹ symbol for PDF output
+// Use Rs. prefix for PDF output (Helvetica does not support the ₹ glyph)
 function pdfCurrency(amount: number): string {
-  return '\u20B9' + new Intl.NumberFormat('en-IN', {
+  return 'Rs.' + new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
@@ -66,7 +66,7 @@ export default function ReportsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: settings } = await supabase.from('settings').select('name').eq('user_id', user.id).single()
-        setUserName(settings?.name || user.email?.split('@')[0] || 'User')
+        setUserName(settings?.name || user.user_metadata?.full_name || user.email || 'User')
       }
 
       setLoading(false)
@@ -292,7 +292,11 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
       pdf.setFontSize(7.5)
       pdf.setFont('helvetica', 'normal')
       pdf.setTextColor(13, 148, 136)
-      pdf.text(`FinFlow \u00B7 ${data.monthName}`, pageWidth - margin, 7, { align: 'right' })
+      pdf.text(`FinFlow \u00B7 ${data.monthName}`, margin, 7)
+      pdf.text(`Page ${currentPage}`, pageWidth - margin, 7, { align: 'right' })
+      pdf.setDrawColor(13, 148, 136)
+      pdf.setLineWidth(0.3)
+      pdf.line(margin, 9, pageWidth - margin, 9)
     }
 
     const newPage = () => {
@@ -362,7 +366,7 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
     pdf.setFontSize(7.5)
     pdf.setFont('helvetica', 'italic')
     pdf.setTextColor(140, 140, 140)
-    pdf.text('All amounts in Indian Rupees (\u20B9)', pageWidth - margin, yPos, { align: 'right' })
+    pdf.text('All amounts in Indian Rupees (Rs.)', pageWidth - margin, yPos, { align: 'right' })
     yPos += 8
 
     // ── SECTION 2: AI FINANCIAL SUMMARY ──────────────────────────────────────
@@ -375,8 +379,10 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
       yPos += 8
 
       // Render summary with keyword highlighting
+      // Sanitize summary text: replace ₹ with Rs. for Helvetica compatibility
+      const sanitizedSummary = data.summary.replace(/\u20B9/g, 'Rs.')
       pdf.setFontSize(10)
-      const summaryLines = pdf.splitTextToSize(data.summary, contentWidth - 4)
+      const summaryLines = pdf.splitTextToSize(sanitizedSummary, contentWidth - 4)
       const lineH = 5.2
 
       const tealKeywords = AI_SUMMARY_TEAL_KEYWORDS
@@ -429,7 +435,7 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
     pdf.setFontSize(10)
     pdf.setFont('helvetica', 'bold')
     pdf.setTextColor(13, 148, 136)
-    pdf.text('\u2728 AI FINANCIAL SUMMARY & KEY METRICS', margin, yPos)
+    pdf.text('AI FINANCIAL SUMMARY & KEY METRICS', margin, yPos)
     yPos += 3
     pdf.setDrawColor(13, 148, 136)
     pdf.setLineWidth(0.5)
@@ -446,11 +452,8 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
     pdf.setDrawColor(13, 148, 136)
     pdf.setLineWidth(0.4)
     pdf.roundedRect(box1X, yPos, boxW, boxH, 2, 2, 'FD')
-    pdf.setFontSize(8)
-    pdf.setFont('helvetica', 'normal')
-    pdf.setTextColor(5, 150, 105)
-    pdf.text('\u2191', box1X + 4, yPos + 7)
     pdf.setFontSize(7)
+    pdf.setFont('helvetica', 'normal')
     pdf.setTextColor(120, 120, 120)
     pdf.text('TOTAL INCOME', box1X + boxW / 2, yPos + 14, { align: 'center' })
     pdf.setFont('helvetica', 'bold')
@@ -465,11 +468,8 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
     pdf.setDrawColor(220, 38, 38)
     pdf.setLineWidth(0.4)
     pdf.roundedRect(box2X, yPos, boxW, boxH, 2, 2, 'FD')
-    pdf.setFontSize(8)
-    pdf.setFont('helvetica', 'normal')
-    pdf.setTextColor(220, 38, 38)
-    pdf.text('\u2193', box2X + 4, yPos + 7)
     pdf.setFontSize(7)
+    pdf.setFont('helvetica', 'normal')
     pdf.setTextColor(120, 120, 120)
     pdf.text('TOTAL EXPENSE', box2X + boxW / 2, yPos + 14, { align: 'center' })
     pdf.setFont('helvetica', 'bold')
