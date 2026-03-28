@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, TrendingDown, PiggyBank, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot } from 'lucide-react'
+import { HelpCircle, Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import Layout from '@/components/layout/Layout'
@@ -218,27 +218,18 @@ export default function DashboardPage() {
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-2">
           {/* Income Card */}
-          <div className="bg-green-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
-            <div className="absolute -top-4 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shadow-sm" aria-hidden="true">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-            </div>
+          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center" style={{ background: '#EFFEF5' }}>
             <span className="text-xs text-gray-500 mb-1">Income</span>
             <span className="text-sm font-bold text-green-600">₹{totalIncome.toLocaleString('en-IN')}</span>
           </div>
           {/* Expense Card */}
-          <div className="bg-red-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
-            <div className="absolute -top-4 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shadow-sm" aria-hidden="true">
-              <TrendingDown className="w-4 h-4 text-red-500" />
-            </div>
+          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center" style={{ background: '#FFF7F8' }}>
             <span className="text-xs text-gray-500 mb-1">Expense</span>
             <span className="text-sm font-bold text-red-500">₹{totalExpenses.toLocaleString('en-IN')}</span>
           </div>
           {/* Savings Card */}
-          <div className="bg-purple-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
-            <div className="absolute -top-4 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center shadow-sm" aria-hidden="true">
-              <PiggyBank className="w-4 h-4 text-purple-600" />
-            </div>
-            <span className="text-xs text-gray-500 mb-1">Savings</span>
+          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
+            <span className="text-xs text-gray-500 mb-1 flex items-center gap-0.5">Savings <HelpCircle className="w-3 h-3 text-gray-400" /></span>
             <span className="text-sm font-bold text-purple-600">{savingsRate}%</span>
             <span className={cn(
               "text-[10px] mt-0.5",
@@ -252,17 +243,17 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-4 gap-2 md:gap-3">
           {[
-            { icon: Mic, label: t('voice'), tab: 'voice', color: '#7c3aed', bg: 'bg-purple-100' },
-            { icon: Camera, label: t('scan'), tab: 'scan', color: '#2563eb', bg: 'bg-blue-100' },
-            { icon: PenLine, label: t('manual'), tab: 'manual', color: '#ea580c', bg: 'bg-orange-100' },
-            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#0d9488', bg: 'bg-teal-100' },
+            { icon: Mic, label: t('voice'), tab: 'voice', color: '#9333EA', bg: '#F3E8FF' },
+            { icon: Camera, label: t('scan'), tab: 'scan', color: '#2563EB', bg: '#DBEAFE' },
+            { icon: PenLine, label: t('manual'), tab: 'manual', color: '#D97706', bg: '#FEF3C7' },
+            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#0D9488', bg: '#ECFDF5' },
           ].map((action) => (
             <button
               key={action.label}
               onClick={() => router.push(`/add?tab=${action.tab}`)}
               className="flex flex-col items-center gap-1.5 p-2.5 md:p-4 rounded-xl bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all border border-gray-100"
             >
-              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", action.bg)}>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: action.bg }}>
                 <action.icon className="w-5 h-5" style={{ color: action.color }} />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 font-medium">{action.label}</span>
