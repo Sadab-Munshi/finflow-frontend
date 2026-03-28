@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, Lock, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Lock, ArrowLeft, CheckCircle, Loader2, BarChart2, Circle } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
@@ -17,6 +17,9 @@ export default function PrivacySecurityPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
+  // Touched state for inline validation
+  const [currentTouched, setCurrentTouched] = useState(false)
+
   // Eye toggle state
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
@@ -25,6 +28,10 @@ export default function PrivacySecurityPage() {
   // Submit state
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
+
+  // Privacy toggles
+  const [hideAmounts, setHideAmounts] = useState(false)
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -38,26 +45,53 @@ export default function PrivacySecurityPage() {
       setMounted(true)
     }
     checkAuth()
+
+    // Load persisted toggle values
+    const storedHide = localStorage.getItem('finflow_hide_amounts')
+    if (storedHide === 'true') setHideAmounts(true)
+    const storedAnalytics = localStorage.getItem('finflow_analytics_enabled')
+    if (storedAnalytics === 'true') setAnalyticsEnabled(true)
   }, [router])
 
   if (loading) return null
   if (!mounted) return null
 
+  // ── Shared regex patterns ──
+  const SPECIAL_CHAR_RE = /[!@#$%^&*]/
+  const DIGIT_RE = /[0-9]/
+
+  // ── Fix 1: Password strength ──
+  const getStrength = (pwd: string) => {
+    if (pwd.length === 0) return null
+    if (pwd.length < 6)
+      return { label: 'Weak', color: 'bg-red-400', text: 'text-red-500', width: 'w-1/3' }
+    if (pwd.length >= 6 && !SPECIAL_CHAR_RE.test(pwd))
+      return { label: 'Medium', color: 'bg-amber-400', text: 'text-amber-500', width: 'w-2/3' }
+    if (pwd.length >= 8 && SPECIAL_CHAR_RE.test(pwd) && DIGIT_RE.test(pwd))
+      return { label: 'Strong', color: 'bg-green-500', text: 'text-green-600', width: 'w-full' }
+    return { label: 'Medium', color: 'bg-amber-400', text: 'text-amber-500', width: 'w-2/3' }
+  }
+
+  const strength = getStrength(newPassword)
+
+  // ── Fix 2: Inline validation helpers ──
+  const hasMinLength = newPassword.length >= 8
+  const hasNumber = DIGIT_RE.test(newPassword)
+  const hasSpecial = SPECIAL_CHAR_RE.test(newPassword)
+  const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword
+  const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword
+
+  // ── Fix 3: Button enabled logic ──
+  const allValid =
+    currentPassword.length > 0 &&
+    hasMinLength &&
+    hasNumber &&
+    hasSpecial &&
+    passwordsMatch
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('Please fill in all fields.')
-      return
-    }
-    if (newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters.')
-      return
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("New passwords don't match.")
-      return
-    }
+    if (!allValid) return
 
     setSaving(true)
     try {
@@ -86,16 +120,33 @@ export default function PrivacySecurityPage() {
       }
 
       setSuccess(true)
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
       toast.success('Password updated successfully!')
-      setTimeout(() => setSuccess(false), 4000)
+      setTimeout(() => {
+        setSuccess(false)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setCurrentTouched(false)
+      }, 3000)
     } catch {
       toast.error('Something went wrong. Please try again.')
     } finally {
       setSaving(false)
     }
+  }
+
+  // ── Fix 4: Hide amounts toggle handler ──
+  const handleHideAmountsToggle = () => {
+    const next = !hideAmounts
+    setHideAmounts(next)
+    localStorage.setItem('finflow_hide_amounts', String(next))
+  }
+
+  // ── Fix 5: Analytics toggle handler ──
+  const handleAnalyticsToggle = () => {
+    const next = !analyticsEnabled
+    setAnalyticsEnabled(next)
+    localStorage.setItem('finflow_analytics_enabled', String(next))
   }
 
   return (
@@ -118,14 +169,7 @@ export default function PrivacySecurityPage() {
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
           ACCOUNT SECURITY
         </p>
-        <div className="bg-white rounded-2xl shadow-sm p-5 mb-3">
-
-          {success && (
-            <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 text-teal-700 rounded-xl px-4 py-3 mb-5 text-sm font-medium">
-              <CheckCircle className="w-4 h-4 shrink-0" />
-              Password updated successfully!
-            </div>
-          )}
+        <div className="bg-white rounded-2xl shadow-sm p-5 mb-6">
 
           <div className="flex items-center gap-3 mb-5">
             <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
@@ -149,6 +193,7 @@ export default function PrivacySecurityPage() {
                   type={showCurrent ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
+                  onBlur={() => setCurrentTouched(true)}
                   placeholder="Enter current password"
                   autoComplete="current-password"
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all pr-11"
@@ -162,6 +207,10 @@ export default function PrivacySecurityPage() {
                   {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {/* Fix 2: Current password blur validation */}
+              {currentTouched && currentPassword.length === 0 && (
+                <p className="text-xs text-red-500 mt-1.5">Current password is required</p>
+              )}
             </div>
 
             {/* New Password */}
@@ -187,6 +236,40 @@ export default function PrivacySecurityPage() {
                   {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Fix 1: Strength bar with right-aligned label */}
+              {newPassword && strength && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="h-1.5 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-300 ${strength.color} ${strength.width}`} />
+                    </div>
+                    <span className={`text-xs font-medium ml-2 ${strength.text}`}>{strength.label}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Fix 2: New password rule checklist */}
+              {newPassword.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {[
+                    { met: hasMinLength, label: 'At least 8 characters' },
+                    { met: hasNumber, label: 'Contains a number' },
+                    { met: hasSpecial, label: 'Contains a special character (!@#$%^&*)' },
+                  ].map((rule) => (
+                    <div key={rule.label} className="flex items-center gap-2">
+                      {rule.met ? (
+                        <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+                      )}
+                      <span className={`text-xs ${rule.met ? 'text-green-600' : 'text-gray-400'}`}>
+                        {rule.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Confirm New Password */}
@@ -212,17 +295,38 @@ export default function PrivacySecurityPage() {
                   {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {/* Fix 2: Confirm password match indicator */}
+              {passwordsMatch && (
+                <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5" /> Passwords match
+                </p>
+              )}
+              {passwordsMismatch && (
+                <p className="text-xs text-red-500 mt-1.5">Passwords do not match</p>
+              )}
             </div>
 
+            {/* Fix 3: Smart button states */}
             <button
               type="submit"
-              disabled={saving}
-              className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 text-sm flex items-center justify-center gap-2 transition-colors mt-2"
+              disabled={!allValid || saving || success}
+              className={`w-full font-semibold rounded-xl py-3 text-sm flex items-center justify-center gap-2 transition-colors mt-2 ${
+                success
+                  ? 'bg-green-500 text-white cursor-default'
+                  : allValid && !saving
+                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
             >
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Updating...
+                </>
+              ) : success ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Password Updated!
                 </>
               ) : (
                 'Update Password'
@@ -230,6 +334,90 @@ export default function PrivacySecurityPage() {
             </button>
           </form>
         </div>
+
+        {/* ── Fix 4: PRIVACY ── */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
+          PRIVACY
+        </p>
+        <div className="bg-white rounded-2xl shadow-sm p-5 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                <Eye size={16} className="text-teal-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Hide Amounts</p>
+                <p className="text-xs text-gray-400">Blur all money values across the app</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={hideAmounts}
+              onClick={handleHideAmountsToggle}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                hideAmounts ? 'bg-teal-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+                  hideAmounts ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Preview when toggle is ON */}
+          {hideAmounts && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-xs text-gray-400 mb-2">Amounts will appear as:</p>
+              <div className="flex gap-3">
+                <div className="bg-gray-50 rounded-xl px-4 py-2">
+                  <span className="text-sm font-semibold text-gray-800 blur-sm select-none">₹11,240</span>
+                </div>
+                <div className="bg-gray-50 rounded-xl px-4 py-2">
+                  <span className="text-sm font-semibold text-gray-800 blur-sm select-none">₹3,500</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Fix 5: DATA & ANALYTICS ── */}
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">
+          DATA &amp; ANALYTICS
+        </p>
+        <div className="bg-white rounded-2xl shadow-sm p-5 mb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                <BarChart2 size={16} className="text-teal-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Analytics &amp; Crash Reports</p>
+                <p className="text-xs text-gray-400">Share anonymous usage data to improve FinFlow</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={analyticsEnabled}
+              onClick={handleAnalyticsToggle}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                analyticsEnabled ? 'bg-teal-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+                  analyticsEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 px-1 mb-6">
+          We never sell your data. Analytics are fully anonymous and contain no personal or financial information.
+        </p>
 
       </div>
     </Layout>
