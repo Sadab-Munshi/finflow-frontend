@@ -228,7 +228,7 @@ function sanitizeImportedCSV(raw: string): SanitizedImport {
   }
 
   // 2. Parse headers: case-insensitive, trimmed, unquoted
-  const headers = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, '').trim().toLowerCase())
+  const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim().toLowerCase())
   const requiredHeaders = ['date', 'type', 'category', 'amount']
   const missingHeaders = requiredHeaders.filter(h => !headers.includes(h))
   if (missingHeaders.length > 0) {
@@ -246,7 +246,7 @@ function sanitizeImportedCSV(raw: string): SanitizedImport {
     if (transactions.length >= MAX_TRANSACTIONS) break
 
     // 4. Parse with quoted field support
-    const cols = parseCSVLine(line).map(c => c.trim().replace(/^"|"$/g, '').trim())
+    const cols = parseCSVLine(line).map(c => c.replace(/^"|"$/g, '').trim())
     const row: Record<string, string> = {}
     headers.forEach((h, idx) => { row[h] = cols[idx] || '' })
 
@@ -271,7 +271,7 @@ function sanitizeImportedCSV(raw: string): SanitizedImport {
     })
   }
 
-  // 8. Error if zero valid rows
+  // 6. Error if zero valid rows
   if (transactions.length === 0) {
     throw new Error('No valid transactions found in this CSV file.')
   }
