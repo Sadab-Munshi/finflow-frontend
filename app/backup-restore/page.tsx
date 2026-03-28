@@ -10,7 +10,7 @@ import {
   Loader2, CheckCircle,
 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { getTransactions, getBudgets, addTransaction, deleteBudget, upsertBudget, deleteTransactions } from '@/lib/db'
+import { getTransactions, getBudgets, deleteBudget, upsertBudget, deleteTransactions } from '@/lib/db'
 import { useUser } from '@/context/UserContext'
 import { createClient } from '@/lib/supabase/client'
 import { Transaction, Budget } from '@/lib/types'
@@ -40,6 +40,7 @@ interface SanitizedTransaction {
   category: string
   note: string
   date: string
+  created_at?: string
 }
 
 interface SanitizedBudget {
@@ -116,6 +117,12 @@ function sanitizeText(str: unknown): string {
     .slice(0, 200)                 // max 200 chars
 }
 
+const ISO_TIMESTAMP_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+
+function sanitizeTimestamp(val: unknown): string | undefined {
+  return typeof val === 'string' && ISO_TIMESTAMP_REGEX.test(val) ? val : undefined
+}
+
 function sanitizeImportedJSON(raw: string): SanitizedImport {
   let parsed: Record<string, unknown>
   try {
@@ -159,6 +166,7 @@ function sanitizeImportedJSON(raw: string): SanitizedImport {
         category: t.category as string,
         note: sanitizeText(t.note),
         date: t.date as string,
+        created_at: sanitizeTimestamp(t.created_at),
       }
     })
 
@@ -236,6 +244,7 @@ function sanitizeImportedCSV(raw: string): SanitizedImport {
   }
 
   const hasNoteColumn = headers.includes('note')
+  const hasCreatedAtColumn = headers.includes('created_at')
 
   const transactions: SanitizedTransaction[] = []
 
@@ -268,6 +277,7 @@ function sanitizeImportedCSV(raw: string): SanitizedImport {
       // 5. Default note to empty string if column missing
       note: sanitizeText(hasNoteColumn ? row.note : ''),
       date: row.date,
+      created_at: hasCreatedAtColumn ? sanitizeTimestamp(row.created_at) : undefined,
     })
   }
 
@@ -407,7 +417,7 @@ export default function BackupRestorePage() {
         category: t.category,
         note: t.note,
         date: t.date,
-        created_at: new Date().toISOString(),
+        created_at: t.created_at ?? (t.date + 'T00:00:00.000Z'),
       }))
 
       const bgts: Budget[] = sanitized.budgets.map(b => ({
@@ -495,16 +505,24 @@ export default function BackupRestorePage() {
 
       // Import transactions
       let imported = 0
+      const supabase = createClient()
       for (const t of txns) {
-        const result = await addTransaction({
-          user_id: user?.userId ?? '',
-          amount: t.amount,
-          type: t.type,
-          category: t.category,
-          note: t.note ?? '',
-          date: t.date,
-        })
-        if (result) imported++
+        const { data, error } = await supabase
+          .from('transactions')
+          .insert({
+            id: crypto.randomUUID(),
+            user_id: user?.userId ?? '',
+            amount: t.amount,
+            type: t.type,
+            category: t.category,
+            note: t.note ?? '',
+            date: t.date,
+            created_at: t.created_at,
+          })
+          .select()
+          .single()
+        if (error) { console.error('Import insert error:', error) }
+        if (data) imported++
       }
 
       // Import budgets
