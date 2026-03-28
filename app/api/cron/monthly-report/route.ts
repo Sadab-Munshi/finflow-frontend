@@ -9,6 +9,8 @@ import {
   buildAISummaryPrompt,
 } from '@/lib/pdf-constants'
 import jsPDF from 'jspdf'
+import fs from 'fs'
+import path from 'path'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -203,8 +205,6 @@ function generatePDF(params: {
 
   // Try to add the logo image; fall back to text
   try {
-    const fs = require('fs')
-    const path = require('path')
     const logoPath = path.join(process.cwd(), 'public', 'images', 'report-logo.png')
     if (fs.existsSync(logoPath)) {
       const logoData = fs.readFileSync(logoPath)
@@ -537,9 +537,8 @@ function generatePDF(params: {
       const nameDisp = src.name.length > 20 ? src.name.slice(0, 18) + '..' : src.name
       pdf.text(nameDisp, M + 8, y)
 
-      // Progress bar background (15% opacity of teal)
-      pdf.setFillColor(cr, cg, cb, 0.15 as any)
-      // Since jsPDF doesn't support alpha easily, use light teal
+      // Bar background (15% opacity of teal)
+      // jsPDF doesn't support alpha, use light teal
       pdf.setFillColor(230, 250, 248)
       pdf.roundedRect(barStart, y - 3.5, barMax, 4, 1, 1, 'F')
 

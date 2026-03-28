@@ -125,7 +125,7 @@ export default function ReportsPage() {
       let displayText = ''
       if (data.sections) {
         const s = data.sections
-        displayText = [s.overall, s.spending, s.income, ...(s.recommendations || []).map((r: string, i: number) => `${i + 1}. ${r}`)].filter(Boolean).join(' ')
+        displayText = [s.overall, s.spending, s.income, '', 'Recommendations:', ...(s.recommendations || []).map((r: string, i: number) => `${i + 1}. ${r}`)].filter((v) => v !== undefined && v !== null).join('\n')
       } else if (data.summary) {
         displayText = data.summary
       }

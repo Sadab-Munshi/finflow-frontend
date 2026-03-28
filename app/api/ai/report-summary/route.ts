@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
-  const { month, totalIncome, totalExpense, categories, prompt: _legacyPrompt } = await req.json()
+  // Accept but ignore legacy 'prompt' field for backward compatibility
+  const { month, totalIncome, totalExpense, categories } = await req.json()
   const GROQ_API_KEY = process.env.GROQ_API_KEY
 
   if (!GROQ_API_KEY) return NextResponse.json({ error: 'Groq API key not configured' }, { status: 500 })
