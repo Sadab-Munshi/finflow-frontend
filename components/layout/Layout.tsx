@@ -133,19 +133,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed left-0 top-0 h-screen w-[75%] max-w-[260px] bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
+              className="fixed left-0 top-0 h-screen w-[72vw] max-w-[260px] bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
             >
-              {/* Close button */}
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Logo */}
-              <div className="h-16 flex items-center px-6 flex-shrink-0">
-                <div className="rounded-xl p-2" style={{ backgroundColor: '#D9FAF7' }}>
+              {/* Logo Row */}
+              <div className="px-4 pt-4 flex-shrink-0">
+                <div className="flex items-center justify-between rounded-xl px-3 py-2" style={{ backgroundColor: '#D9FAF7' }}>
                   <Image
                     src="/images/finflow-logo.png"
                     alt="FinFlow"
@@ -155,11 +147,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     draggable={false}
                     onContextMenu={(e) => e.preventDefault()}
                   />
+                  <button
+                    onClick={() => setSidebarOpen(false)}
+                    className="text-teal-700 hover:text-teal-900 transition-colors flex-shrink-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
 
               {/* Divider */}
-              <div className="mx-4 border-t border-teal-600/50" />
+              <div className="mx-4 mt-3 border-t border-teal-600/50" />
 
               {/* Nav Items */}
               <nav className="flex-1 p-3 space-y-1 mt-1">
@@ -171,25 +169,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     className={cn(
                       'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
                       pathname === item.path
-                        ? 'bg-[#0F766E] text-white shadow-lg'
-                        : 'text-white/80 hover:bg-white/10'
+                        ? 'bg-white/20 text-white font-semibold'
+                        : 'text-white/70 font-normal hover:bg-white/10'
                     )}
                   >
                     <item.icon className="w-5 h-5" />
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <span className="text-sm">{item.label}</span>
                   </Link>
                 ))}
               </nav>
 
               {/* User Info — pinned to bottom, display only */}
-              <div className="mt-auto p-5 pt-4 border-t border-teal-600/50 flex-shrink-0">
+              <div className="mt-auto py-3 px-4 border-t border-white/20 flex-shrink-0">
                 {loading ? (
-                  <ProfileSkeleton showEmail />
+                  <ProfileSkeleton />
                 ) : (
                   <div className="flex items-center gap-3">
-                    <AvatarCircle size={44} />
+                    <AvatarCircle size={36} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-bold text-sm truncate">{userName}</p>
+                      <p className="text-sm font-semibold text-white truncate">{userName}</p>
                     </div>
                   </div>
                 )}
@@ -223,21 +221,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Landscape Sidebar (Desktop — fixed left panel) */}
       <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-teal-700 to-teal-800 z-40 overflow-y-auto no-print shadow-xl">
-        {/* Logo */}
-        <div className="h-16 flex items-center px-6 flex-shrink-0">
-          <Image
-            src="/images/finflow-logo.png"
-            alt="FinFlow"
-            width={120}
-            height={40}
-            style={{ objectFit: 'contain', pointerEvents: 'none' }}
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-          />
+        {/* Logo Row */}
+        <div className="px-4 pt-4 flex-shrink-0">
+          <div className="flex items-center justify-between rounded-xl px-3 py-2" style={{ backgroundColor: '#D9FAF7' }}>
+            <Image
+              src="/images/finflow-logo.png"
+              alt="FinFlow"
+              width={120}
+              height={40}
+              style={{ objectFit: 'contain', pointerEvents: 'none' }}
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          </div>
         </div>
 
         {/* Add Button */}
-        <div className="px-3 pb-3">
+        <div className="px-3 pt-3 pb-3">
           <button
             onClick={() => router.push('/add')}
             className="flex items-center justify-center gap-2 w-full bg-white text-teal-700 rounded-xl py-2.5 font-semibold hover:bg-teal-50 transition-colors"
@@ -254,12 +254,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
                 pathname === item.path
-                  ? 'bg-[#0F766E] text-white shadow-lg shadow-teal-900/20'
-                  : 'text-teal-200 hover:bg-white/10 hover:text-white'
+                  ? 'bg-white/20 text-white font-semibold'
+                  : 'text-white/70 font-normal hover:bg-white/10'
               )}
             >
               <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
