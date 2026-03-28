@@ -9,6 +9,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions } from '@/lib/db'
 import { getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, parseIndianDate, normalizeDateToYMD, formatIST } from '@/lib/utils'
+import { AI_SUMMARY_TEAL_KEYWORDS, getTransactionDescription } from '@/lib/pdf-constants'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import { Transaction } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
@@ -378,7 +379,7 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
       const summaryLines = pdf.splitTextToSize(data.summary, contentWidth - 4)
       const lineH = 5.2
 
-      const tealKeywords = ['concerning', 'major allocation', 'reduce', 'mitigate', 'generate income']
+      const tealKeywords = AI_SUMMARY_TEAL_KEYWORDS
 
       summaryLines.forEach((line: string, i: number) => {
         let xCursor = margin + 2
@@ -657,8 +658,7 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
       pdf.text(dateStr, tCol.date, yPos)
 
       // Description: if empty or "Done", show category
-      const noteRaw = (tx.note || '').trim()
-      const description = (!noteRaw || noteRaw.toLowerCase() === 'done') ? (tx.category || '-') : noteRaw.replace(/\n/g, ' ')
+      const description = getTransactionDescription(tx.note, tx.category)
       const noteDisplay = pdf.splitTextToSize(description, 60)[0]
       pdf.text(noteDisplay, tCol.desc, yPos)
 

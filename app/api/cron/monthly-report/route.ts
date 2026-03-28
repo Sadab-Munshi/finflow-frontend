@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { normalizeDateToYMD } from '@/lib/utils'
+import { AI_SUMMARY_TEAL_KEYWORDS, getTransactionDescription } from '@/lib/pdf-constants'
 import jsPDF from 'jspdf'
 
 const supabase = createClient(
@@ -256,7 +257,7 @@ function generatePDF(params: {
     const summaryLines = pdf.splitTextToSize(aiSummary, CW - 4)
     const lh = 5.2
 
-    const tealKeywords = ['concerning', 'major allocation', 'reduce', 'mitigate', 'generate income']
+    const tealKeywords = AI_SUMMARY_TEAL_KEYWORDS
 
     summaryLines.forEach((line: string, i: number) => {
       let xCursor = M + 2
@@ -545,8 +546,7 @@ function generatePDF(params: {
     pdf.text(dateStr, tc.date, y)
 
     // Description: if empty or "Done", show category
-    const noteRaw = tx.note?.trim()
-    const description = (!noteRaw || noteRaw.toLowerCase() === 'done') ? (tx.category || '-') : noteRaw.replace(/\n/g, ' ')
+    const description = getTransactionDescription(tx.note, tx.category)
     const noteDisplay = pdf.splitTextToSize(description, 60)[0]
     pdf.text(noteDisplay, tc.desc, y)
 
