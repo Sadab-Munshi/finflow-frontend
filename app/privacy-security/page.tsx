@@ -43,6 +43,19 @@ export default function PrivacySecurityPage() {
   if (loading) return null
   if (!mounted) return null
 
+  const getStrength = (pwd: string) => {
+    if (pwd.length === 0) return null
+    if (pwd.length < 6)
+      return { label: 'Weak', color: 'bg-red-400', text: 'text-red-500', width: 'w-1/3' }
+    if (pwd.length >= 6 && !/[!@#$%^&*]/.test(pwd))
+      return { label: 'Medium', color: 'bg-amber-400', text: 'text-amber-500', width: 'w-2/3' }
+    if (pwd.length >= 8 && /[!@#$%^&*]/.test(pwd) && /[0-9]/.test(pwd))
+      return { label: 'Strong', color: 'bg-green-500', text: 'text-green-600', width: 'w-full' }
+    return { label: 'Medium', color: 'bg-amber-400', text: 'text-amber-500', width: 'w-2/3' }
+  }
+
+  const strength = getStrength(newPassword)
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -187,6 +200,14 @@ export default function PrivacySecurityPage() {
                   {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {newPassword && strength && (
+                <div className="mt-2">
+                  <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-300 ${strength.color} ${strength.width}`} />
+                  </div>
+                  <p className={`text-xs mt-1 font-medium ${strength.text}`}>{strength.label}</p>
+                </div>
+              )}
             </div>
 
             {/* Confirm New Password */}
