@@ -10,11 +10,10 @@ import {
   Loader2, CheckCircle,
 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { getTransactions, getBudgets, getSettings, addTransaction, deleteBudget, upsertBudget, deleteTransactions } from '@/lib/db'
+import { getTransactions, getBudgets, addTransaction, deleteBudget, upsertBudget, deleteTransactions } from '@/lib/db'
 import { useUser } from '@/context/UserContext'
 import { createClient } from '@/lib/supabase/client'
 import { Transaction, Budget } from '@/lib/types'
-import { categories } from '@/lib/categories'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,11 +29,27 @@ interface ImportPreview {
 interface JsonBackup {
   exportedAt: string
   version: string
-  user: { name: string; email: string }
-  transactions: Transaction[]
-  budgets: Budget[]
-  categories: { id: number; name: string; type: string }[]
-  settings: Record<string, unknown>
+  transactions: { amount: number; type: 'income' | 'expense'; category: string; note: string; date: string }[]
+  budgets: { category: string; amount: number; month: string }[]
+}
+
+interface SanitizedTransaction {
+  amount: number
+  type: 'income' | 'expense'
+  category: string
+  note: string
+  date: string
+}
+
+interface SanitizedBudget {
+  amount: number
+  category: string
+  month: string
+}
+
+interface SanitizedImport {
+  transactions: SanitizedTransaction[]
+  budgets: SanitizedBudget[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -56,49 +71,157 @@ function triggerDownload(content: string, filename: string, mimeType: string): v
   URL.revokeObjectURL(url)
 }
 
-/** Escape a CSV cell value, wrapping in quotes if necessary. */
-function csvCell(value: string | number | null | undefined): string {
-  const str = String(value ?? '')
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`
-  }
-  return str
+// ─── Import sanitization constants ───────────────────────────────────────────
+
+const VALID_TYPES = ['expense', 'income'] as const
+
+const VALID_CATEGORIES = [
+  'Food & Dining', 'Transport', 'Shopping',
+  'Bills & Utilities', 'Entertainment', 'Health',
+  'Education', 'Rent', 'Groceries', 'Personal Care',
+  'Salary', 'Freelance', 'Business', 'Investment',
+  'Gift', 'Other',
+]
+
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
+const MONTH_REGEX = /^\d{4}-\d{2}$/
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024   // 5 MB
+const MAX_AMOUNT = 10_000_000
+const MAX_TRANSACTIONS = 10_000
+const MAX_BUDGETS = 100
+
+const DANGEROUS_KEYS = [
+  'user_id', 'is_admin', 'avatar_url',
+  'telegram', 'whatsapp', 'settings',
+  '__proto__', 'constructor', 'prototype',
+  'eval', 'script', 'exec', 'system',
+]
+
+function sanitizeText(str: unknown): string {
+  if (!str) return ''
+  return String(str)
+    .replace(/[<>"'`]/g, '')       // strip all HTML-bracket and quote chars
+    .replace(/javascript:/gi, '')  // strip js: protocol
+    .replace(/vbscript:/gi, '')    // strip vbscript: protocol
+    .replace(/data:/gi, '')        // strip data: protocol
+    .trim()
+    .slice(0, 200)                 // max 200 chars
 }
 
-/** Parse a simple CSV string into rows of cells. Handles quoted fields. */
-function parseCsv(text: string): string[][] {
-  const rows: string[][] = []
-  const lines = text.split(/\r?\n/)
-  for (const line of lines) {
-    if (!line.trim()) continue
-    const cells: string[] = []
-    let inQuote = false
-    let cell = ''
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i]
-      if (ch === '"') {
-        if (inQuote && line[i + 1] === '"') {
-          cell += '"'
-          i++
-        } else {
-          inQuote = !inQuote
-        }
-      } else if (ch === ',' && !inQuote) {
-        cells.push(cell)
-        cell = ''
-      } else {
-        cell += ch
-      }
+function sanitizeImportedJSON(raw: string): SanitizedImport {
+  let parsed: Record<string, unknown>
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>
+  } catch {
+    throw new Error('Invalid JSON file')
+  }
+
+  if (!parsed.transactions && !parsed.budgets) {
+    throw new Error('No valid data found in file')
+  }
+
+  const rawStr = JSON.stringify(parsed).toLowerCase()
+  for (const key of DANGEROUS_KEYS) {
+    if (rawStr.includes(key.toLowerCase())) {
+      throw new Error(`File contains unauthorized field: ${key}`)
     }
-    cells.push(cell)
-    rows.push(cells)
   }
-  return rows
+
+  const sanitizedTransactions: SanitizedTransaction[] = (
+    Array.isArray(parsed.transactions) ? parsed.transactions : []
+  )
+    .slice(0, MAX_TRANSACTIONS)
+    .map((t: Record<string, unknown>, index: number) => {
+      const amount = Number(t.amount)
+      if (isNaN(amount) || amount <= 0 || amount > MAX_AMOUNT) {
+        throw new Error(`Invalid amount at transaction ${index + 1}`)
+      }
+      if (!VALID_TYPES.includes(t.type as 'income' | 'expense')) {
+        throw new Error(`Invalid type at transaction ${index + 1}`)
+      }
+      if (!VALID_CATEGORIES.includes(t.category as string)) {
+        throw new Error(`Unknown category at transaction ${index + 1}`)
+      }
+      if (!DATE_REGEX.test(t.date as string)) {
+        throw new Error(`Invalid date at transaction ${index + 1}`)
+      }
+      return {
+        amount,
+        type: t.type as 'income' | 'expense',
+        category: t.category as string,
+        note: sanitizeText(t.note),
+        date: t.date as string,
+      }
+    })
+
+  const sanitizedBudgets: SanitizedBudget[] = (
+    Array.isArray(parsed.budgets) ? parsed.budgets : []
+  )
+    .slice(0, MAX_BUDGETS)
+    .map((b: Record<string, unknown>, index: number) => {
+      const amount = Number(b.amount)
+      if (isNaN(amount) || amount <= 0 || amount > MAX_AMOUNT) {
+        throw new Error(`Invalid budget amount at index ${index + 1}`)
+      }
+      if (!VALID_CATEGORIES.includes(b.category as string)) {
+        throw new Error(`Unknown budget category at index ${index + 1}`)
+      }
+      if (!MONTH_REGEX.test(b.month as string)) {
+        throw new Error(`Invalid month format at budget ${index + 1}`)
+      }
+      return {
+        amount,
+        category: b.category as string,
+        month: b.month as string,
+      }
+    })
+
+  return { transactions: sanitizedTransactions, budgets: sanitizedBudgets }
 }
 
-/** Sanitize a string to prevent injection — strips control characters. */
-function sanitize(value: string): string {
-  return value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim()
+function sanitizeImportedCSV(raw: string): SanitizedImport {
+  const lines = raw.trim().split('\n')
+  if (lines.length < 2) {
+    throw new Error('CSV file is empty or has no data rows')
+  }
+
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''))
+  const requiredHeaders = ['date', 'type', 'category', 'amount']
+  const missingHeaders = requiredHeaders.filter(h => !headers.includes(h))
+  if (missingHeaders.length > 0) {
+    throw new Error(`Missing columns: ${missingHeaders.join(', ')}`)
+  }
+
+  const transactions: SanitizedTransaction[] = lines
+    .slice(1)
+    .filter(line => line.trim())
+    .slice(0, MAX_TRANSACTIONS)
+    .map((line, index) => {
+      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+      const row: Record<string, string> = {}
+      headers.forEach((h, i) => { row[h] = cols[i] || '' })
+
+      const amount = Number(row.amount)
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error(`Invalid amount on row ${index + 2}`)
+      }
+      if (!VALID_TYPES.includes(row.type as 'income' | 'expense')) {
+        throw new Error(`Invalid type on row ${index + 2}`)
+      }
+      if (!DATE_REGEX.test(row.date)) {
+        throw new Error(`Invalid date on row ${index + 2}`)
+      }
+      return {
+        amount,
+        type: row.type as 'income' | 'expense',
+        category: row.category || 'Other',
+        note: sanitizeText(row.note),
+        date: row.date,
+      }
+    })
+
+  return { transactions, budgets: [] }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -141,11 +264,15 @@ export default function BackupRestorePage() {
         toast('No transactions to export.', { icon: 'ℹ️' })
         return
       }
-      const header = ['Date', 'Category', 'Amount', 'Type', 'Note'].map(csvCell).join(',')
-      const rows = transactions.map(t =>
-        [t.date, t.category, t.amount, t.type, t.note ?? ''].map(csvCell).join(',')
-      )
-      const csv = [header, ...rows].join('\n')
+      const headers = ['Date', 'Type', 'Category', 'Amount', 'Note']
+      const rows = transactions.map(t => [
+        t.date,
+        t.type,
+        t.category,
+        t.amount,
+        `"${(t.note || '').replace(/"/g, '""')}"`,
+      ])
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
       triggerDownload(csv, `finflow-backup-${formatDateForFilename()}.csv`, 'text/csv;charset=utf-8;')
       toast.success('CSV exported successfully')
     } catch {
@@ -160,21 +287,27 @@ export default function BackupRestorePage() {
   async function handleExportJson() {
     setIsExportingJson(true)
     try {
-      const [transactions, budgets, settings] = await Promise.all([
+      const [rawTransactions, rawBudgets] = await Promise.all([
         getTransactions(),
         getBudgets(),
-        getSettings(),
       ])
-      const backup: JsonBackup = {
+      const sanitizedExport: JsonBackup = {
         exportedAt: new Date().toISOString(),
         version: '1.0',
-        user: { name: user?.userName ?? '', email: user?.email ?? '' },
-        transactions,
-        budgets,
-        categories: categories.map(c => ({ id: c.id, name: c.name, type: c.type })),
-        settings: (settings ?? {}) as Record<string, unknown>,
+        transactions: rawTransactions.map(t => ({
+          amount: t.amount,
+          type: t.type,
+          category: t.category,
+          note: t.note || '',
+          date: t.date,
+        })),
+        budgets: rawBudgets.map(b => ({
+          category: b.category,
+          amount: b.amount,
+          month: b.month,
+        })),
       }
-      triggerDownload(JSON.stringify(backup, null, 2), `finflow-backup-${formatDateForFilename()}.json`, 'application/json')
+      triggerDownload(JSON.stringify(sanitizedExport, null, 2), `finflow-backup-${formatDateForFilename()}.json`, 'application/json')
       toast.success('JSON exported successfully')
     } catch {
       toast.error('Export failed. Please try again.')
@@ -186,135 +319,57 @@ export default function BackupRestorePage() {
   // ── File parsing ─────────────────────────────────────────────────────────────
 
   async function parseAndPreviewFile(file: File) {
-    // Security: validate file size (max 10 MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File is too large. Maximum allowed size is 10 MB.')
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File too large. Maximum size is 5MB.')
       return
     }
 
     const ext = file.name.split('.').pop()?.toLowerCase()
     if (ext !== 'csv' && ext !== 'json') {
-      toast.error('Unsupported file format. Please use .csv or .json.')
+      toast.error('Only .json and .csv files are supported.')
       return
     }
 
     try {
       const text = await file.text()
-      const txns: Transaction[] = []
-      const bgts: Budget[] = []
+      let sanitized: SanitizedImport
 
-      if (ext === 'csv') {
-        const rows = parseCsv(text)
-        if (rows.length < 2) {
-          toast.error('CSV file appears to be empty or invalid.')
-          return
-        }
-        const header = rows[0].map(h => h.toLowerCase().trim())
-        const dateIdx = header.indexOf('date')
-        const catIdx = header.indexOf('category')
-        const amtIdx = header.indexOf('amount')
-        const typeIdx = header.indexOf('type')
-        const noteIdx = header.indexOf('note')
-
-        if (dateIdx === -1 || catIdx === -1 || amtIdx === -1 || typeIdx === -1) {
-          toast.error('CSV must have Date, Category, Amount, and Type columns.')
-          return
-        }
-
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i]
-          const rawType = sanitize(row[typeIdx] ?? '').toLowerCase()
-          const rawAmount = parseFloat(row[amtIdx] ?? '')
-          const rawDate = sanitize(row[dateIdx] ?? '')
-          const rawCategory = sanitize(row[catIdx] ?? '')
-
-          if (!['income', 'expense'].includes(rawType)) continue
-          if (isNaN(rawAmount) || rawAmount <= 0) continue
-          if (!rawDate || !rawCategory) continue
-
-          txns.push({
-            id: '',
-            user_id: user?.userId ?? '',
-            amount: rawAmount,
-            type: rawType as 'income' | 'expense',
-            category: rawCategory,
-            note: noteIdx !== -1 ? sanitize(row[noteIdx] ?? '') : '',
-            date: rawDate,
-            created_at: new Date().toISOString(),
-          })
-        }
+      if (ext === 'json') {
+        sanitized = sanitizeImportedJSON(text)
       } else {
-        // JSON
-        let backup: Partial<JsonBackup>
-        try {
-          backup = JSON.parse(text) as Partial<JsonBackup>
-        } catch {
-          toast.error('Invalid JSON file.')
-          return
-        }
-
-        // Validate version
-        if (backup.version && backup.version !== '1.0') {
-          toast.error('Unsupported backup version.')
-          return
-        }
-
-        // Parse transactions
-        if (Array.isArray(backup.transactions)) {
-          for (const t of backup.transactions) {
-            if (!t || typeof t !== 'object') continue
-            const rawType = String(t.type ?? '').toLowerCase()
-            const rawAmount = parseFloat(String(t.amount ?? ''))
-            const rawDate = sanitize(String(t.date ?? ''))
-            const rawCategory = sanitize(String(t.category ?? ''))
-            if (!['income', 'expense'].includes(rawType)) continue
-            if (isNaN(rawAmount) || rawAmount <= 0) continue
-            if (!rawDate || !rawCategory) continue
-            txns.push({
-              id: '',
-              user_id: user?.userId ?? '',
-              amount: rawAmount,
-              type: rawType as 'income' | 'expense',
-              category: rawCategory,
-              note: sanitize(String(t.note ?? '')),
-              date: rawDate,
-              created_at: new Date().toISOString(),
-            })
-          }
-        }
-
-        // Parse budgets
-        if (Array.isArray(backup.budgets)) {
-          for (const b of backup.budgets) {
-            if (!b || typeof b !== 'object') continue
-            const rawCategory = sanitize(String(b.category ?? ''))
-            const rawAmount = parseFloat(String(b.amount ?? ''))
-            const rawMonth = sanitize(String(b.month ?? ''))
-            if (!rawCategory || isNaN(rawAmount) || rawAmount <= 0 || !rawMonth) continue
-            bgts.push({
-              id: '',
-              user_id: user?.userId ?? '',
-              category: rawCategory,
-              amount: rawAmount,
-              month: rawMonth,
-              created_at: new Date().toISOString(),
-            })
-          }
-        }
+        sanitized = sanitizeImportedCSV(text)
       }
+
+      const txns: Transaction[] = sanitized.transactions.map(t => ({
+        id: '',
+        user_id: user?.userId ?? '',
+        amount: t.amount,
+        type: t.type,
+        category: t.category,
+        note: t.note,
+        date: t.date,
+        created_at: new Date().toISOString(),
+      }))
+
+      const bgts: Budget[] = sanitized.budgets.map(b => ({
+        id: '',
+        user_id: user?.userId ?? '',
+        category: b.category,
+        amount: b.amount,
+        month: b.month,
+        created_at: new Date().toISOString(),
+      }))
 
       if (txns.length === 0 && bgts.length === 0) {
         toast.error('No valid data found in file.')
         return
       }
 
-      // Compute date range
       const dates = txns.map(t => t.date).filter(Boolean).sort()
       const dateRange = dates.length > 0
         ? { earliest: dates[0], latest: dates[dates.length - 1] }
         : null
 
-      // Count unique categories
       const uniqueCategories = new Set(txns.map(t => t.category)).size
 
       setParsedData({ transactions: txns, budgets: bgts })
@@ -326,8 +381,9 @@ export default function BackupRestorePage() {
         categoryCount: uniqueCategories,
         dateRange,
       })
-    } catch {
-      toast.error('Failed to read file. Please try again.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Invalid file. Please use a FinFlow export.')
+      setImportPreview(null)
     }
   }
 
@@ -479,7 +535,7 @@ export default function BackupRestorePage() {
                 <FileJson className="w-8 h-8 text-teal-500" />
               )}
               <span className="text-sm font-semibold text-gray-700">Export JSON</span>
-              <span className="text-xs text-gray-400 text-center">Full data with all settings</span>
+              <span className="text-xs text-gray-400 text-center">Transactions &amp; budgets</span>
             </button>
           </div>
         </div>
