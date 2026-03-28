@@ -249,7 +249,7 @@ export default function DashboardPage() {
             { icon: Mic, label: t('voice'), tab: 'voice', color: '#9333EA', bg: '#F3E8FF' },
             { icon: Camera, label: t('scan'), tab: 'scan', color: '#2563EB', bg: '#DBEAFE' },
             { icon: PenLine, label: t('manual'), tab: 'manual', color: '#16A34A', bg: '#DCFCE7' },
-            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#0D9488', bg: '#FFB3BA' },
+            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#F6546A', bg: '#FEEDF0' },
           ].map((action) => (
             <button
               key={action.label}
@@ -283,6 +283,7 @@ export default function DashboardPage() {
                       if (v >= 1000) return `${(v / 1000).toFixed(0)}k`
                       return `${v}`
                     }}
+                    domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.1)]}
                     width={40}
                     axisLine={false}
                     tickLine={false}
@@ -292,8 +293,8 @@ export default function DashboardPage() {
                     contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="income" name={t('income')} fill="#0D9488" barSize={8} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expense" name={t('expense')} fill="#F43F5E" barSize={8} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="income" name={t('income')} fill="#0D9488" barSize={18} radius={[4, 4, 0, 0]} minPointSize={3} />
+                  <Bar dataKey="expense" name={t('expense')} fill="#F43F5E" barSize={18} radius={[4, 4, 0, 0]} minPointSize={3} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
