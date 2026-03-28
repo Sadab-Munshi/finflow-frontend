@@ -219,7 +219,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-3 gap-2">
           {/* Income Card */}
           <div className="bg-green-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
-            <div className="absolute -top-4 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shadow-sm">
+            <div className="absolute -top-4 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shadow-sm" aria-hidden="true">
               <TrendingUp className="w-4 h-4 text-green-600" />
             </div>
             <span className="text-xs text-gray-500 mb-1">Income</span>
@@ -227,7 +227,7 @@ export default function DashboardPage() {
           </div>
           {/* Expense Card */}
           <div className="bg-red-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
-            <div className="absolute -top-4 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shadow-sm">
+            <div className="absolute -top-4 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shadow-sm" aria-hidden="true">
               <TrendingDown className="w-4 h-4 text-red-500" />
             </div>
             <span className="text-xs text-gray-500 mb-1">Expense</span>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
           </div>
           {/* Savings Card */}
           <div className="bg-purple-50 rounded-2xl shadow-sm p-3 flex flex-col items-center text-center relative pt-7">
-            <div className="absolute -top-4 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center shadow-sm">
+            <div className="absolute -top-4 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center shadow-sm" aria-hidden="true">
               <PiggyBank className="w-4 h-4 text-purple-600" />
             </div>
             <span className="text-xs text-gray-500 mb-1">Savings</span>
