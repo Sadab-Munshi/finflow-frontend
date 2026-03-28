@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { FileText, ChevronRight, Sparkles, Loader2, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,11 +9,11 @@ import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions } from '@/lib/db'
 import { getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, parseIndianDate, normalizeDateToYMD, formatIST } from '@/lib/utils'
+import { AI_SUMMARY_TEAL_KEYWORDS, getTransactionDescription } from '@/lib/pdf-constants'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import { Transaction } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 
 interface PdfData {
   monthKey: string;
@@ -29,9 +29,12 @@ interface PdfData {
   userName: string;
 }
 
-// Helper to replace ₹ with Rs. for PDF output
+// Use ₹ symbol for PDF output
 function pdfCurrency(amount: number): string {
-  return formatIndianCurrency(amount).replace('₹', 'Rs.').replace('Rs ', 'Rs. ')
+  return '\u20B9' + new Intl.NumberFormat('en-IN', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
 }
 
 // Parse hex color to RGB
@@ -53,7 +56,6 @@ export default function ReportsPage() {
   const [summaries, setSummaries] = useState<Record<string, string>>({})
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null)
   const [userName, setUserName] = useState<string>('')
-  const pdfRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -103,7 +105,7 @@ export default function ReportsPage() {
       const topCategories = Object.entries(categoryTotals)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
-        .map(([name, amount]) => `${name} (Rs. ${amount.toLocaleString('en-IN')})`)
+        .map(([name, amount]) => `${name} (\u20B9${amount.toLocaleString('en-IN')})`)
         .join(', ')
 
       const incomeTotals: Record<string, number> = {}
@@ -114,14 +116,14 @@ export default function ReportsPage() {
       })
       const incomeSources = Object.entries(incomeTotals)
         .sort((a, b) => b[1] - a[1])
-        .map(([name, amount]) => `${name} (Rs. ${amount.toLocaleString('en-IN')})`)
+        .map(([name, amount]) => `${name} (\u20B9${amount.toLocaleString('en-IN')})`)
         .join(', ')
 
       const [year, month] = monthKey.split('-')
       const monthName = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })
 
       const prompt = `Generate a detailed 5-6 sentence personal financial report summary for ${monthName}.
-Total income: Rs.${totalIncome}, Total expenses: Rs.${totalExpense}, Net savings: Rs.${savings}, Savings rate: ${savingsRate}%.
+Total income: \u20B9${totalIncome}, Total expenses: \u20B9${totalExpense}, Net savings: \u20B9${savings}, Savings rate: ${savingsRate}%.
 Top expense categories: ${topCategories}.
 Income sources: ${incomeSources}.
 
@@ -187,11 +189,11 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
       try {
         const savings = netSavings
         const savingsRatePct = Math.round(savingsRate)
-        const topCategories = categoryBreakdown.slice(0, 5).map(c => `${c.name} (Rs. ${c.amount.toLocaleString('en-IN')})`).join(', ')
-        const incomeSources = incomeBreakdown.map(i => `${i.source} (Rs. ${i.amount.toLocaleString('en-IN')})`).join(', ')
+        const topCategories = categoryBreakdown.slice(0, 5).map(c => `${c.name} (\u20B9${c.amount.toLocaleString('en-IN')})`).join(', ')
+        const incomeSources = incomeBreakdown.map(i => `${i.source} (\u20B9${i.amount.toLocaleString('en-IN')})`).join(', ')
 
         const prompt = `Generate a detailed 5-6 sentence personal financial report summary for ${monthName}.
-Total income: Rs.${totalIncome}, Total expenses: Rs.${totalExpense}, Net savings: Rs.${savings}, Savings rate: ${savingsRatePct}%.
+Total income: \u20B9${totalIncome}, Total expenses: \u20B9${totalExpense}, Net savings: \u20B9${savings}, Savings rate: ${savingsRatePct}%.
 Top expense categories: ${topCategories}.
 Income sources: ${incomeSources}.
 
@@ -259,25 +261,38 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
     const generatedDate = formatIST(new Date().toISOString())
     const fileName = `FinFlow-Report-${data.monthName.replace(' ', '-')}.pdf`
 
+    // Parse date and time parts
+    const dateParts = generatedDate.split(',').map((s: string) => s.trim())
+    const genDateStr = dateParts[0] || generatedDate
+    const genTimeStr = dateParts.slice(1).join(',').trim() || ''
+
+    // Extract month and year
+    const monthYearParts = data.monthName.split(' ')
+    const monthOnly = monthYearParts[0] || data.monthName
+    const yearOnly = monthYearParts[1] || ''
+
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    const addFooter = (pageNum: number) => {
+      pdf.setDrawColor(220, 220, 220)
+      pdf.setLineWidth(0.3)
+      pdf.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12)
+      pdf.setFontSize(7.5)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(160, 160, 160)
+      pdf.text(
+        `FinFlow Financial Report \u00B7 Confidential \u00B7 Generated on ${genDateStr}, ${genTimeStr} \u00B7 Page ${pageNum}`,
+        pageWidth / 2,
+        pageHeight - 7,
+        { align: 'center' }
+      )
+    }
 
     const addPageHeader = () => {
       pdf.setFontSize(7.5)
       pdf.setFont('helvetica', 'normal')
       pdf.setTextColor(13, 148, 136)
-      pdf.text(`FinFlow · ${data.monthName}`, pageWidth - margin, 7, { align: 'right' })
-    }
-
-    const addFooter = (pageNum: number) => {
-      pdf.setFontSize(7.5)
-      pdf.setFont('helvetica', 'normal')
-      pdf.setTextColor(160, 160, 160)
-      pdf.text(
-        `FinFlow Financial Report  ·  Confidential  ·  Generated on ${generatedDate}  ·  Page ${pageNum}`,
-        pageWidth / 2,
-        pageHeight - 7,
-        { align: 'center' }
-      )
+      pdf.text(`FinFlow \u00B7 ${data.monthName}`, pageWidth - margin, 7, { align: 'right' })
     }
 
     const newPage = () => {
@@ -292,226 +307,303 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
       if (yPos + needed > pageHeight - 16) newPage()
     }
 
-    const sectionHeader = (title: string) => {
+    const numberedSection = (num: string, title: string) => {
       checkPageBreak(16)
+      // Teal left border accent
+      pdf.setFillColor(13, 148, 136)
+      pdf.rect(margin, yPos - 4, 1.2, 8, 'F')
       pdf.setFontSize(13)
-      pdf.setTextColor(13, 148, 136)
       pdf.setFont('helvetica', 'bold')
-      pdf.text(title, margin, yPos)
-      yPos += 4
-      pdf.setDrawColor(13, 148, 136)
-      pdf.setLineWidth(0.4)
-      pdf.line(margin, yPos, pageWidth - margin, yPos)
-      yPos += 7
+      pdf.setTextColor(30, 30, 30)
+      pdf.text(`${num}. ${title}`, margin + 4, yPos + 2)
+      yPos += 10
       pdf.setFont('helvetica', 'normal')
     }
 
-    // ── Page 1 Header ────────────────────────────────────────────────────────
-    // Compact teal header band — no giant "FinFlow" word
+    // ── SECTION 1: HEADER BAR ────────────────────────────────────────────────
+    const headerH = 28
     pdf.setFillColor(13, 148, 136)
-    pdf.rect(0, 0, pageWidth, 32, 'F')
+    pdf.rect(0, 0, pageWidth, headerH, 'F')
 
-    pdf.setTextColor(255, 255, 255)
-    pdf.setFontSize(14)
+    // Left column: Logo placeholder (rounded container)
+    const logoBoxX = margin
+    const logoBoxY = 5
+    const logoBoxW = 32
+    const logoBoxH = 18
+    pdf.setFillColor(217, 250, 247) // #D9FAF7
+    pdf.roundedRect(logoBoxX, logoBoxY, logoBoxW, logoBoxH, 3, 3, 'F')
+    pdf.setFontSize(9)
     pdf.setFont('helvetica', 'bold')
-    pdf.text('FinFlow  ·  Financial Report', margin, 11)
+    pdf.setTextColor(13, 148, 136)
+    pdf.text('FinFlow', logoBoxX + logoBoxW / 2, logoBoxY + logoBoxH / 2 + 1, { align: 'center' })
 
-    pdf.setFontSize(11)
+    // Center column: Month and year
+    const centerX = pageWidth / 2
+    pdf.setTextColor(255, 255, 255)
+    pdf.setFontSize(16)
+    pdf.setFont('helvetica', 'bold')
+    pdf.text(`${monthOnly} ${yearOnly}`, centerX, 13, { align: 'center' })
+    pdf.setFontSize(10)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(data.monthName, margin, 19)
+    pdf.text('Financial Report', centerX, 20, { align: 'center' })
 
-    pdf.setFontSize(8.5)
-    pdf.text(`${data.userName}   ·   Generated: ${generatedDate} IST`, margin, 26)
-
+    // Right column: User name and generated date
+    const rightX = pageWidth - margin
+    pdf.setFontSize(10)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(255, 255, 255)
+    pdf.text(data.userName, rightX, 13, { align: 'right' })
     pdf.setFontSize(8)
-    pdf.setTextColor(200, 245, 230)
-    pdf.text('All amounts in Indian Rupees (Rs.)', margin, 31)
-
-    yPos = 40
-
-    // ── Summary Cards ────────────────────────────────────────────────────────
-    const colW = contentWidth / 4
-    const summaryItems = [
-      { label: 'Total Income',  value: pdfCurrency(data.totalIncome),  color: '#059669' },
-      { label: 'Total Expense', value: pdfCurrency(data.totalExpense), color: '#dc2626' },
-      { label: 'Net Savings',   value: pdfCurrency(data.netSavings),   color: data.netSavings >= 0 ? '#059669' : '#dc2626' },
-      { label: 'Savings Rate',  value: `${data.savingsRate.toFixed(1)}%`, color: data.savingsRate >= 20 ? '#059669' : '#d97706' }
-    ]
-
-    const cardH = 26
-    summaryItems.forEach((item, idx) => {
-      const x = margin + idx * colW
-      pdf.setFillColor(248, 250, 252)
-      pdf.rect(x + 0.5, yPos, colW - 1, cardH, 'F')
-      pdf.setFillColor(13, 148, 136)
-      pdf.rect(x + 0.5, yPos, colW - 1, 1.8, 'F')
-
-      pdf.setFontSize(7.5)
-      pdf.setTextColor(110, 110, 110)
-      pdf.setFont('helvetica', 'normal')
-      pdf.text(item.label, x + colW / 2, yPos + 9, { align: 'center' })
-
-      const [r, g, b] = hexToRgb(item.color)
-      // Auto-shrink value font if text is long
-      const valFontSize = item.value.length > 12 ? 9 : 11
-      pdf.setFontSize(valFontSize)
-      pdf.setTextColor(r, g, b)
-      pdf.setFont('helvetica', 'bold')
-      pdf.text(item.value, x + colW / 2, yPos + 20, { align: 'center' })
-    })
     pdf.setFont('helvetica', 'normal')
-    yPos += cardH + 10
+    pdf.text(`Generated: ${genDateStr}, ${genTimeStr} IST`, rightX, 20, { align: 'right' })
 
-    // ── AI Summary ───────────────────────────────────────────────────────────
+    // Below header: currency note right-aligned
+    yPos = headerH + 4
+    pdf.setFontSize(7.5)
+    pdf.setFont('helvetica', 'italic')
+    pdf.setTextColor(140, 140, 140)
+    pdf.text('All amounts in Indian Rupees (\u20B9)', pageWidth - margin, yPos, { align: 'right' })
+    yPos += 8
+
+    // ── SECTION 2: AI FINANCIAL SUMMARY ──────────────────────────────────────
     if (data.summary) {
       checkPageBreak(40)
-      sectionHeader('AI Financial Summary')
-
-      // Use 10pt for the summary text so it wraps cleanly and stays consistent
-      pdf.setFontSize(10)
-      const summaryLines = pdf.splitTextToSize(data.summary, contentWidth - 10)
-      const lineH = 5
-      const boxH = summaryLines.length * lineH + 10
-
-      pdf.setFillColor(248, 250, 252)
-      pdf.rect(margin, yPos - 3, contentWidth, boxH, 'F')
-      pdf.setFillColor(13, 148, 136)
-      pdf.rect(margin, yPos - 3, 2, boxH, 'F')
-
-      pdf.setTextColor(55, 55, 55)
-      // Draw each line individually to keep spacing consistent
-      summaryLines.forEach((line: string, i: number) => {
-        pdf.text(line, margin + 5, yPos + 2 + i * lineH)
-      })
-      yPos += boxH + 10
-    }
-
-    // ── Income Breakdown ─────────────────────────────────────────────────────
-    if (data.incomeBreakdown.length > 0) {
-      checkPageBreak(30)
-      sectionHeader('Income Breakdown')
-
-      // Column x positions
-      const iCol = { source: margin + 2, amount: margin + 110, pct: margin + 155 }
-      const rowH = 7
-
-      // Header row
-      pdf.setFillColor(13, 148, 136)
-      pdf.rect(margin, yPos - 5, contentWidth, rowH, 'F')
-      pdf.setFontSize(8.5)
-      pdf.setTextColor(255, 255, 255)
+      pdf.setFontSize(14)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('Source', iCol.source, yPos)
-      pdf.text('Amount', iCol.amount, yPos)
-      pdf.text('% of Total', iCol.pct, yPos)
-      pdf.setFont('helvetica', 'normal')
-      yPos += rowH
-
-      data.incomeBreakdown.forEach((item) => {
-        checkPageBreak(rowH + 2)
-        pdf.setFillColor(240, 253, 244)
-        pdf.rect(margin, yPos - 5, contentWidth, rowH, 'F')
-
-        pdf.setFontSize(9)
-        pdf.setTextColor(50, 50, 50)
-        pdf.text(item.source, iCol.source, yPos)
-        pdf.setTextColor(5, 150, 105)
-        pdf.text(pdfCurrency(item.amount), iCol.amount, yPos)
-        pdf.setTextColor(80, 80, 80)
-        pdf.text(`${item.percentage.toFixed(1)}%`, iCol.pct, yPos)
-        yPos += rowH
-      })
+      pdf.setTextColor(30, 30, 30)
+      pdf.text('AI Financial Summary', margin, yPos)
       yPos += 8
+
+      // Render summary with keyword highlighting
+      pdf.setFontSize(10)
+      const summaryLines = pdf.splitTextToSize(data.summary, contentWidth - 4)
+      const lineH = 5.2
+
+      const tealKeywords = AI_SUMMARY_TEAL_KEYWORDS
+
+      summaryLines.forEach((line: string, i: number) => {
+        let xCursor = margin + 2
+        const lineY = yPos + i * lineH
+        let remaining = line
+
+        while (remaining.length > 0) {
+          let earliestIdx = remaining.length
+          let matchedKeyword = ''
+
+          for (const kw of tealKeywords) {
+            const idx = remaining.toLowerCase().indexOf(kw.toLowerCase())
+            if (idx !== -1 && idx < earliestIdx) {
+              earliestIdx = idx
+              matchedKeyword = kw
+            }
+          }
+
+          if (matchedKeyword && earliestIdx < remaining.length) {
+            if (earliestIdx > 0) {
+              const before = remaining.slice(0, earliestIdx)
+              pdf.setFont('helvetica', 'normal')
+              pdf.setTextColor(55, 55, 55)
+              pdf.text(before, xCursor, lineY)
+              xCursor += pdf.getTextWidth(before)
+            }
+            const kwText = remaining.slice(earliestIdx, earliestIdx + matchedKeyword.length)
+            pdf.setFont('helvetica', 'bold')
+            pdf.setTextColor(13, 148, 136)
+            pdf.text(kwText, xCursor, lineY)
+            xCursor += pdf.getTextWidth(kwText)
+            remaining = remaining.slice(earliestIdx + matchedKeyword.length)
+          } else {
+            pdf.setFont('helvetica', 'normal')
+            pdf.setTextColor(55, 55, 55)
+            pdf.text(remaining, xCursor, lineY)
+            remaining = ''
+          }
+        }
+      })
+      yPos += summaryLines.length * lineH + 10
     }
 
-    // ── Expense Breakdown (bar chart) ────────────────────────────────────────
+    // ── SECTION 3: KEY METRICS BOXES ─────────────────────────────────────────
+    checkPageBreak(50)
+    // Section title
+    pdf.setFontSize(10)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(13, 148, 136)
+    pdf.text('\u2728 AI FINANCIAL SUMMARY & KEY METRICS', margin, yPos)
+    yPos += 3
+    pdf.setDrawColor(13, 148, 136)
+    pdf.setLineWidth(0.5)
+    pdf.line(margin, yPos, pageWidth - margin, yPos)
+    yPos += 8
+
+    const boxW = (contentWidth - 6) / 3
+    const boxH = 32
+    const boxGap = 3
+
+    // Box 1: Total Income
+    const box1X = margin
+    pdf.setFillColor(236, 253, 245)
+    pdf.setDrawColor(13, 148, 136)
+    pdf.setLineWidth(0.4)
+    pdf.roundedRect(box1X, yPos, boxW, boxH, 2, 2, 'FD')
+    pdf.setFontSize(8)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(5, 150, 105)
+    pdf.text('\u2191', box1X + 4, yPos + 7)
+    pdf.setFontSize(7)
+    pdf.setTextColor(120, 120, 120)
+    pdf.text('TOTAL INCOME', box1X + boxW / 2, yPos + 14, { align: 'center' })
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(30, 30, 30)
+    const incomeVal = pdfCurrency(data.totalIncome)
+    pdf.setFontSize(incomeVal.length > 12 ? 9 : 12)
+    pdf.text(incomeVal, box1X + boxW / 2, yPos + 24, { align: 'center' })
+
+    // Box 2: Total Expense
+    const box2X = margin + boxW + boxGap
+    pdf.setFillColor(255, 241, 242)
+    pdf.setDrawColor(220, 38, 38)
+    pdf.setLineWidth(0.4)
+    pdf.roundedRect(box2X, yPos, boxW, boxH, 2, 2, 'FD')
+    pdf.setFontSize(8)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(220, 38, 38)
+    pdf.text('\u2193', box2X + 4, yPos + 7)
+    pdf.setFontSize(7)
+    pdf.setTextColor(120, 120, 120)
+    pdf.text('TOTAL EXPENSE', box2X + boxW / 2, yPos + 14, { align: 'center' })
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(30, 30, 30)
+    const expenseVal = pdfCurrency(data.totalExpense)
+    pdf.setFontSize(expenseVal.length > 12 ? 9 : 12)
+    pdf.text(expenseVal, box2X + boxW / 2, yPos + 24, { align: 'center' })
+
+    // Box 3: Net Savings
+    const box3X = margin + (boxW + boxGap) * 2
+    const savingsNegative = data.netSavings < 0
+    const savingsZero = data.netSavings === 0
+    if (savingsNegative) {
+      pdf.setFillColor(255, 241, 242)
+      pdf.setDrawColor(220, 38, 38)
+    } else if (savingsZero) {
+      pdf.setFillColor(248, 250, 252)
+      pdf.setDrawColor(160, 160, 160)
+    } else {
+      pdf.setFillColor(236, 253, 245)
+      pdf.setDrawColor(5, 150, 105)
+    }
+    pdf.setLineWidth(0.4)
+    pdf.roundedRect(box3X, yPos, boxW, boxH, 2, 2, 'FD')
+
+    // Badge pill
+    if (savingsNegative) {
+      const badgeText = 'CONCERNING DEFICIT'
+      pdf.setFontSize(6)
+      const badgeW = pdf.getTextWidth(badgeText) + 6
+      const badgeX = box3X + (boxW - badgeW) / 2
+      pdf.setFillColor(254, 202, 202)
+      pdf.roundedRect(badgeX, yPos + 2, badgeW, 5, 2, 2, 'F')
+      pdf.setTextColor(185, 28, 28)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text(badgeText, box3X + boxW / 2, yPos + 5.8, { align: 'center' })
+    } else if (!savingsZero) {
+      const badgeText = 'HEALTHY SAVINGS'
+      pdf.setFontSize(6)
+      const badgeW = pdf.getTextWidth(badgeText) + 6
+      const badgeX = box3X + (boxW - badgeW) / 2
+      pdf.setFillColor(187, 247, 208)
+      pdf.roundedRect(badgeX, yPos + 2, badgeW, 5, 2, 2, 'F')
+      pdf.setTextColor(22, 101, 52)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text(badgeText, box3X + boxW / 2, yPos + 5.8, { align: 'center' })
+    }
+
+    pdf.setFontSize(7)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(120, 120, 120)
+    pdf.text('NET SAVINGS', box3X + boxW / 2, yPos + 14, { align: 'center' })
+
+    pdf.setFont('helvetica', 'bold')
+    if (savingsNegative) {
+      pdf.setTextColor(220, 38, 38)
+    } else if (savingsZero) {
+      pdf.setTextColor(120, 120, 120)
+    } else {
+      pdf.setTextColor(5, 150, 105)
+    }
+    const savingsVal = pdfCurrency(data.netSavings)
+    pdf.setFontSize(savingsVal.length > 12 ? 9 : 12)
+    pdf.text(savingsVal, box3X + boxW / 2, yPos + 24, { align: 'center' })
+
+    pdf.setFontSize(7)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(120, 120, 120)
+    pdf.text(`Savings Rate: ${data.savingsRate.toFixed(1)}%`, box3X + boxW / 2, yPos + 29, { align: 'center' })
+
+    yPos += boxH + 10
+
+    // ── SECTION 4: EXPENSE BREAKDOWN BY CATEGORY ────────────────────────────
     if (data.categoryBreakdown.length > 0) {
       checkPageBreak(30)
-      sectionHeader('Expense Breakdown by Category')
+      numberedSection('2', 'EXPENSE BREAKDOWN BY CATEGORY')
 
-      // Fixed column layout: dot | name | bar | amount+pct
-      const nameColW = 55   // category name area
-      const barStart = margin + nameColW + 6
-      const barMaxW  = 68
-      const labelStart = barStart + barMaxW + 3
+      const nameW = 50
+      const barStart = margin + nameW + 8
+      const barMax = 60
+      const pctX = barStart + barMax + 3
 
-      data.categoryBreakdown.forEach((cat) => {
-        checkPageBreak(12)
-        const [r, g, b] = hexToRgb(cat.color)
+      data.categoryBreakdown.forEach((cat, i) => {
+        checkPageBreak(14)
+        const [cr, cg, cb] = hexToRgb(cat.color)
 
-        // Dot
-        pdf.setFillColor(r, g, b)
-        pdf.circle(margin + 2.5, yPos - 1.5, 2, 'F')
+        // Category icon (colored rounded square)
+        pdf.setFillColor(cr, cg, cb)
+        pdf.roundedRect(margin, yPos - 4, 5, 5, 1, 1, 'F')
 
-        // Category name — truncate if needed
+        // Category name
         pdf.setFontSize(9)
+        pdf.setFont('helvetica', 'normal')
         pdf.setTextColor(55, 55, 55)
-        const nameDisplay = cat.name.length > 22 ? cat.name.slice(0, 20) + '..' : cat.name
-        pdf.text(nameDisplay, margin + 7, yPos)
+        const nameDisplay = cat.name.length > 20 ? cat.name.slice(0, 18) + '..' : cat.name
+        pdf.text(nameDisplay, margin + 8, yPos)
 
-        // Bar
-        const barW = Math.max((cat.percentage / 100) * barMaxW, 0.5)
-        pdf.setFillColor(220, 220, 220)
-        pdf.rect(barStart, yPos - 4.5, barMaxW, 5, 'F')
-        pdf.setFillColor(r, g, b)
-        pdf.rect(barStart, yPos - 4.5, barW, 5, 'F')
+        // Progress bar background
+        pdf.setFillColor(230, 230, 230)
+        pdf.roundedRect(barStart, yPos - 3.5, barMax, 4, 1, 1, 'F')
 
-        // Amount + pct — keep on same line
-        pdf.setFontSize(8.5)
+        // Progress bar fill (teal)
+        const barW = Math.max((cat.percentage / 100) * barMax, 0.5)
+        pdf.setFillColor(13, 148, 136)
+        pdf.roundedRect(barStart, yPos - 3.5, barW, 4, 1, 1, 'F')
+
+        // Percentage at right
+        pdf.setFontSize(8)
+        pdf.setFont('helvetica', 'bold')
         pdf.setTextColor(70, 70, 70)
-        pdf.text(`${pdfCurrency(cat.amount)}  (${cat.percentage.toFixed(1)}%)`, labelStart, yPos)
+        pdf.text(`${cat.percentage.toFixed(1)}%`, pctX, yPos)
 
-        yPos += 10
+        // Amount right-aligned below
+        pdf.setFontSize(8)
+        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(90, 90, 90)
+        pdf.text(pdfCurrency(cat.amount), pageWidth - margin, yPos + 4, { align: 'right' })
+
+        // Divider
+        if (i < data.categoryBreakdown.length - 1) {
+          pdf.setDrawColor(230, 230, 230)
+          pdf.setLineWidth(0.2)
+          pdf.line(margin, yPos + 7, pageWidth - margin, yPos + 7)
+        }
+
+        yPos += 11
       })
       yPos += 5
     }
 
-    // ── Category Details Table ────────────────────────────────────────────────
-    if (data.categoryBreakdown.length > 0) {
-      checkPageBreak(30)
-      sectionHeader('Category Details')
-
-      // Column positions
-      const cCol = { name: margin + 2, amount: margin + 95, pct: margin + 145 }
-      const rowH = 7
-
-      const renderCatHdr = () => {
-        pdf.setFillColor(13, 148, 136)
-        pdf.rect(margin, yPos - 5, contentWidth, rowH, 'F')
-        pdf.setFontSize(8.5)
-        pdf.setTextColor(255, 255, 255)
-        pdf.setFont('helvetica', 'bold')
-        pdf.text('Category', cCol.name, yPos)
-        pdf.text('Amount', cCol.amount, yPos)
-        pdf.text('% of Total Expense', cCol.pct, yPos)
-        pdf.setFont('helvetica', 'normal')
-        yPos += rowH
-      }
-      renderCatHdr()
-
-      data.categoryBreakdown.forEach((cat, idx) => {
-        checkPageBreak(rowH + 2)
-        pdf.setFillColor(idx % 2 === 0 ? 250 : 255, idx % 2 === 0 ? 250 : 255, idx % 2 === 0 ? 250 : 255)
-        pdf.rect(margin, yPos - 5, contentWidth, rowH, 'F')
-
-        pdf.setFontSize(9)
-        pdf.setTextColor(55, 55, 55)
-        pdf.text(cat.name, cCol.name, yPos)
-        pdf.setTextColor(220, 38, 38)
-        pdf.text(pdfCurrency(cat.amount), cCol.amount, yPos)
-        pdf.setTextColor(80, 80, 80)
-        pdf.text(`${cat.percentage.toFixed(1)}%`, cCol.pct, yPos)
-        yPos += rowH
-      })
-      yPos += 10
-    }
-
-    // ── Full Transaction List ────────────────────────────────────────────────
+    // ── SECTION 5: TRANSACTION DETAILS ────────────────────────────────────────
     checkPageBreak(30)
-    sectionHeader('Transaction Details')
+    numberedSection('3', 'TRANSACTION DETAILS')
 
-    // Column positions — carefully spaced to avoid overlap
-    // A4 content = 182mm; date=22, desc=52, category=38, type=18, amount=rest
     const tCol = {
       date:     margin + 2,
       desc:     margin + 26,
@@ -521,6 +613,7 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
     }
     const txRowH = 7
 
+    // Single header row
     const renderTxHdr = () => {
       pdf.setFillColor(13, 148, 136)
       pdf.rect(margin, yPos - 5, contentWidth, txRowH, 'F')
@@ -539,39 +632,70 @@ Write in a warm, professional tone as if a financial advisor is speaking directl
 
     data.transactions.forEach((tx, idx) => {
       checkPageBreak(txRowH + 2)
-      // Re-render header on new page (yPos resets to margin+6 after newPage)
+      // Re-render header only on new page
       if (yPos < margin + 20 && idx > 0) renderTxHdr()
 
       const isIncome = tx.type === 'income'
-      pdf.setFillColor(isIncome ? 240 : 255, isIncome ? 253 : 255, isIncome ? 244 : 255)
+
+      // Alternating row backgrounds
+      if (idx % 2 === 0) {
+        pdf.setFillColor(255, 255, 255)
+      } else {
+        pdf.setFillColor(249, 250, 251) // #F9FAFB
+      }
       pdf.rect(margin, yPos - 5, contentWidth, txRowH, 'F')
 
+      // Light gray bottom border
+      pdf.setDrawColor(230, 230, 230)
+      pdf.setLineWidth(0.2)
+      pdf.line(margin, yPos + 2, pageWidth - margin, yPos + 2)
+
+      // Date
       const date = normalizeDateToYMD(tx.date)
       const dateStr = date.split('-').reverse().join('/')
-
       pdf.setFontSize(9)
       pdf.setTextColor(55, 55, 55)
       pdf.text(dateStr, tCol.date, yPos)
 
-      // Description: truncate to fit desc column (≈60mm wide)
-      const noteRaw = (tx.note || '-').replace(/\n/g, ' ')
-      const noteDisplay = pdf.splitTextToSize(noteRaw, 60)[0]
+      // Description: if empty or "Done", show category
+      const description = getTransactionDescription(tx.note, tx.category)
+      const noteDisplay = pdf.splitTextToSize(description, 60)[0]
       pdf.text(noteDisplay, tCol.desc, yPos)
 
-      // Category: truncate to fit (≈36mm wide)
+      // Category
       const catRaw = tx.category || '-'
       const catDisplay = pdf.splitTextToSize(catRaw, 36)[0]
       pdf.text(catDisplay, tCol.category, yPos)
 
-      pdf.text(tx.type, tCol.type, yPos)
+      // Type: colored badge pill
+      if (isIncome) {
+        pdf.setFillColor(220, 252, 231)
+        pdf.setTextColor(22, 101, 52)
+      } else {
+        pdf.setFillColor(254, 226, 226)
+        pdf.setTextColor(185, 28, 28)
+      }
+      const typeText = tx.type
+      const typeW = pdf.getTextWidth(typeText) + 4
+      pdf.roundedRect(tCol.type - 1, yPos - 3.5, typeW, 5, 1.5, 1.5, 'F')
+      pdf.setFontSize(7.5)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text(typeText, tCol.type + 1, yPos)
+      pdf.setFont('helvetica', 'normal')
 
-      pdf.setTextColor(isIncome ? 5 : 220, isIncome ? 150 : 38, isIncome ? 105 : 38)
+      // Amount
+      pdf.setFontSize(9)
+      if (isIncome) {
+        pdf.setTextColor(5, 150, 105)
+      } else {
+        pdf.setTextColor(220, 38, 38)
+      }
       pdf.text(pdfCurrency(tx.amount), tCol.amount, yPos)
 
       yPos += txRowH
     })
 
-    // ── Final Footer ─────────────────────────────────────────────────────────
+    // ── FOOTER ──────────────────────────────────────────────────────────────
     addFooter(currentPage)
 
     pdf.save(fileName)
