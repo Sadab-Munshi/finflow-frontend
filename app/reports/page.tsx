@@ -416,7 +416,7 @@ export default function ReportsPage() {
 
     // ── MONTH-OVER-MONTH COMPARISON BOX ──────────────────────────────────────
     {
-      const compBoxPad = 4
+      const compBoxPad = 8
       if (!data.prevMonthData) {
         checkPageBreak(22)
         pdf.setFillColor(248, 250, 252)
@@ -474,7 +474,7 @@ export default function ReportsPage() {
           rowY: number,
           upIsGood: boolean
         ) => {
-          const arrow    = change > 0 ? '(^)' : change < 0 ? '(v)' : '(-)'
+          const arrow    = change > 0 ? '\u2191' : change < 0 ? '\u2193' : '\u2014'
           const pctStr   = fmtPct(change, base)
           const isUp     = change > 0
           const isDown   = change < 0
@@ -507,9 +507,11 @@ export default function ReportsPage() {
           pdf.text(arrow, colArrow, rowY)
 
           pdf.setFont('helvetica', 'normal')
+          pdf.setTextColor(...changeColor)
           pdf.text(pdfCurrency(Math.abs(change)), colChange, rowY, { align: 'right' })
 
           const sign = change > 0 ? '+' : change < 0 ? '-' : ''
+          pdf.setTextColor(...changeColor)
           pdf.text(pctStr === 'N/A' ? 'N/A' : `${sign}${pctStr}`, colPct, rowY, { align: 'right' })
         }
 
@@ -948,9 +950,9 @@ export default function ReportsPage() {
       y += 4
     } else {
       const budgetBarTrackX = M + 2
-      const budgetBarTrackW = CW - 50
+      const budgetBarTrackW = CW - 4
       data.budgets.forEach((bud, i) => {
-        checkPageBreak(14)
+        checkPageBreak(18)
         const pctUsed = bud.budgetAmount > 0 ? (bud.spent / bud.budgetAmount) * 100 : 0
 
         let br: number, bg: number, bb: number
@@ -963,6 +965,7 @@ export default function ReportsPage() {
           ;[br, bg, bb] = [16, 185, 129]; statusLabel = 'WITHIN BUDGET'
         }
 
+        // Line 1: category name (left, bold) + status label + percentage (right, colored)
         pdf.setFontSize(8.5)
         pdf.setFont('helvetica', 'bold')
         pdf.setTextColor(30, 30, 30)
@@ -974,26 +977,28 @@ export default function ReportsPage() {
         pdf.setTextColor(br, bg, bb)
         pdf.text(`${statusLabel}  ${pctUsed.toFixed(0)}%`, PW - M - 2, y, { align: 'right' })
 
+        // Line 2: full-width progress bar
         pdf.setFillColor(235, 235, 235)
-        pdf.roundedRect(budgetBarTrackX, y + 3, budgetBarTrackW, 4, 1, 1, 'F')
+        pdf.roundedRect(budgetBarTrackX, y + 4, budgetBarTrackW, 4, 1, 1, 'F')
 
         const fillW = Math.min((pctUsed / 100) * budgetBarTrackW, budgetBarTrackW)
         if (fillW > 0.5) {
           pdf.setFillColor(br, bg, bb)
-          pdf.roundedRect(budgetBarTrackX, y + 3, fillW, 4, 1, 1, 'F')
+          pdf.roundedRect(budgetBarTrackX, y + 4, fillW, 4, 1, 1, 'F')
         }
 
+        // Line 3: spent / budget (right aligned, small gray)
         pdf.setFontSize(7.5)
         pdf.setFont('helvetica', 'normal')
-        pdf.setTextColor(90, 90, 90)
-        pdf.text(`${pdfCurrency(bud.spent)} / ${pdfCurrency(bud.budgetAmount)}`, PW - M - 2, y + 10, { align: 'right' })
+        pdf.setTextColor(120, 120, 120)
+        pdf.text(`${pdfCurrency(bud.spent)} / ${pdfCurrency(bud.budgetAmount)}`, PW - M - 2, y + 12, { align: 'right' })
 
         if (i < data.budgets.length - 1) {
           pdf.setDrawColor(235, 235, 235)
           pdf.setLineWidth(0.2)
-          pdf.line(M, y + 12, PW - M, y + 12)
+          pdf.line(M, y + 15, PW - M, y + 15)
         }
-        y += 12
+        y += 16
       })
 
       checkPageBreak(10)
@@ -1041,27 +1046,23 @@ export default function ReportsPage() {
       : '-'
 
     if (txAll.length > 0) {
-      checkPageBreak(40)
-      const statsBoxH = 36
+      checkPageBreak(50)
+      const statsBoxH = 46
       pdf.setFillColor(248, 250, 252)
       pdf.setDrawColor(209, 213, 219)
       pdf.setLineWidth(0.3)
       pdf.roundedRect(M, y, CW, statsBoxH, 2, 2, 'FD')
 
-      const col1X = M + 4
-      const col2X = M + CW / 2 + 2
-      const rowGap = 7
+      const col1X = M + 5
+      const col2X = M + CW / 2 + 4
+      const rowGap = 9
 
-      const statsData: [string, string][] = [
+      // LEFT column: Total Transactions, Biggest Expense, Most Active Day
+      // RIGHT column: Biggest Income, Avg. Daily Spending
+      const statsLeft: [string, string][] = [
         [
           'Total Transactions:',
           `${txAll.length} (${txIncome.length} income, ${txExpense.length} expense)`,
-        ],
-        [
-          'Biggest Income:',
-          biggestInc
-            ? `${getTransactionDescription(biggestInc.note, biggestInc.category)} — ${pdfCurrency(biggestInc.amount)} (${normalizeDateToYMD(biggestInc.date).split('-').reverse().join('/')})`
-            : '-',
         ],
         [
           'Biggest Expense:',
@@ -1069,27 +1070,38 @@ export default function ReportsPage() {
             ? `${getTransactionDescription(biggestExp.note, biggestExp.category)} — ${pdfCurrency(biggestExp.amount)} (${normalizeDateToYMD(biggestExp.date).split('-').reverse().join('/')})`
             : '-',
         ],
+        ['Most Active Day:', mostActiveDayStr],
+      ]
+      const statsRight: [string, string][] = [
+        [
+          'Biggest Income:',
+          biggestInc
+            ? `${getTransactionDescription(biggestInc.note, biggestInc.category)} — ${pdfCurrency(biggestInc.amount)} (${normalizeDateToYMD(biggestInc.date).split('-').reverse().join('/')})`
+            : '-',
+        ],
         [
           'Avg. Daily Spending:',
           `${pdfCurrency(Math.round(avgDailySpend))}/day`,
         ],
-        ['Most Active Day:', mostActiveDayStr],
       ]
 
-      let statsY = y + 7
-      for (let si = 0; si < statsData.length; si++) {
-        const colX  = si % 2 === 0 ? col1X : col2X
-        const sY    = statsY + Math.floor(si / 2) * rowGap
-        const [lbl, val] = statsData[si]
+      const statsStartY = y + 9
+      const halfW = CW / 2 - 10
+
+      const renderStatRow = (lbl: string, val: string, colX: number, sY: number) => {
         pdf.setFontSize(7.5)
         pdf.setFont('helvetica', 'bold')
-        pdf.setTextColor(90, 90, 90)
+        pdf.setTextColor(80, 80, 80)
         pdf.text(lbl, colX, sY)
+        const lblW = pdf.getTextWidth(lbl)
         pdf.setFont('helvetica', 'normal')
         pdf.setTextColor(30, 30, 30)
-        const valTrunc = pdf.splitTextToSize(val, CW / 2 - 8)[0]
-        pdf.text(valTrunc, colX + pdf.getTextWidth(lbl) + 1, sY)
+        const valTrunc = pdf.splitTextToSize(val, halfW - lblW)[0]
+        pdf.text(valTrunc, colX + lblW + 2, sY)
       }
+
+      statsLeft.forEach(([lbl, val], i) => renderStatRow(lbl, val, col1X, statsStartY + i * rowGap))
+      statsRight.forEach(([lbl, val], i) => renderStatRow(lbl, val, col2X, statsStartY + i * rowGap))
 
       y += statsBoxH + 6
     }
