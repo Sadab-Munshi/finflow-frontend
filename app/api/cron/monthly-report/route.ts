@@ -13,11 +13,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const MONTHS = [
+    'January', 'February', 'March', 'April',
+    'May', 'June', 'July', 'August',
+    'September', 'October', 'November', 'December'
+  ]
+
   const now = new Date()
-  const reportDate = new Date(now)
-  reportDate.setMonth(now.getMonth() - 1)
-  const month = reportDate.toLocaleString('en-IN', { month: 'long' })
-  const year = reportDate.getFullYear()
+  const previousMonthIndex = now.getMonth() - 1
+  const month = previousMonthIndex < 0 
+    ? MONTHS[11] 
+    : MONTHS[previousMonthIndex]
+  const year = previousMonthIndex < 0 
+    ? now.getFullYear() - 1 
+    : now.getFullYear()
 
   // Fetch all active users
   const { data: users, error } = await supabase
