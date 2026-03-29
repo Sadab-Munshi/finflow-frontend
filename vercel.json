@@ -2,11 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/monthly-report",
-      "schedule": "0 0 1 * *"
-    },
-    {
-      "path": "/api/cron/process-report-queue",
-      "schedule": "0 2 1 * *"
+      "schedule": "0 8 1 * *"
     }
   ]
 }
