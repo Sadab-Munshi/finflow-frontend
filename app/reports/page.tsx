@@ -115,7 +115,7 @@ export default function ReportsPage() {
             </div>
             <h3 className="font-semibold text-gray-800 mb-2">No reports yet</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Your first report will be automatically generated on 1st {nextMonthName} {nextYear}
+              Your first report will be automatically generated on the 1st of {nextMonthName} {nextYear}
             </p>
           </div>
         ) : (

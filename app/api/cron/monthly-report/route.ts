@@ -1407,18 +1407,20 @@ export async function POST(req: NextRequest) {
           if (uploadError) {
             console.error(`[MONTHLY REPORT] Storage upload failed for ${userId}:`, uploadError)
           } else {
-            // Get signed URL (valid for 1 year)
+            const SIGNED_URL_EXPIRY_SECONDS = 365 * 24 * 60 * 60 // 1 year
             const { data: urlData } = await supabase
               .storage
               .from('reports')
-              .createSignedUrl(fileName, 365 * 24 * 60 * 60)
+              .createSignedUrl(fileName, SIGNED_URL_EXPIRY_SECONDS)
 
             if (urlData?.signedUrl) {
+              // prevMonthName format is "Month Year" (e.g. "March 2026")
+              const monthNameOnly = prevMonthName.split(' ')[0] || prevMonthName
               await supabase
                 .from('reports')
                 .upsert({
                   user_id: userId,
-                  month: prevMonthName.split(' ')[0],
+                  month: monthNameOnly,
                   year: parseInt(reportYear),
                   pdf_url: urlData.signedUrl,
                   file_size: pdfBuffer.length,
