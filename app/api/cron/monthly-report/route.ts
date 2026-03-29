@@ -52,24 +52,25 @@ function incomeCatColor(name: string): string {
 // ── AI Summary ────────────────────────────────────────────────────────────────
 
 async function getAISummary(
+  firstName: string,
   monthName: string,
   totalIncome: number,
   totalExpense: number,
   savings: number,
   savingsRate: number,
-  topExpense: { name: string; amount: number }[],
-  incomeSources: { name: string; amount: number }[]
+  topExpense: { name: string; amount: number; percentage: number }[],
+  incomeSources: { name: string; amount: number; percentage: number }[],
+  prevMonthData: { totalIncome: number; totalExpense: number; netSavings: number } | null,
+  exceededBudgets: { category: string; budget: number; spent: number }[],
+  unusualPatterns: string[]
 ): Promise<{ sections?: { overall: string; spending: string; income: string; recommendations: string[] }; summary?: string } | null> {
   try {
     const GROQ_API_KEY = process.env.GROQ_API_KEY
     if (!GROQ_API_KEY) return null
 
-    const topCatStr = topExpense.map(c => `${c.name} (Rs.${c.amount.toLocaleString('en-IN')})`).join(', ')
-    const incomeStr = incomeSources.map(i => `${i.name} (Rs.${i.amount.toLocaleString('en-IN')})`).join(', ')
-
     const prompt = buildAISummaryPrompt(
-      monthName, totalIncome, totalExpense, savings, savingsRate,
-      topCatStr, incomeStr
+      firstName, monthName, totalIncome, totalExpense, savings, savingsRate,
+      topExpense, incomeSources, prevMonthData, exceededBudgets, unusualPatterns
     )
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -115,10 +116,13 @@ function generatePDF(params: {
   transactions: { date: string; note: string; category: string; type: string; amount: number }[]
   aiSummary: { sections?: { overall: string; spending: string; income: string; recommendations: string[] }; summary?: string } | null
   generatedDate: string
+  prevMonthData: { monthName: string; totalIncome: number; totalExpense: number; netSavings: number } | null
+  budgets: { category: string; budgetAmount: number; spent: number }[]
 }): string {
   const {
     userName, monthName, totalIncome, totalExpense, netSavings, savingsRate,
-    expenseBreakdown, incomeBreakdown, transactions, aiSummary, generatedDate
+    expenseBreakdown, incomeBreakdown, transactions, aiSummary, generatedDate,
+    prevMonthData, budgets
   } = params
 
   const pdf = new jsPDF('p', 'mm', 'a4')
@@ -246,6 +250,143 @@ function generatePDF(params: {
   pdf.setLineWidth(0.3)
   pdf.line(M, 31, PW - M, 31)
   y = 35
+
+  // ── MONTH-OVER-MONTH COMPARISON BOX ──────────────────────────────────────────
+  {
+    const compBoxPad = 4
+    if (!prevMonthData) {
+      need(22)
+      pdf.setFillColor(248, 250, 252)
+      pdf.setDrawColor(209, 213, 219)
+      pdf.setLineWidth(0.4)
+      pdf.roundedRect(M, y, CW, 18, 2, 2, 'FD')
+      pdf.setFontSize(8.5)
+      pdf.setFont('helvetica', 'italic')
+      pdf.setTextColor(107, 114, 128)
+      pdf.text(
+        'Monthly comparison will be available from next month onwards.',
+        M + compBoxPad, y + 11
+      )
+      y += 24
+    } else {
+      const prevLabel = prevMonthData.monthName.toUpperCase()
+      const incChange  = totalIncome  - prevMonthData.totalIncome
+      const expChange  = totalExpense - prevMonthData.totalExpense
+      const savChange  = netSavings   - prevMonthData.netSavings
+
+      const fmtPct = (change: number, base: number): string => {
+        if (base === 0) return 'N/A'
+        return Math.abs((change / base) * 100).toFixed(1) + '%'
+      }
+
+      need(58)
+      const compH = 54
+      pdf.setFillColor(248, 250, 252)
+      pdf.setDrawColor(209, 213, 219)
+      pdf.setLineWidth(0.4)
+      pdf.roundedRect(M, y, CW, compH, 2, 2, 'FD')
+
+      // Title
+      pdf.setFontSize(8.5)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(55, 55, 55)
+      pdf.text(`COMPARED TO ${prevLabel}`, M + compBoxPad, y + 7)
+
+      // Divider under title
+      pdf.setDrawColor(220, 220, 220)
+      pdf.setLineWidth(0.2)
+      pdf.line(M + compBoxPad, y + 10, M + CW - compBoxPad, y + 10)
+
+      // Column x positions
+      const colLabel   = M + compBoxPad
+      const colCurrent = M + 82   // current value right-aligned here
+      const colArrow   = M + 88   // arrow text starts here
+      const colChange  = M + 138  // change amount right-aligned here
+      const colPct     = PW - M - compBoxPad  // pct right-aligned here
+
+      const renderCompRow = (
+        label: string,
+        current: number,
+        change: number,
+        base: number,
+        rowY: number,
+        upIsGood: boolean
+      ) => {
+        const arrow     = change > 0 ? '(^)' : change < 0 ? '(v)' : '(-)'
+        const pctStr    = fmtPct(change, base)
+        const isUp      = change > 0
+        const isDown    = change < 0
+        const noChange  = change === 0
+
+        // green = good, red = bad, gray = no change
+        const goodColor: [number, number, number] = [4, 120, 87]
+        const badColor:  [number, number, number] = [225, 29, 72]
+        const grayColor: [number, number, number] = [107, 114, 128]
+
+        let changeColor: [number, number, number]
+        if (noChange) {
+          changeColor = grayColor
+        } else if ((isUp && upIsGood) || (isDown && !upIsGood)) {
+          changeColor = goodColor
+        } else {
+          changeColor = badColor
+        }
+
+        // Label
+        pdf.setFontSize(8.5)
+        pdf.setFont('helvetica', 'normal')
+        pdf.setTextColor(55, 55, 55)
+        pdf.text(label, colLabel, rowY)
+
+        // Current value
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(30, 30, 30)
+        pdf.text(pdfRs(current), colCurrent, rowY, { align: 'right' })
+
+        // Arrow
+        pdf.setFont('helvetica', 'bold')
+        pdf.setTextColor(...changeColor)
+        pdf.text(arrow, colArrow, rowY)
+
+        // Change amount
+        const changeAmt = pdfRs(Math.abs(change))
+        pdf.setFont('helvetica', 'normal')
+        pdf.text(changeAmt, colChange, rowY, { align: 'right' })
+
+        // Percentage
+        const sign = change > 0 ? '+' : change < 0 ? '-' : ''
+        pdf.text(pctStr === 'N/A' ? 'N/A' : `${sign}${pctStr}`, colPct, rowY, { align: 'right' })
+      }
+
+      renderCompRow('Income:',   totalIncome,  incChange, prevMonthData.totalIncome,  y + 19, true)
+      renderCompRow('Expenses:', totalExpense, expChange, prevMonthData.totalExpense, y + 30, false)
+      renderCompRow('Savings:',  netSavings,   savChange, Math.abs(prevMonthData.netSavings), y + 41, true)
+
+      // Insight line
+      pdf.setDrawColor(220, 220, 220)
+      pdf.setLineWidth(0.2)
+      pdf.line(M + compBoxPad, y + 44, M + CW - compBoxPad, y + 44)
+
+      let insight: string
+      if (savChange === 0 && incChange === 0 && expChange === 0) {
+        insight = 'No significant changes from last month.'
+      } else if (savChange > 0) {
+        insight = `You saved ${pdfRs(savChange)} more than last month.`
+      } else if (savChange < 0) {
+        insight = `Your savings decreased by ${pdfRs(Math.abs(savChange))} compared to last month.`
+      } else if (expChange > 0) {
+        insight = `Your expenses increased by ${pdfRs(expChange)} compared to last month.`
+      } else {
+        insight = `You spent ${pdfRs(Math.abs(expChange))} less than last month.`
+      }
+      pdf.setFontSize(8)
+      pdf.setFont('helvetica', 'italic')
+      pdf.setTextColor(80, 80, 80)
+      pdf.text(insight, M + compBoxPad, y + 50)
+
+      y += compH + 6
+    }
+  }
 
   // ── AI FINANCIAL SUMMARY (FIX 2 — structured 4-section format) ──
   if (aiSummary) {
@@ -639,92 +780,282 @@ function generatePDF(params: {
 
   y += 6 // section spacing
 
-  // ── SECTION 3: TRANSACTION DETAILS (FIX 6) ──
-  need(30)
-  numberedSection('3', 'TRANSACTION DETAILS')
+  // ── SECTION 3: BUDGET STATUS ──────────────────────────────────────────────
+  need(20)
+  numberedSection('3', 'BUDGET STATUS')
 
-  const tc = { date: M + 2, desc: M + 26, cat: M + 90, type: M + 132, amt: M + 153 }
-  const txRowH = 7
+  if (budgets.length === 0) {
+    // No budgets set
+    need(16)
+    pdf.setFontSize(9)
+    pdf.setFont('helvetica', 'italic')
+    pdf.setTextColor(120, 120, 120)
+    const noBudgetMsg = `No budgets set for ${monthName}. Create budgets in the app to track your spending limits.`
+    const noBudgetLines = pdf.splitTextToSize(noBudgetMsg, CW - 8)
+    noBudgetLines.forEach((line: string) => {
+      need(7)
+      pdf.text(line, M + 4, y)
+      y += 6
+    })
+    y += 4
+  } else {
+    const budgetBarTrackX = M + 2
+    const budgetBarTrackW = CW - 50
+    budgets.forEach((bud, i) => {
+      need(14)
+      const pctUsed = bud.budgetAmount > 0 ? (bud.spent / bud.budgetAmount) * 100 : 0
 
-  // Single header row — teal bg, white bold text
-  const renderTHdr = () => {
-    pdf.setFillColor(13, 148, 136)
-    pdf.rect(M, y - 5, CW, txRowH, 'F')
-    pdf.setFontSize(8.5)
-    pdf.setFont('helvetica', 'bold')
-    pdf.setTextColor(255, 255, 255)
-    pdf.text('Date',        tc.date, y)
-    pdf.text('Description', tc.desc, y)
-    pdf.text('Category',    tc.cat, y)
-    pdf.text('Type',        tc.type, y)
-    pdf.text('Amount',      tc.amt, y)
+      let br: number, bg: number, bb: number
+      let statusLabel: string
+      if (pctUsed >= 100) {
+        ;[br, bg, bb] = [239, 68, 68]; statusLabel = 'OVER BUDGET'
+      } else if (pctUsed >= 80) {
+        ;[br, bg, bb] = [245, 158, 11]; statusLabel = 'NEAR LIMIT'
+      } else {
+        ;[br, bg, bb] = [16, 185, 129]; statusLabel = 'WITHIN BUDGET'
+      }
+
+      // Category name
+      pdf.setFontSize(8.5)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(30, 30, 30)
+      const nameDisp = bud.category.length > 22 ? bud.category.slice(0, 20) + '..' : bud.category
+      pdf.text(nameDisp, M + 2, y)
+
+      // Status label right-aligned
+      pdf.setFontSize(7)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(br, bg, bb)
+      pdf.text(`${statusLabel}  ${pctUsed.toFixed(0)}%`, PW - M - 2, y, { align: 'right' })
+
+      // Bar track
+      pdf.setFillColor(235, 235, 235)
+      pdf.roundedRect(budgetBarTrackX, y + 3, budgetBarTrackW, 4, 1, 1, 'F')
+
+      // Bar fill (capped at track width)
+      const fillW = Math.min((pctUsed / 100) * budgetBarTrackW, budgetBarTrackW)
+      if (fillW > 0.5) {
+        pdf.setFillColor(br, bg, bb)
+        pdf.roundedRect(budgetBarTrackX, y + 3, fillW, 4, 1, 1, 'F')
+      }
+
+      // Amount text right-aligned below bar
+      pdf.setFontSize(7.5)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(90, 90, 90)
+      pdf.text(`${pdfRs(bud.spent)} / ${pdfRs(bud.budgetAmount)}`, PW - M - 2, y + 10, { align: 'right' })
+
+      if (i < budgets.length - 1) {
+        pdf.setDrawColor(235, 235, 235)
+        pdf.setLineWidth(0.2)
+        pdf.line(M, y + 12, PW - M, y + 12)
+      }
+      y += 12
+    })
+
+    // Summary line
+    need(10)
+    const withinCount = budgets.filter(b => b.budgetAmount > 0 ? b.spent < b.budgetAmount : true).length
+    pdf.setFontSize(8)
     pdf.setFont('helvetica', 'normal')
-    y += txRowH
+    pdf.setTextColor(107, 114, 128)
+    pdf.text(`${withinCount} of ${budgets.length} budget${budgets.length !== 1 ? 's' : ''} within limit`, M + 2, y + 5)
+    y += 10
   }
-  renderTHdr()
 
-  transactions.forEach((tx, i) => {
-    need(9)
-    // Re-render header on new page (FIX 6 — page 2 table gets headers)
-    if (y < M + 18 && i > 0) renderTHdr()
+  y += 6 // section spacing
 
-    const isIncome = tx.type === 'income'
+  // ── SECTION 4: TRANSACTION OVERVIEW ──────────────────────────────────────
+  need(30)
+  numberedSection('4', 'TRANSACTION OVERVIEW')
 
-    // Alternating row backgrounds
-    if (i % 2 === 0) {
-      pdf.setFillColor(255, 255, 255)
-    } else {
-      pdf.setFillColor(249, 250, 251) // #F9FAFB
-    }
-    pdf.rect(M, y - 5, CW, txRowH, 'F')
+  // ── Stats summary box ──
+  const incomeTx  = transactions.filter(tx => tx.type === 'income')
+  const expenseTx = transactions.filter(tx => tx.type === 'expense')
+  const biggestInc = incomeTx.length > 0
+    ? incomeTx.reduce((a, b) => b.amount > a.amount ? b : a)
+    : null
+  const biggestExp = expenseTx.length > 0
+    ? expenseTx.reduce((a, b) => b.amount > a.amount ? b : a)
+    : null
 
-    // Light gray bottom border
-    pdf.setDrawColor(230, 230, 230)
-    pdf.setLineWidth(0.2)
-    pdf.line(M, y + 2, PW - M, y + 2)
+  // Days in month from monthName
+  const monthNamesList = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const daysInMonth = (() => {
+    const idx = monthNamesList.indexOf(monthOnly)
+    if (idx < 0) return 30
+    return new Date(parseInt(yearOnly || '2000'), idx + 1, 0).getDate()
+  })()
+  const avgDailySpend = totalExpense / daysInMonth
 
-    // Date: DD/MM/YYYY
-    const dateStr = normalizeDateToYMD(tx.date).split('-').reverse().join('/')
-    pdf.setFontSize(9)
-    pdf.setTextColor(55, 55, 55)
-    pdf.text(dateStr, tc.date, y)
-
-    // Description: if empty or "Done", show category
-    const description = getTransactionDescription(tx.note, tx.category)
-    const noteDisplay = pdf.splitTextToSize(description, 60)[0]
-    pdf.text(noteDisplay, tc.desc, y)
-
-    // Category
-    const catDisp = pdf.splitTextToSize(tx.category || '-', 36)[0]
-    pdf.text(catDisp, tc.cat, y)
-
-    // Type: colored badge pill (FIX 6)
-    if (isIncome) {
-      pdf.setFillColor(236, 253, 245) // #ECFDF5
-      pdf.setTextColor(4, 120, 87)    // #047857
-    } else {
-      pdf.setFillColor(255, 241, 242) // #FFF1F2
-      pdf.setTextColor(225, 29, 72)   // #E11D48
-    }
-    const typeText = tx.type
-    const typeW = pdf.getTextWidth(typeText) + 4
-    pdf.roundedRect(tc.type - 1, y - 3.5, typeW, 5, 1.5, 1.5, 'F')
-    pdf.setFontSize(7.5)
-    pdf.setFont('helvetica', 'bold')
-    pdf.text(typeText, tc.type + 1, y)
-    pdf.setFont('helvetica', 'normal')
-
-    // Amount with color (FIX 6)
-    pdf.setFontSize(9)
-    if (isIncome) {
-      pdf.setTextColor(4, 120, 87)  // #047857
-    } else {
-      pdf.setTextColor(225, 29, 72) // #E11D48
-    }
-    pdf.text(pdfRs(tx.amount), tc.amt, y)
-
-    y += txRowH
+  // Most active day
+  const txDateCount: Record<string, number> = {}
+  transactions.forEach(tx => {
+    const d = normalizeDateToYMD(tx.date)
+    txDateCount[d] = (txDateCount[d] || 0) + 1
   })
+  const mostActiveDayEntry = Object.entries(txDateCount).sort((a, b) => b[1] - a[1])[0]
+  const mostActiveDayStr = mostActiveDayEntry
+    ? mostActiveDayEntry[0].split('-').reverse().join('/') + ` (${mostActiveDayEntry[1]} transactions)`
+    : '-'
+
+  // Stats box
+  if (transactions.length > 0) {
+    need(40)
+    const statsBoxH = 36
+    pdf.setFillColor(248, 250, 252)
+    pdf.setDrawColor(209, 213, 219)
+    pdf.setLineWidth(0.3)
+    pdf.roundedRect(M, y, CW, statsBoxH, 2, 2, 'FD')
+
+    const col1X = M + 4
+    const col2X = M + CW / 2 + 2
+    const rowGap = 7
+
+    const statsData: [string, string][] = [
+      [
+        'Total Transactions:',
+        `${transactions.length} (${incomeTx.length} income, ${expenseTx.length} expense)`,
+      ],
+      [
+        'Biggest Income:',
+        biggestInc
+          ? `${getTransactionDescription(biggestInc.note, biggestInc.category)} — ${pdfRs(biggestInc.amount)} (${normalizeDateToYMD(biggestInc.date).split('-').reverse().join('/')})`
+          : '-',
+      ],
+      [
+        'Biggest Expense:',
+        biggestExp
+          ? `${getTransactionDescription(biggestExp.note, biggestExp.category)} — ${pdfRs(biggestExp.amount)} (${normalizeDateToYMD(biggestExp.date).split('-').reverse().join('/')})`
+          : '-',
+      ],
+      [
+        'Avg. Daily Spending:',
+        `${pdfRs(Math.round(avgDailySpend))}/day`,
+      ],
+      ['Most Active Day:', mostActiveDayStr],
+    ]
+
+    let statsY = y + 7
+    for (let si = 0; si < statsData.length; si++) {
+      const colX  = si % 2 === 0 ? col1X : col2X
+      const sY    = statsY + Math.floor(si / 2) * rowGap
+      const [lbl, val] = statsData[si]
+      pdf.setFontSize(7.5)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(90, 90, 90)
+      pdf.text(lbl, colX, sY)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(30, 30, 30)
+      const valTrunc = pdf.splitTextToSize(val, CW / 2 - 8)[0]
+      pdf.text(valTrunc, colX + pdf.getTextWidth(lbl) + 1, sY)
+    }
+
+    y += statsBoxH + 6
+  }
+
+  // ── Transaction table ──
+  const displayTransactions = transactions.length === 0
+    ? []
+    : transactions.length > 15
+      ? [...transactions].sort((a, b) => b.amount - a.amount).slice(0, 15)
+      : transactions
+
+  if (transactions.length === 0) {
+    need(12)
+    pdf.setFontSize(9)
+    pdf.setFont('helvetica', 'italic')
+    pdf.setTextColor(120, 120, 120)
+    pdf.text('No transactions recorded for this month.', M + 4, y)
+    y += 10
+  } else {
+    const tc = { date: M + 2, desc: M + 26, cat: M + 90, type: M + 132, amt: M + 153 }
+    const txRowH = 7
+
+    const renderTHdr = () => {
+      pdf.setFillColor(13, 148, 136)
+      pdf.rect(M, y - 5, CW, txRowH, 'F')
+      pdf.setFontSize(8.5)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(255, 255, 255)
+      pdf.text('Date',        tc.date, y)
+      pdf.text('Description', tc.desc, y)
+      pdf.text('Category',    tc.cat, y)
+      pdf.text('Type',        tc.type, y)
+      pdf.text('Amount',      tc.amt, y)
+      pdf.setFont('helvetica', 'normal')
+      y += txRowH
+    }
+    renderTHdr()
+
+    displayTransactions.forEach((tx, i) => {
+      need(9)
+      if (y < M + 18 && i > 0) renderTHdr()
+
+      const isIncome = tx.type === 'income'
+
+      if (i % 2 === 0) {
+        pdf.setFillColor(255, 255, 255)
+      } else {
+        pdf.setFillColor(249, 250, 251)
+      }
+      pdf.rect(M, y - 5, CW, txRowH, 'F')
+
+      pdf.setDrawColor(230, 230, 230)
+      pdf.setLineWidth(0.2)
+      pdf.line(M, y + 2, PW - M, y + 2)
+
+      const dateStr = normalizeDateToYMD(tx.date).split('-').reverse().join('/')
+      pdf.setFontSize(9)
+      pdf.setTextColor(55, 55, 55)
+      pdf.text(dateStr, tc.date, y)
+
+      const description = getTransactionDescription(tx.note, tx.category)
+      const noteDisplay = pdf.splitTextToSize(description, 60)[0]
+      pdf.text(noteDisplay, tc.desc, y)
+
+      const catDisp = pdf.splitTextToSize(tx.category || '-', 36)[0]
+      pdf.text(catDisp, tc.cat, y)
+
+      if (isIncome) {
+        pdf.setFillColor(236, 253, 245)
+        pdf.setTextColor(4, 120, 87)
+      } else {
+        pdf.setFillColor(255, 241, 242)
+        pdf.setTextColor(225, 29, 72)
+      }
+      const typeText = tx.type
+      const typeW = pdf.getTextWidth(typeText) + 4
+      pdf.roundedRect(tc.type - 1, y - 3.5, typeW, 5, 1.5, 1.5, 'F')
+      pdf.setFontSize(7.5)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text(typeText, tc.type + 1, y)
+      pdf.setFont('helvetica', 'normal')
+
+      pdf.setFontSize(9)
+      if (isIncome) {
+        pdf.setTextColor(4, 120, 87)
+      } else {
+        pdf.setTextColor(225, 29, 72)
+      }
+      pdf.text(pdfRs(tx.amount), tc.amt, y)
+
+      y += txRowH
+    })
+
+    // Note if limited to top 15
+    if (transactions.length > 15) {
+      need(10)
+      pdf.setFontSize(7.5)
+      pdf.setFont('helvetica', 'italic')
+      pdf.setTextColor(107, 114, 128)
+      pdf.text(
+        'Showing top 15 transactions by amount. View all transactions in the app.',
+        M + 2, y + 4
+      )
+      y += 10
+    }
+  }
 
   // Post-process: add footers to all pages with known total
   const totalPages = page
@@ -940,10 +1271,68 @@ export async function POST(req: NextRequest) {
           .map(([name, amount]) => ({ name, amount, percentage: totalIncome > 0 ? (amount / totalIncome) * 100 : 0 }))
           .sort((a, b) => b.amount - a.amount)
 
+        // ── Previous month comparison data ──
+        const compMonthDate = new Date(reportDate.getFullYear(), reportDate.getMonth() - 1, 1)
+        const compMonthKey  = compMonthDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }).slice(0, 7)
+        const compMonthName = compMonthDate.toLocaleString('en-IN', { month: 'long', year: 'numeric' })
+        const compTx = (transactions || []).filter(t => normalizeDateToYMD(t.date).startsWith(compMonthKey))
+        let prevMonthData: { monthName: string; totalIncome: number; totalExpense: number; netSavings: number } | null = null
+        if (compTx.length > 0) {
+          const pIncome  = compTx.filter(tx => tx.type === 'income').reduce((s, tx) => s + Number(tx.amount), 0)
+          const pExpense = compTx.filter(tx => tx.type === 'expense').reduce((s, tx) => s + Number(tx.amount), 0)
+          prevMonthData = { monthName: compMonthName, totalIncome: pIncome, totalExpense: pExpense, netSavings: pIncome - pExpense }
+        }
+
+        // ── Budgets for report month ──
+        const { data: budgetsData } = await supabase
+          .from('budgets')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('month', prevMonthKey)
+        const budgets = (budgetsData || []).map((b: { category: string; amount: number }) => {
+          const spent = monthTx
+            .filter(tx => tx.type === 'expense' && (tx.category?.trim() || 'Other') === b.category)
+            .reduce((s: number, tx: { amount: number | string }) => s + Number(tx.amount), 0)
+          return { category: b.category, budgetAmount: Number(b.amount), spent }
+        })
+
+        // ── Exceeded budgets ──
+        const exceededBudgets = budgets
+          .filter(b => b.budgetAmount > 0 && b.spent > b.budgetAmount)
+          .map(b => ({ category: b.category, budget: b.budgetAmount, spent: b.spent }))
+
+        // ── Unusual patterns ──
+        const unusualPatterns: string[] = []
+        // Multiple transactions of same category on same day
+        const dayCategMap: Record<string, string[]> = {}
+        monthTx.forEach(tx => {
+          const d = normalizeDateToYMD(tx.date)
+          const key = `${d}__${tx.category?.trim() || 'Other'}`
+          if (!dayCategMap[key]) dayCategMap[key] = []
+          dayCategMap[key].push(tx.note || tx.category || '')
+        })
+        Object.entries(dayCategMap).forEach(([key, notes]) => {
+          if (notes.length >= 3) {
+            const [d, cat] = key.split('__')
+            const displayDate = d.split('-').reverse().join('/')
+            unusualPatterns.push(`${notes.length} ${cat} transactions on ${displayDate}`)
+          }
+        })
+        // Test/testing transactions
+        const testTx = monthTx.filter(tx =>
+          /\btest(ing)?\b/i.test(tx.note || '')
+        )
+        if (testTx.length > 0) {
+          unusualPatterns.push(`${testTx.length} transaction${testTx.length > 1 ? 's' : ''} with test description`)
+        }
+
         const aiSummary = await getAISummary(
-          prevMonthName, totalIncome, totalExpense, savings, savingsRate,
-          expenseBreakdown.slice(0, 5).map(c => ({ name: c.name, amount: c.amount })),
-          incomeBreakdown.slice(0, 3).map(i => ({ name: i.name, amount: i.amount }))
+          firstName, prevMonthName, totalIncome, totalExpense, savings, savingsRate,
+          expenseBreakdown.slice(0, 5),
+          incomeBreakdown.slice(0, 3),
+          prevMonthData ? { totalIncome: prevMonthData.totalIncome, totalExpense: prevMonthData.totalExpense, netSavings: prevMonthData.netSavings } : null,
+          exceededBudgets,
+          unusualPatterns
         )
 
         const generatedDate = new Date().toLocaleString('en-IN', {
@@ -976,6 +1365,8 @@ export async function POST(req: NextRequest) {
             })),
           aiSummary,
           generatedDate,
+          prevMonthData,
+          budgets,
         })
 
         const html = buildEmail({
