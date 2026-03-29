@@ -312,7 +312,7 @@ function generatePDF(params: {
         rowY: number,
         upIsGood: boolean
       ) => {
-        const arrow     = change > 0 ? '(^)' : change < 0 ? '(v)' : '(-)'
+        const arrow     = change > 0 ? '(+)' : change < 0 ? '(-)' : '(=)'
         const pctStr    = fmtPct(change, base)
         const isUp      = change > 0
         const isDown    = change < 0
