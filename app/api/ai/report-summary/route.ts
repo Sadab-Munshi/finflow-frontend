@@ -1,32 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { buildAISummaryPrompt } from '@/lib/pdf-constants'
 
 export async function POST(req: NextRequest) {
-  // Accept but ignore legacy 'prompt' field for backward compatibility
-  const { month, totalIncome, totalExpense, categories } = await req.json()
+  const {
+    month,
+    firstName,
+    totalIncome,
+    totalExpense,
+    savingsRate,
+    expenseBreakdown,
+    incomeBreakdown,
+    prevMonthData,
+    exceededBudgets,
+    unusualPatterns,
+    // legacy fields kept for backward compatibility
+    categories,
+  } = await req.json()
   const GROQ_API_KEY = process.env.GROQ_API_KEY
 
   if (!GROQ_API_KEY) return NextResponse.json({ error: 'Groq API key not configured' }, { status: 500 })
 
-  // Build structured 4-section prompt (FIX 2)
-  const topCatStr = categories.map((c: any) => `${c.name}: Rs.${c.amount}`).join(', ')
+  const savings = totalIncome - totalExpense
+  const effectiveSavingsRate = savingsRate ?? (totalIncome > 0 ? (savings / totalIncome) * 100 : 0)
+  const effectiveFirstName = firstName || 'User'
 
-  const systemPrompt = `You are a personal finance advisor for an Indian user.
-Generate a structured financial report summary for ${month}.
-Return ONLY valid JSON, no other text.
-Response format:
-{
-  "sections": {
-    "overall": "2-3 sentences on general financial health.",
-    "spending": "2-3 sentences on spending patterns.",
-    "income": "1-2 sentences on income sources.",
-    "recommendations": ["Specific recommendation 1", "Specific recommendation 2", "Specific recommendation 3"]
-  }
-}`
+  // Build enriched breakdown arrays (support both new and legacy callers)
+  const effectiveExpenseBreakdown: { name: string; amount: number; percentage: number }[] =
+    expenseBreakdown ?? (categories ?? []).map((c: { name: string; amount: number }) => ({
+      name: c.name,
+      amount: c.amount,
+      percentage: totalExpense > 0 ? (c.amount / totalExpense) * 100 : 0,
+    }))
+  const effectiveIncomeBreakdown: { name: string; amount: number; percentage: number }[] =
+    incomeBreakdown ?? []
+
+  const prompt = buildAISummaryPrompt(
+    effectiveFirstName,
+    month,
+    totalIncome,
+    totalExpense,
+    savings,
+    effectiveSavingsRate,
+    effectiveExpenseBreakdown,
+    effectiveIncomeBreakdown,
+    prevMonthData ?? null,
+    exceededBudgets ?? [],
+    unusualPatterns ?? []
+  )
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: `Monthly data: Total Income: Rs.${totalIncome}, Total Expense: Rs.${totalExpense}, Top spending: ${topCatStr}` }], temperature: 0.3 }),
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: 'You are a personal finance advisor for Indian users. Return only valid JSON.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.3,
+    }),
   })
 
   if (!response.ok) return NextResponse.json({ error: 'Failed to generate summary' }, { status: 500 })
@@ -42,6 +74,5 @@ Response format:
   if (parsed.sections) {
     return NextResponse.json(parsed)
   }
-  // Fallback: legacy { "summary": "..." } format
   return NextResponse.json(parsed)
 }
