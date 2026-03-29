@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/process-report-queue",
-      "schedule": "* * * * *"
+      "schedule": "0 2 1 * *"
     }
   ]
 }
