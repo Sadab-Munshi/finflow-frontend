@@ -14,8 +14,10 @@ export async function POST(request: NextRequest) {
   }
 
   const now = new Date()
-  const month = now.toLocaleString('en-IN', { month: 'long' })
-  const year = now.getFullYear()
+  const reportDate = new Date(now)
+  reportDate.setMonth(now.getMonth() - 1)
+  const month = reportDate.toLocaleString('en-IN', { month: 'long' })
+  const year = reportDate.getFullYear()
 
   // Fetch all active users
   const { data: users, error } = await supabase
