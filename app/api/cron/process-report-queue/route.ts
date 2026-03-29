@@ -813,10 +813,9 @@ function generatePDF(params: {
     })
     y += 4
   } else {
-    const budgetBarTrackX = M + 2
-    const budgetBarTrackW = CW - 50
-    budgets.forEach((bud, i) => {
-      need(14)
+    const budgetBarTrackW = CW - 4
+    budgets.forEach((bud) => {
+      need(22)
       const pctUsed = bud.budgetAmount > 0 ? (bud.spent / bud.budgetAmount) * 100 : 0
 
       let br: number, bg: number, bb: number
@@ -829,51 +828,50 @@ function generatePDF(params: {
         ;[br, bg, bb] = [16, 185, 129]; statusLabel = 'WITHIN BUDGET'
       }
 
-      // Category name
+      // Line 1: Category name (left, bold) + "Rs.spent / Rs.budget" (right)
       pdf.setFontSize(8.5)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(30, 30, 30)
       const nameDisp = bud.category.length > 22 ? bud.category.slice(0, 20) + '..' : bud.category
       pdf.text(nameDisp, M + 2, y)
 
-      // Status label right-aligned
+      pdf.setFontSize(7.5)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(90, 90, 90)
+      pdf.text(`${pdfRs(bud.spent)} / ${pdfRs(bud.budgetAmount)}`, PW - M - 2, y, { align: 'right' })
+
+      // Line 2: Percentage + Status label (right-aligned)
+      const line2Y = y + 4.5
       pdf.setFontSize(7)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(br, bg, bb)
-      pdf.text(`${statusLabel}  ${pctUsed.toFixed(0)}%`, PW - M - 2, y, { align: 'right' })
+      pdf.text(`${pctUsed.toFixed(0)}%  ${statusLabel}`, PW - M - 2, line2Y, { align: 'right' })
 
-      // Bar track
+      // Line 3: Progress bar (full width)
+      const barY = line2Y + 3
+      const barX = M + 2
+      // Bar track (gray background)
       pdf.setFillColor(235, 235, 235)
-      pdf.roundedRect(budgetBarTrackX, y + 3, budgetBarTrackW, 4, 1, 1, 'F')
+      pdf.roundedRect(barX, barY, budgetBarTrackW, 4, 1, 1, 'F')
 
       // Bar fill (capped at track width)
       const fillW = Math.min((pctUsed / 100) * budgetBarTrackW, budgetBarTrackW)
       if (fillW > 0.5) {
         pdf.setFillColor(br, bg, bb)
-        pdf.roundedRect(budgetBarTrackX, y + 3, fillW, 4, 1, 1, 'F')
+        pdf.roundedRect(barX, barY, fillW, 4, 1, 1, 'F')
       }
 
-      // Amount text right-aligned below bar
-      pdf.setFontSize(7.5)
-      pdf.setFont('helvetica', 'normal')
-      pdf.setTextColor(90, 90, 90)
-      pdf.text(`${pdfRs(bud.spent)} / ${pdfRs(bud.budgetAmount)}`, PW - M - 2, y + 10, { align: 'right' })
-
-      if (i < budgets.length - 1) {
-        pdf.setDrawColor(235, 235, 235)
-        pdf.setLineWidth(0.2)
-        pdf.line(M, y + 12, PW - M, y + 12)
-      }
-      y += 12
+      // Gap between rows (12-16px ≈ 4.5-5.6mm)
+      y += 18
     })
 
-    // Summary line
+    // Summary line — italic gray
     need(10)
     const withinCount = budgets.filter(b => b.budgetAmount > 0 ? b.spent < b.budgetAmount : true).length
     pdf.setFontSize(8)
-    pdf.setFont('helvetica', 'normal')
+    pdf.setFont('helvetica', 'italic')
     pdf.setTextColor(107, 114, 128)
-    pdf.text(`${withinCount} of ${budgets.length} budget${budgets.length !== 1 ? 's' : ''} within limit`, M + 2, y + 5)
+    pdf.text(`${withinCount} of ${budgets.length} budget${budgets.length !== 1 ? 's' : ''} within limit`, M + 2, y + 2)
     y += 10
   }
 
@@ -913,56 +911,58 @@ function generatePDF(params: {
     ? mostActiveDayEntry[0].split('-').reverse().join('/') + ` (${mostActiveDayEntry[1]} transactions)`
     : '-'
 
-  // Stats box
+  // Stats box — vertical stack layout
   if (transactions.length > 0) {
-    need(40)
-    const statsBoxH = 36
+    const statsData: [string, string][] = [
+      [
+        'Total Transactions:',
+        `  ${transactions.length} (${incomeTx.length} income, ${expenseTx.length} expense)`,
+      ],
+      [
+        'Biggest Income:',
+        biggestInc
+          ? `  ${getTransactionDescription(biggestInc.note, biggestInc.category)} — ${pdfRs(biggestInc.amount)} (${normalizeDateToYMD(biggestInc.date).split('-').reverse().join('/')})`
+          : '  -',
+      ],
+      [
+        'Biggest Expense:',
+        biggestExp
+          ? `  ${getTransactionDescription(biggestExp.note, biggestExp.category)} — ${pdfRs(biggestExp.amount)} (${normalizeDateToYMD(biggestExp.date).split('-').reverse().join('/')})`
+          : '  -',
+      ],
+      [
+        'Avg. Daily Spending:',
+        `  ${pdfRs(Math.round(avgDailySpend))}/day`,
+      ],
+      ['Most Active Day:', `  ${mostActiveDayStr}`],
+    ]
+
+    const lineH = 3.2 // ~9px vertical spacing between lines
+    const boxPad = 5.6 // ~16px padding
+    const statsBoxH = boxPad * 2 + (2 * statsData.length - 1) * lineH
+    need(statsBoxH + 6)
+
+    // Draw box background with light gray border
     pdf.setFillColor(248, 250, 252)
     pdf.setDrawColor(209, 213, 219)
     pdf.setLineWidth(0.3)
     pdf.roundedRect(M, y, CW, statsBoxH, 2, 2, 'FD')
 
-    const col1X = M + 4
-    const col2X = M + CW / 2 + 2
-    const rowGap = 7
+    const textX = M + boxPad
+    let statsY = y + boxPad + 2.5 // baseline offset for first line
 
-    const statsData: [string, string][] = [
-      [
-        'Total Transactions:',
-        `${transactions.length} (${incomeTx.length} income, ${expenseTx.length} expense)`,
-      ],
-      [
-        'Biggest Income:',
-        biggestInc
-          ? `${getTransactionDescription(biggestInc.note, biggestInc.category)} — ${pdfRs(biggestInc.amount)} (${normalizeDateToYMD(biggestInc.date).split('-').reverse().join('/')})`
-          : '-',
-      ],
-      [
-        'Biggest Expense:',
-        biggestExp
-          ? `${getTransactionDescription(biggestExp.note, biggestExp.category)} — ${pdfRs(biggestExp.amount)} (${normalizeDateToYMD(biggestExp.date).split('-').reverse().join('/')})`
-          : '-',
-      ],
-      [
-        'Avg. Daily Spending:',
-        `${pdfRs(Math.round(avgDailySpend))}/day`,
-      ],
-      ['Most Active Day:', mostActiveDayStr],
-    ]
-
-    let statsY = y + 7
     for (let si = 0; si < statsData.length; si++) {
-      const colX  = si % 2 === 0 ? col1X : col2X
-      const sY    = statsY + Math.floor(si / 2) * rowGap
       const [lbl, val] = statsData[si]
+      // Label — bold
       pdf.setFontSize(7.5)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(90, 90, 90)
-      pdf.text(lbl, colX, sY)
+      pdf.text(lbl, textX, statsY)
+      // Value — normal weight, after the label
       pdf.setFont('helvetica', 'normal')
       pdf.setTextColor(30, 30, 30)
-      const valTrunc = pdf.splitTextToSize(val, CW / 2 - 8)[0]
-      pdf.text(valTrunc, colX + pdf.getTextWidth(lbl) + 1, sY)
+      pdf.text(val, textX + pdf.getTextWidth(lbl), statsY)
+      statsY += lineH * 2 // 2x lineH ≈ 6.4mm between lines
     }
 
     y += statsBoxH + 6
