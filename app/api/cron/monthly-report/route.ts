@@ -9,8 +9,6 @@ import {
   buildAISummaryPrompt,
 } from '@/lib/pdf-constants'
 import jsPDF from 'jspdf'
-import fs from 'fs'
-import path from 'path'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -142,33 +140,56 @@ function generatePDF(params: {
 
   // ── Helpers ──
 
-  const addFooter = () => {
-    pdf.setDrawColor(220, 220, 220)
+  const addFooter = (pageNum: number, totalPages: number) => {
+    const footerY = PH - 14
+    pdf.setDrawColor(209, 213, 219)
     pdf.setLineWidth(0.3)
-    pdf.line(M, PH - 12, PW - M, PH - 12)
-    pdf.setFontSize(7.5)
+    pdf.line(M, footerY, PW - M, footerY)
+    // Left: "FinFlow" bold teal + site URL gray below
+    pdf.setFontSize(9)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(42, 181, 160)
+    pdf.text('FinFlow', M, footerY + 4.5)
+    pdf.setFontSize(7)
     pdf.setFont('helvetica', 'normal')
-    pdf.setTextColor(160, 160, 160)
-    pdf.text(
-      `FinFlow Financial Report \u00B7 Confidential \u00B7 Generated on ${genDateStr}, ${genTimeStr} \u00B7 Page ${page}`,
-      PW / 2, PH - 7, { align: 'center' }
-    )
+    pdf.setTextColor(156, 163, 175)
+    pdf.text('app.sadabmunshi.online', M, footerY + 8.5)
+    // Center: "Confidential" + "For personal use only"
+    pdf.setFontSize(8)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(107, 114, 128)
+    pdf.text('Confidential', PW / 2, footerY + 4.5, { align: 'center' })
+    pdf.setFontSize(7)
+    pdf.setTextColor(156, 163, 175)
+    pdf.text('For personal use only', PW / 2, footerY + 8.5, { align: 'center' })
+    // Right: "Page X/Y"
+    pdf.setFontSize(8.5)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(107, 114, 128)
+    pdf.text(`Page ${pageNum}/${totalPages}`, PW - M, footerY + 6.5, { align: 'right' })
   }
 
-  // FIX 7 — Page 2+ slim header
+  // Page 2+ compact header
   const pageHeader = () => {
-    pdf.setDrawColor(13, 148, 136)
-    pdf.setLineWidth(0.5)
-    pdf.line(M, 5, PW - M, 5)
-    pdf.setFontSize(7.5)
+    pdf.setFontSize(11)
+    pdf.setFont('helvetica', 'bold')
+    pdf.setTextColor(42, 181, 160)
+    pdf.text('FinFlow', M, 6.5)
+    const fw = pdf.getTextWidth('FinFlow')
+    pdf.setFontSize(8.5)
     pdf.setFont('helvetica', 'normal')
-    pdf.setTextColor(130, 130, 130)
-    pdf.text(`FinFlow \u00B7 ${monthName}`, M, 9)
-    pdf.text(`Page ${page}`, PW - M, 9, { align: 'right' })
+    pdf.setTextColor(107, 114, 128)
+    pdf.text(` | ${monthName} Financial Report`, M + fw, 6.5)
+    pdf.setFontSize(8.5)
+    pdf.setFont('helvetica', 'normal')
+    pdf.setTextColor(107, 114, 128)
+    pdf.text(`Page ${page}`, PW - M, 6.5, { align: 'right' })
+    pdf.setDrawColor(209, 213, 219)
+    pdf.setLineWidth(0.3)
+    pdf.line(M, 9.5, PW - M, 9.5)
   }
 
   const newPage = () => {
-    addFooter()
     pdf.addPage()
     page++
     pageHeader()
@@ -190,69 +211,41 @@ function generatePDF(params: {
     pdf.setFont('helvetica', 'normal')
   }
 
-  // ── SECTION: HEADER BAR (FIX 1 — 30% thinner) ──
-  const headerH = 20 // was 28
-  pdf.setFillColor(13, 148, 136)
-  pdf.rect(0, 0, PW, headerH, 'F')
-
-  // Left column: Logo in #D9FAF7 rounded container (page 1 only)
-  const logoBoxX = M
-  const logoBoxY = 3
-  const logoBoxW = 28
-  const logoBoxH = 14
-  pdf.setFillColor(217, 250, 247) // #D9FAF7
-  pdf.roundedRect(logoBoxX, logoBoxY, logoBoxW, logoBoxH, 3, 3, 'F')
-
-  // Try to add the logo image; fall back to text
-  try {
-    const logoPath = path.join(process.cwd(), 'public', 'images', 'report-logo.png')
-    if (fs.existsSync(logoPath)) {
-      const logoData = fs.readFileSync(logoPath)
-      const logoBase64 = 'data:image/png;base64,' + logoData.toString('base64')
-      // Height 36px ≈ 9.5mm, maintain aspect ratio
-      const logoH = 9.5
-      const logoW = logoH // approximate square; aspect ratio maintained by jsPDF
-      const lx = logoBoxX + (logoBoxW - logoW) / 2
-      const ly = logoBoxY + (logoBoxH - logoH) / 2
-      pdf.addImage(logoBase64, 'PNG', lx, ly, logoW, logoH)
-    } else {
-      throw new Error('Logo file not found')
-    }
-  } catch {
-    // Fallback: draw "FinFlow" text inside logo container
-    pdf.setFontSize(8)
-    pdf.setFont('helvetica', 'bold')
-    pdf.setTextColor(13, 148, 136)
-    pdf.text('FinFlow', logoBoxX + logoBoxW / 2, logoBoxY + logoBoxH / 2 + 1, { align: 'center' })
-  }
-
-  // Center column: Month Year bold white + "Financial Report" smaller white
-  const centerX = PW / 2
-  pdf.setTextColor(255, 255, 255)
-  pdf.setFontSize(14)
-  pdf.setFont('helvetica', 'bold')
-  pdf.text(`${monthOnly} ${yearOnly}`, centerX, 10, { align: 'center' })
-  pdf.setFontSize(9)
-  pdf.setFont('helvetica', 'normal')
-  pdf.text('Financial Report', centerX, 16, { align: 'center' })
-
-  // Right column: User name + generated date
+  // ── SECTION: PAGE 1 HEADER ──
+  // Row 1: "FinFlow" bold teal left + Month Year bold dark right
   const rightX = PW - M
-  pdf.setFontSize(9)
+  pdf.setFontSize(19)
   pdf.setFont('helvetica', 'bold')
-  pdf.setTextColor(255, 255, 255)
-  pdf.text(userName, rightX, 10, { align: 'right' })
-  pdf.setFontSize(7)
+  pdf.setTextColor(42, 181, 160)
+  pdf.text('FinFlow', M, 9)
+  pdf.setFontSize(16)
+  pdf.setFont('helvetica', 'bold')
+  pdf.setTextColor(30, 30, 30)
+  pdf.text(`${monthOnly} ${yearOnly}`, rightX, 8, { align: 'right' })
+  pdf.setFontSize(9)
   pdf.setFont('helvetica', 'normal')
-  pdf.text(`Generated: ${genDateStr}, ${genTimeStr} IST`, rightX, 16, { align: 'right' })
-
-  // Below header: currency note
-  y = headerH + 4
+  pdf.setTextColor(107, 114, 128)
+  pdf.text('Financial Report', rightX, 13.5, { align: 'right' })
+  // First divider
+  pdf.setDrawColor(209, 213, 219)
+  pdf.setLineWidth(0.3)
+  pdf.line(M, 17, PW - M, 17)
+  // Info row: "Prepared for" left + "Generated" right
+  pdf.setFontSize(8.5)
+  pdf.setFont('helvetica', 'normal')
+  pdf.setTextColor(30, 30, 30)
+  pdf.text(`Prepared for: ${userName}`, M, 22.5)
+  pdf.setTextColor(107, 114, 128)
+  pdf.text(`Generated: ${genDateStr}, ${genTimeStr} IST`, rightX, 22.5, { align: 'right' })
+  // Currency line
   pdf.setFontSize(7.5)
-  pdf.setFont('helvetica', 'italic')
-  pdf.setTextColor(140, 140, 140)
-  pdf.text('All amounts in Indian Rupees (Rs.)', PW - M, y, { align: 'right' })
-  y += 8
+  pdf.setTextColor(156, 163, 175)
+  pdf.text('Currency: Indian Rupees (Rs.)', M, 27.5)
+  // Second divider
+  pdf.setDrawColor(209, 213, 219)
+  pdf.setLineWidth(0.3)
+  pdf.line(M, 31, PW - M, 31)
+  y = 35
 
   // ── AI FINANCIAL SUMMARY (FIX 2 — structured 4-section format) ──
   if (aiSummary) {
@@ -733,8 +726,12 @@ function generatePDF(params: {
     y += txRowH
   })
 
-  // ── FOOTER ──
-  addFooter()
+  // Post-process: add footers to all pages with known total
+  const totalPages = page
+  for (let p = 1; p <= totalPages; p++) {
+    pdf.setPage(p)
+    addFooter(p, totalPages)
+  }
 
   // Return base64 (strip the "data:application/pdf;base64," prefix)
   return pdf.output('datauristring').split(',')[1]
