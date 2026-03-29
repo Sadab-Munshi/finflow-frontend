@@ -8,6 +8,7 @@ import {
   getTransactionDescription,
   buildAISummaryPrompt,
 } from '@/lib/pdf-constants'
+import { pdfBase64ToBuffer } from '@/lib/generatePDFBuffer'
 import jsPDF from 'jspdf'
 
 const supabase = createClient(
@@ -1388,6 +1389,51 @@ export async function POST(req: NextRequest) {
           pdfBase64,
           monthName: prevMonthName,
         })
+
+        // ── Upload PDF to Supabase Storage & save to reports table ──
+        try {
+          const pdfBuffer = pdfBase64ToBuffer(pdfBase64)
+          const [reportYear, reportMonth] = prevMonthKey.split('-')
+          const fileName = `${userId}/${reportYear}-${reportMonth}.pdf`
+
+          const { error: uploadError } = await supabase
+            .storage
+            .from('reports')
+            .upload(fileName, pdfBuffer, {
+              contentType: 'application/pdf',
+              upsert: true,
+            })
+
+          if (uploadError) {
+            console.error(`[MONTHLY REPORT] Storage upload failed for ${userId}:`, uploadError)
+          } else {
+            const SIGNED_URL_EXPIRY_SECONDS = 365 * 24 * 60 * 60 // 1 year
+            const { data: urlData } = await supabase
+              .storage
+              .from('reports')
+              .createSignedUrl(fileName, SIGNED_URL_EXPIRY_SECONDS)
+
+            if (urlData?.signedUrl) {
+              // prevMonthName format is "Month Year" (e.g. "March 2026")
+              const monthNameOnly = prevMonthName.split(' ')[0] || prevMonthName
+              await supabase
+                .from('reports')
+                .upsert({
+                  user_id: userId,
+                  month: monthNameOnly,
+                  year: parseInt(reportYear),
+                  pdf_url: urlData.signedUrl,
+                  file_size: pdfBuffer.length,
+                }, {
+                  onConflict: 'user_id,month,year',
+                })
+              console.log(`[MONTHLY REPORT] Report saved to storage for ${userId}`)
+            }
+          }
+        } catch (storageErr) {
+          console.error(`[MONTHLY REPORT] Storage error for ${userId}:`, storageErr)
+          // Don't throw — continue with notifications
+        }
 
         // Create in-app notification for report
         await supabase
