@@ -37,12 +37,18 @@ function formatFileSize(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+const MONTHS = [
+  'January', 'February', 'March', 'April',
+  'May', 'June', 'July', 'August',
+  'September', 'October', 'November', 'December',
+]
+
 function getNextMonthInfo(): { nextMonthName: string; nextYear: number } {
   const now = new Date()
-  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   return {
-    nextMonthName: next.toLocaleString('en-IN', { month: 'long' }),
-    nextYear: next.getFullYear(),
+    nextMonthName: MONTHS[nextMonth.getMonth()],
+    nextYear: nextMonth.getFullYear(),
   }
 }
 
@@ -115,7 +121,7 @@ export default function ReportsPage() {
             </div>
             <h3 className="font-semibold text-gray-800 mb-2">No reports yet</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Your first report will be automatically generated on the 1st of {nextMonthName} {nextYear}
+              Your first report will be automatically generated on 1st {nextMonthName} {nextYear}
             </p>
           </div>
         ) : (
