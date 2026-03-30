@@ -702,11 +702,11 @@ function generatePDF(params: {
       pdf.setTextColor(cr, cg, cb)
       pdf.text(`${src.percentage.toFixed(1)}%`, pctX, y)
 
-      // Amount right-aligned below bar
+      // Amount right-aligned on the same line as percentage
       pdf.setFontSize(8)
       pdf.setFont('helvetica', 'normal')
       pdf.setTextColor(90, 90, 90)
-      pdf.text(pdfRs(src.amount), PW - M, y + 4, { align: 'right' })
+      pdf.text(pdfRs(src.amount), PW - M, y, { align: 'right' })
 
       // Divider
       if (i < incomeBreakdown.length - 1) {
@@ -774,11 +774,11 @@ function generatePDF(params: {
       pdf.setTextColor(cr, cg, cb)
       pdf.text(`${cat.percentage.toFixed(1)}%`, pctX, y)
 
-      // Amount right-aligned below bar
+      // Amount right-aligned on the same line as percentage
       pdf.setFontSize(8)
       pdf.setFont('helvetica', 'normal')
       pdf.setTextColor(90, 90, 90)
-      pdf.text(pdfRs(cat.amount), PW - M, y + 4, { align: 'right' })
+      pdf.text(pdfRs(cat.amount), PW - M, y, { align: 'right' })
 
       // Light gray divider
       if (i < expenseBreakdown.length - 1) {
@@ -951,17 +951,18 @@ function generatePDF(params: {
     const textX = M + boxPad
     let statsY = y + boxPad + 2.5 // baseline offset for first line
 
+    const labelColW = 55 // fixed label column width in mm
     for (let si = 0; si < statsData.length; si++) {
       const [lbl, val] = statsData[si]
-      // Label — bold
+      // Label — bold, fixed column
       pdf.setFontSize(7.5)
       pdf.setFont('helvetica', 'bold')
       pdf.setTextColor(90, 90, 90)
       pdf.text(lbl, textX, statsY)
-      // Value — normal weight, after the label
+      // Value — normal weight, starts at fixed offset so there is always visible gap
       pdf.setFont('helvetica', 'normal')
       pdf.setTextColor(30, 30, 30)
-      pdf.text(val, textX + pdf.getTextWidth(lbl), statsY)
+      pdf.text(val.trim(), textX + labelColW, statsY)
       statsY += lineH * 2 // 2x lineH ≈ 6.4mm between lines
     }
 
@@ -1008,10 +1009,10 @@ function generatePDF(params: {
 
       const isIncome = tx.type === 'income'
 
-      if (i % 2 === 0) {
-        pdf.setFillColor(255, 255, 255)
+      if (isIncome) {
+        pdf.setFillColor(240, 255, 240) // light green for income rows
       } else {
-        pdf.setFillColor(249, 250, 251)
+        pdf.setFillColor(255, 240, 240) // light red for expense rows
       }
       pdf.rect(M, y - 5, CW, txRowH, 'F')
 
