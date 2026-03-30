@@ -1,32 +1,19 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Loader2, Mic } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getCategoriesByType } from '@/lib/categories'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
-import { TEAL, RED, FONT, WAVEFORM_BARS, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
+import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
 import { useTransaction } from '../hooks/useTransaction'
 import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
 
-const MAX_RECORDING_SECONDS = 15
+const ParticleSphere = dynamic(() => import('./ParticleSphere'), { ssr: false })
 
-function WaveformBars() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: 40, marginTop: 16 }}>
-      {WAVEFORM_BARS.map((bar, i) => (
-        <motion.div
-          key={i}
-          style={{ width: 3, borderRadius: 2, backgroundColor: RED }}
-          animate={{ height: [8, bar.maxHeight, 8] }}
-          transition={{ duration: bar.duration, repeat: Infinity, ease: 'easeInOut', delay: i * 0.05 }}
-        />
-      ))}
-    </div>
-  )
-}
+const MAX_RECORDING_SECONDS = 15
 
 export default function VoiceTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
@@ -125,7 +112,6 @@ export default function VoiceTab() {
             throw new Error(errData.error || `Parse failed (${mistralRes.status})`)
           }
           const result = await mistralRes.json()
-          // API now returns { transactions: [...] }
           const txs: ParsedTransaction[] = result.transactions || [result]
           txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
           if (txs.length === 1) fillForm(txs[0])
@@ -323,30 +309,21 @@ export default function VoiceTab() {
     )
   }
 
-  /* ── Recording / idle UI ── */
+  /* ── Recording / idle UI with Three.js particle sphere ── */
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: 16, paddingTop: 32, fontFamily: FONT,
+      gap: 16, fontFamily: FONT,
     }}>
-      {/* Mic button */}
-      <motion.button
-        onClick={isListening ? handleVoiceStop : handleVoiceStart}
-        whileTap={{ scale: 0.9 }}
-        style={{
-          width: 96, height: 96, borderRadius: '50%',
-          background: isListening ? RED : TEAL,
-          border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: isListening ? `0 0 0 8px ${RED}30` : `0 0 0 8px ${TEAL}30`,
-          transition: 'all 0.3s',
-        }}
-      >
-        <Mic size={40} color="#fff" />
-      </motion.button>
+      {/* Three.js Particle Sphere — tap to start/stop recording */}
+      <ParticleSphere
+        isRecording={isListening}
+        onTap={isListening ? handleVoiceStop : handleVoiceStart}
+      />
 
-      <p style={{ color: isListening ? RED : '#6b7280', fontSize: 16, fontWeight: 500 }}>
-        {isListening ? 'Listening... Tap to stop' : 'Tap to speak'}
+      {/* Status text */}
+      <p style={{ color: isListening ? TEAL : '#6b7280', fontSize: 16, fontWeight: 500 }}>
+        {isListening ? 'Listening... Tap to stop' : 'Tap the sphere to speak'}
       </p>
       <p style={{ color: '#9ca3af', fontSize: 12 }}>
         Supports Hindi, Bengali, Tamil, Telugu & more
@@ -355,9 +332,8 @@ export default function VoiceTab() {
       {/* Recording progress + Cancel */}
       {isListening && (
         <>
-          <WaveformBars />
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 14, color: RED, fontWeight: 500 }}>
+            <p style={{ fontSize: 14, color: TEAL, fontWeight: 500 }}>
               {recordingTime}s / {MAX_RECORDING_SECONDS}s
             </p>
             <div style={{
@@ -366,7 +342,7 @@ export default function VoiceTab() {
             }}>
               <div style={{
                 width: `${(recordingTime / MAX_RECORDING_SECONDS) * 100}%`,
-                height: '100%', background: RED,
+                height: '100%', background: TEAL,
                 borderRadius: 2, transition: 'width 0.3s',
               }} />
             </div>
@@ -377,7 +353,7 @@ export default function VoiceTab() {
             onClick={handleVoiceCancel}
             style={{
               padding: '10px 28px', borderRadius: 20,
-              border: '1.5px solid #e5e7eb',
+              border: `1.5px solid ${TEAL}40`,
               background: '#fff', color: '#6b7280',
               fontSize: 14, fontWeight: 500, cursor: 'pointer',
               fontFamily: FONT,
@@ -396,19 +372,19 @@ export default function VoiceTab() {
         </div>
       )}
 
-      {/* Parse error → Re-record only */}
+      {/* Parse error → Re-record */}
       {parseError && !loading && (
         <div style={{
-          width: '100%', padding: 16, background: '#fef2f2',
-          borderRadius: 12, border: `1px solid ${RED}30`,
+          width: '100%', padding: 16, background: '#fef9f0',
+          borderRadius: 12, border: '1px solid #f9731630',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
         }}>
-          <p style={{ fontSize: 14, color: RED, textAlign: 'center' }}>{parseError}</p>
+          <p style={{ fontSize: 14, color: '#b45309', textAlign: 'center' }}>{parseError}</p>
           <button
             onClick={handleVoiceReRecord}
             style={{
               padding: '10px 24px', borderRadius: 20,
-              border: '1.5px solid #e5e7eb',
+              border: `1.5px solid ${TEAL}40`,
               background: '#fff', color: '#374151',
               fontSize: 14, fontWeight: 500, cursor: 'pointer',
               fontFamily: FONT,
