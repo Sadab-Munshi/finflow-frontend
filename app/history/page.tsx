@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Clock, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, Download, FileSpreadsheet, FileText, X } from 'lucide-react'
+import { Clock, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, Download, FileSpreadsheet, FileText, X, Filter, Search, CheckSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Checkbox } from '@/components/ui/checkbox'
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions, deleteTransactions } from '@/lib/db'
@@ -16,6 +14,7 @@ import { categories, getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD } from '@/lib/utils'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import { Transaction } from '@/lib/types'
+import toast from 'react-hot-toast'
 
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -56,6 +55,9 @@ function HistoryContent() {
   const [appliedToDate, setAppliedToDate] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -270,16 +272,31 @@ function HistoryContent() {
   const paginated = filtered.slice((page - 1) * perPage, page * perPage)
 
   const handleDeleteSelected = async () => {
+    const count = selectedIds.length
     await deleteTransactions(selectedIds)
     const data = await getTransactions()
     setTransactions(data)
     setSelectedIds([])
     setDeleteDialogOpen(false)
+    setSelectionMode(false)
+    toast.success(`${count} transaction${count !== 1 ? 's' : ''} deleted`)
+  }
+
+  const isFilterActive = appliedFromDate !== '' || appliedToDate !== '' || categoryFilter !== 'all'
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false)
+    setSelectedIds([])
+  }
+
+  const selectAll = () => {
+    setSelectedIds(paginated.map(tx => tx.id))
   }
 
   return (
     <Layout>
-      <div className="space-y-4">
+      <div className="space-y-3">
+        {/* Page header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800">{t('history')}</h1>
           <div className="relative" ref={dropdownRef}>
@@ -311,77 +328,149 @@ function HistoryContent() {
           </div>
         </div>
 
-        <Card className="no-print border-gray-200 shadow-sm">
-          <CardContent className="p-3 space-y-3">
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {/* Filter / type row */}
+        {selectionMode ? (
+          <div className="flex items-center justify-between no-print">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">{selectedIds.length} selected</span>
+              <button
+                onClick={selectAll}
+                className="text-xs text-teal-600 font-medium px-2 py-1 rounded-lg hover:bg-teal-50 transition-colors"
+              >
+                Select All
+              </button>
+            </div>
+            <button
+              onClick={exitSelectionMode}
+              className="text-sm font-medium text-gray-600 px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between no-print">
+            {/* Pill type tabs */}
+            <div className="flex gap-1.5">
               {(['all', 'income', 'expense'] as const).map((f) => (
-                <Button key={f} variant={typeFilter === f ? 'default' : 'outline'} size="sm"
+                <button
+                  key={f}
                   onClick={() => { setTypeFilter(f); setPage(1) }}
-                  className={cn("text-xs px-3 whitespace-nowrap", typeFilter === f ? 'bg-teal-600 hover:bg-teal-700' : 'border-gray-200 text-gray-600')}>
+                  className={cn(
+                    'text-xs px-3 py-1.5 rounded-full font-medium transition-colors whitespace-nowrap',
+                    typeFilter === f
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  )}
+                >
                   {f === 'all' ? t('all') : f === 'income' ? t('income') : t('expense')}
-                </Button>
+                </button>
               ))}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1) }}>
-                <SelectTrigger className="border-gray-200 h-9 text-sm"><SelectValue placeholder={t('category')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all')} {t('category')}</SelectItem>
-                  {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Input placeholder={t('search')} value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1) }} className="border-gray-200 h-9 text-sm" />
-            </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <input
-                type="date"
-                value={fromDate}
-                onChange={e => setFromDate(e.target.value)}
-                className="border border-gray-200 rounded-md h-9 px-2 text-sm bg-white min-w-[120px]"
-                placeholder="From Date"
-              />
-              <input
-                type="date"
-                value={toDate}
-                onChange={e => setToDate(e.target.value)}
-                className="border border-gray-200 rounded-md h-9 px-2 text-sm bg-white min-w-[120px]"
-                placeholder="To Date"
-              />
-              <Button size="sm" onClick={applyDateFilter} className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-9">
-                Apply Filter
-              </Button>
-              {(appliedFromDate || appliedToDate) && (
-                <Button size="sm" variant="outline" onClick={clearDateFilter} className="border-gray-200 text-gray-600 h-9 px-2">
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {selectedIds.length > 0 && (
-          <div className="flex items-center justify-between p-3 bg-teal-100 rounded-xl no-print">
-            <span className="font-medium text-teal-800 text-sm">{selectedIds.length} {t('selected')}</span>
-            <div className="flex gap-2">
-              <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm" className="text-xs"><Trash2 className="w-3.5 h-3.5 mr-1.5" /> {t('delete')}</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t('deleteConfirmTitle')}</AlertDialogTitle>
-                    <AlertDialogDescription>{t('deleteConfirmMessage')}</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteSelected} className="bg-red-500 hover:bg-red-600">{t('delete')}</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            {/* Icon buttons */}
+            <div className="flex gap-1.5">
+              {/* Filter */}
+              <button
+                onClick={() => { setFilterPanelOpen(p => !p); setSearchOpen(false) }}
+                className={cn(
+                  'relative bg-gray-100 rounded-xl p-2.5 transition-colors hover:bg-gray-200',
+                  filterPanelOpen && 'bg-teal-50'
+                )}
+              >
+                <Filter className="w-4 h-4 text-gray-600" />
+                {isFilterActive && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-teal-500" />
+                )}
+              </button>
+              {/* Search */}
+              <button
+                onClick={() => { setSearchOpen(p => !p); setFilterPanelOpen(false) }}
+                className={cn(
+                  'bg-gray-100 rounded-xl p-2.5 transition-colors hover:bg-gray-200',
+                  searchOpen && 'bg-teal-50'
+                )}
+              >
+                <Search className="w-4 h-4 text-gray-600" />
+              </button>
+              {/* Select */}
+              <button
+                onClick={() => { setSelectionMode(true); setSelectedIds([]) }}
+                className="bg-gray-100 rounded-xl p-2.5 transition-colors hover:bg-gray-200"
+              >
+                <CheckSquare className="w-4 h-4 text-gray-600" />
+              </button>
             </div>
           </div>
         )}
 
+        {/* Search bar */}
+        {searchOpen && (
+          <div className="flex items-center gap-2 bg-gray-50 rounded-xl border border-gray-200 focus-within:border-teal-500 px-3 transition-colors no-print">
+            <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <input
+              autoFocus
+              type="text"
+              placeholder={t('search')}
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1) }}
+              className="flex-1 py-2.5 text-sm bg-transparent outline-none text-gray-800 placeholder-gray-400"
+            />
+            <button
+              onClick={() => { setSearchOpen(false); setSearchQuery(''); setPage(1) }}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Filter panel */}
+        {filterPanelOpen && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3 no-print">
+            <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1) }}>
+              <SelectTrigger className="border-gray-200 h-10 text-sm w-full"><SelectValue placeholder={t('category')} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all')} {t('category')}</SelectItem>
+                {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">From</label>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={e => setFromDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl h-10 px-3 text-sm bg-gray-50 outline-none focus:border-teal-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">To</label>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={e => setToDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl h-10 px-3 text-sm bg-gray-50 outline-none focus:border-teal-500 transition-colors"
+                />
+              </div>
+            </div>
+            <button
+              onClick={() => { applyDateFilter(); setFilterPanelOpen(false) }}
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors"
+            >
+              Apply Filter
+            </button>
+            {isFilterActive && (
+              <button
+                onClick={() => { clearDateFilter(); setCategoryFilter('all'); setPage(1) }}
+                className="w-full text-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Transaction list */}
         <Card className="border-gray-200 shadow-sm overflow-hidden">
           <CardContent className="p-0">
             {paginated.length === 0 ? (
@@ -390,11 +479,40 @@ function HistoryContent() {
               <div className="divide-y divide-gray-100">
                 {paginated.map((tx) => {
                   const category = getCategoryByName(tx.category)
+                  const isSelected = selectedIds.includes(tx.id)
                   return (
-                    <div key={tx.id} className="flex items-center gap-2 p-3 hover:bg-gray-50 transition-colors">
-                      <Checkbox checked={selectedIds.includes(tx.id)} className="no-print flex-shrink-0"
-                        onCheckedChange={(checked) => setSelectedIds(checked ? [...selectedIds, tx.id] : selectedIds.filter(id => id !== tx.id))} />
-                      <button onClick={() => router.push(`/transaction/${tx.id}`)} className="flex-1 flex items-center gap-2.5 min-w-0">
+                    <div
+                      key={tx.id}
+                      className={cn(
+                        'flex items-center gap-2 p-3 transition-colors',
+                        isSelected ? 'bg-teal-50' : 'hover:bg-gray-50'
+                      )}
+                    >
+                      {selectionMode && (
+                        <button
+                          className={cn(
+                            'w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-colors',
+                            isSelected ? 'bg-teal-500 border-teal-500' : 'border-gray-300 bg-white'
+                          )}
+                          onClick={() => setSelectedIds(isSelected ? selectedIds.filter(id => id !== tx.id) : [...selectedIds, tx.id])}
+                        >
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          if (selectionMode) {
+                            setSelectedIds(isSelected ? selectedIds.filter(id => id !== tx.id) : [...selectedIds, tx.id])
+                          } else {
+                            router.push(`/transaction/${tx.id}`)
+                          }
+                        }}
+                        className="flex-1 flex items-center gap-2.5 min-w-0"
+                      >
                         <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${category?.color}20` }}>
                           <span style={{ color: category?.color }}>{categoryIcons[tx.category] || categoryIcons['Other']}</span>
                         </div>
@@ -425,6 +543,45 @@ function HistoryContent() {
           </div>
         )}
       </div>
+
+      {/* Fixed delete button */}
+      {selectionMode && selectedIds.length > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 px-4 z-40 no-print">
+          <button
+            onClick={() => setDeleteDialogOpen(true)}
+            className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-3 font-semibold flex items-center justify-center gap-2 shadow-lg transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete {selectedIds.length} transaction{selectedIds.length !== 1 ? 's' : ''}
+          </button>
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transactions?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.length} transaction{selectedIds.length !== 1 ? 's' : ''}? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2">
+            <button
+              onClick={() => setDeleteDialogOpen(false)}
+              className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-2.5 font-medium hover:bg-gray-50 transition-colors"
+            >
+              {t('cancel')}
+            </button>
+            <button
+              onClick={handleDeleteSelected}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 font-medium transition-colors"
+            >
+              Yes, Delete {selectedIds.length}
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   )
 }

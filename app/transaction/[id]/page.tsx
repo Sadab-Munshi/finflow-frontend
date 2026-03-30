@@ -5,8 +5,6 @@ import { useRouter, useParams } from 'next/navigation'
 import { ChevronLeft, Edit, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
@@ -33,6 +31,25 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'Investment': <TrendingUp className="w-7 h-7" />,
   'Gift': <Gift className="w-7 h-7" />,
   'Other': <CircleDot className="w-7 h-7" />,
+}
+
+const categoryIconMap: Record<string, typeof Utensils> = {
+  'Food & Dining': Utensils,
+  'Transport': Car,
+  'Shopping': ShoppingBag,
+  'Bills & Utilities': Zap,
+  'Entertainment': Film,
+  'Health': Heart,
+  'Education': GraduationCap,
+  'Rent': Building,
+  'Groceries': ShoppingCart,
+  'Personal Care': Sparkles,
+  'Salary': Wallet,
+  'Freelance': Briefcase,
+  'Business': Briefcase,
+  'Investment': TrendingUp,
+  'Gift': Gift,
+  'Other': CircleDot,
 }
 
 function formatDateDisplay(dateStr: string): string {
@@ -116,26 +133,118 @@ export default function TransactionDetailPage() {
         <Card className="border-gray-100">
           <CardContent className="p-6 space-y-6">
             {editing ? (
-              <div className="space-y-4">
-                <div><label className="text-sm font-medium text-gray-700">{t('amount')}</label><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="border-gray-200" /></div>
+              <div className="space-y-5">
+                {/* Amount */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700">{t('type')}</label>
-                  <div className="flex gap-2 mt-1">
-                    <Button type="button" variant={type === 'expense' ? 'default' : 'outline'} onClick={() => setType('expense')} className={cn("flex-1", type === 'expense' ? "bg-orange-500" : "border-gray-200")}>{t('expense')}</Button>
-                    <Button type="button" variant={type === 'income' ? 'default' : 'outline'} onClick={() => setType('income')} className={cn("flex-1", type === 'income' ? "bg-emerald-500" : "border-gray-200")}>{t('income')}</Button>
+                  <label className="block text-sm font-medium text-gray-500 mb-1.5">{t('amount')}</label>
+                  <div className="bg-gray-50 rounded-xl border border-gray-200 focus-within:border-teal-500 flex items-center px-4 transition-colors">
+                    <span className="text-gray-500 font-semibold mr-2">₹</span>
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="flex-1 py-3 text-xl font-bold bg-transparent outline-none text-gray-800"
+                    />
                   </div>
                 </div>
-                <div><label className="text-sm font-medium text-gray-700">{t('category')}</label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="border-gray-200"><SelectValue /></SelectTrigger>
-                    <SelectContent>{getCategoriesByType(type).map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
+
+                {/* Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1.5">{t('type')}</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setType('expense')}
+                      className={cn(
+                        'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors',
+                        type === 'expense' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-500'
+                      )}
+                    >
+                      {t('expense')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setType('income')}
+                      className={cn(
+                        'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors',
+                        type === 'income' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500'
+                      )}
+                    >
+                      {t('income')}
+                    </button>
+                  </div>
                 </div>
-                <div><label className="text-sm font-medium text-gray-700">{t('description')}</label><Input value={note} onChange={(e) => setNote(e.target.value)} className="border-gray-200" /></div>
-                <div><label className="text-sm font-medium text-gray-700">{t('date')}</label><Input value={date} onChange={(e) => setDate(e.target.value)} className="border-gray-200" /></div>
-                <div className="flex gap-2">
-                  <Button onClick={handleSave} className="flex-1 bg-emerald-600 hover:bg-emerald-700">{t('save')}</Button>
-                  <Button variant="outline" onClick={() => setEditing(false)} className="flex-1 border-gray-200">{t('cancel')}</Button>
+
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1.5">{t('category')}</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {getCategoriesByType(type).map(c => {
+                      const CI = categoryIconMap[c.name] || categoryIconMap['Other']
+                      const sel = category === c.name
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setCategory(c.name)}
+                          className={cn(
+                            'rounded-xl p-2 text-center transition-all',
+                            sel
+                              ? 'bg-teal-50 border-2 border-teal-500'
+                              : 'bg-gray-50 border border-gray-200 hover:border-gray-300'
+                          )}
+                        >
+                          <span style={{ color: sel ? '#0D9488' : c.color }}>
+                            <CI className="w-4 h-4 mx-auto" />
+                          </span>
+                          <p className={cn('text-xs mt-1 truncate', sel ? 'text-teal-700 font-semibold' : 'text-gray-600')}>
+                            {c.name}
+                          </p>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Note */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1.5">Note (optional)</label>
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Add a note..."
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-teal-500 transition-colors"
+                  />
+                </div>
+
+                {/* Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1.5">{t('date')}</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-teal-500 transition-colors"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-3 font-semibold transition-colors"
+                  >
+                    {t('save')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(false)}
+                    className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-3 font-semibold bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    {t('cancel')}
+                  </button>
                 </div>
               </div>
             ) : (
