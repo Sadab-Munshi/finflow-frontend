@@ -27,12 +27,15 @@ const MONTH_NAMES = [
 
 const formatMonthLabel = (m: string) => {
   const [y, mo] = m.split('-')
-  return `${MONTH_NAMES[parseInt(mo) - 1]} ${y}`
+  const idx = parseInt(mo) - 1
+  return `${MONTH_NAMES[idx] ?? mo} ${y}`
 }
 
 const formatMonthShort = (m: string) => {
   const [y, mo] = m.split('-')
-  return `${MONTH_NAMES[parseInt(mo) - 1].slice(0, 3)} ${y}`
+  const idx = parseInt(mo) - 1
+  const name = MONTH_NAMES[idx]
+  return `${name ? name.slice(0, 3) : mo} ${y}`
 }
 
 function getCurrentMonth(): string {
@@ -184,7 +187,8 @@ export default function BudgetsPage() {
 
   const nextDisabled = (() => {
     const [y, m] = selectedMonth.split('-').map(Number)
-    return new Date(y, m, 1) > new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    const now = new Date()
+    return new Date(y, m, 1) > new Date(now.getFullYear(), now.getMonth(), 1)
   })()
 
   /* ── Handlers (logic preserved) ─────────────────────────────────────── */
