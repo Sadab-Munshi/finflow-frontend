@@ -133,13 +133,13 @@ export function ManualForm({
 }: ManualFormProps) {
   const dateInputRef = useRef<HTMLInputElement>(null)
   const [showSheet, setShowSheet] = useState(false)
-  const [hasInteracted, setHasInteracted] = useState(!!confirmMode)
+  const [shouldShowTypeColor, setShouldShowTypeColor] = useState(!!confirmMode)
   const today = getTodayIST()
 
   const amountValue = parseFloat(amount)
   const isSaveDisabled = isSubmitting || !amount || isNaN(amountValue) || amountValue <= 0
   // Fix 1d: neutral teal by default, color only after user interaction
-  const activeColor = hasInteracted ? (type === 'expense' ? RED : GREEN) : TEAL
+  const activeColor = shouldShowTypeColor ? (type === 'expense' ? RED : GREEN) : TEAL
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontFamily: FONT }}>
@@ -197,7 +197,7 @@ export function ManualForm({
           <button
             key={t}
             onClick={() => {
-              setHasInteracted(true)
+              setShouldShowTypeColor(true)
               if (t !== type) { setType(t); setCategory('') }
             }}
             style={{

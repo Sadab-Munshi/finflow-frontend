@@ -9,6 +9,7 @@ const SPHERE_RADIUS = 2.2
 const TEAL_COLOR = new THREE.Color('#00b894')
 const WHITE_COLOR = new THREE.Color('#ffffff')
 const GREEN_ACCENT = new THREE.Color('#55efc4')
+const BG_GRADIENT = 'radial-gradient(circle, #0d1f1a 0%, #0a0a0a 100%)'
 
 interface ParticleSphereProps {
   isRecording: boolean
@@ -120,13 +121,9 @@ function Particles({ isRecording }: { isRecording: boolean }) {
 
   // Listen for pointer moves on window
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('pointermove', handlePointerMove)
-    }
+    window.addEventListener('pointermove', handlePointerMove)
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('pointermove', handlePointerMove)
-      }
+      window.removeEventListener('pointermove', handlePointerMove)
     }
   }, [handlePointerMove])
 
@@ -169,7 +166,7 @@ export default function ParticleSphere({ isRecording, onTap }: ParticleSpherePro
         cursor: 'pointer',
         borderRadius: 20,
         overflow: 'hidden',
-        background: 'radial-gradient(circle, #0d1f1a 0%, #0a0a0a 100%)',
+        background: BG_GRADIENT,
         position: 'relative',
       }}
     >

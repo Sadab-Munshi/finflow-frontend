@@ -53,7 +53,7 @@ export default function NLPTab() {
         throw new Error(err.error || `AI request failed (${res.status})`)
       }
       const result = await res.json()
-      // API now always returns { transactions: [...] }
+      // API returns { transactions: [...] }, with fallback for legacy single-object format
       const txs: ParsedTransaction[] = result.transactions || [result]
       txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
       setParsedList(txs)
