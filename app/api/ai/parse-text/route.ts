@@ -28,14 +28,32 @@ Rules:
 - category: must be EXACTLY one from the list above, match intelligently (e.g. 'food', 'lunch', 'dinner', 'restaurant' → 'Food & Dining', 'uber', 'auto', 'petrol', 'bus' → 'Transport', 'salary', 'payment received' → 'Salary', 'doctor', 'medicine', 'hospital' → 'Health', 'house rent', 'apartment' → 'Rent')
 - date: YYYY-MM-DD format, use today if not mentioned (today is ${new Date().toISOString().split('T')[0]})
 - note: brief description
+- confidence: a number between 0 and 1
+
+IMPORTANT: The user may mention MULTIPLE transactions in a single message. If so, return a JSON object with a "transactions" array. If there is only one transaction, still wrap it in a "transactions" array.
 
 Return ONLY this JSON:
 {
-  "amount": 500,
-  "type": "expense",
-  "category": "Food & Dining",
-  "date": "2026-03-03",
-  "note": "lunch at restaurant"
+  "transactions": [
+    {
+      "amount": 500,
+      "type": "expense",
+      "category": "Food & Dining",
+      "date": "2026-03-03",
+      "note": "lunch at restaurant",
+      "confidence": 0.95
+    }
+  ]
+}
+
+Example with multiple transactions:
+Input: "Spent 2000 on food and 290 on transport and received 5000 salary"
+{
+  "transactions": [
+    { "amount": 2000, "type": "expense", "category": "Food & Dining", "date": "2026-03-03", "note": "food expense", "confidence": 0.95 },
+    { "amount": 290, "type": "expense", "category": "Transport", "date": "2026-03-03", "note": "transport expense", "confidence": 0.90 },
+    { "amount": 5000, "type": "income", "category": "Salary", "date": "2026-03-03", "note": "salary received", "confidence": 0.95 }
+  ]
 }`
 
 export async function POST(req: NextRequest) {
@@ -76,12 +94,23 @@ export async function POST(req: NextRequest) {
 
     const parsed = JSON.parse(jsonMatch[0])
 
-    // Capitalize first letter of note
-    if (parsed.note) {
-      parsed.note = parsed.note.charAt(0).toUpperCase() + parsed.note.slice(1)
+    // Normalize: ensure we always return { transactions: [...] }
+    let transactions: Array<Record<string, unknown>>
+    if (parsed.transactions && Array.isArray(parsed.transactions)) {
+      transactions = parsed.transactions
+    } else {
+      // Legacy single-object response
+      transactions = [parsed]
     }
 
-    return NextResponse.json(parsed)
+    // Capitalize first letter of note for each transaction
+    for (const tx of transactions) {
+      if (tx.note && typeof tx.note === 'string') {
+        tx.note = tx.note.charAt(0).toUpperCase() + tx.note.slice(1)
+      }
+    }
+
+    return NextResponse.json({ transactions })
   } catch (error) {
     console.error('[parse-text] Error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

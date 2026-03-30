@@ -34,9 +34,9 @@ export default function VoiceTab() {
   const [transcript, setTranscript] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [parsed, setParsed] = useState<ParsedTransaction | null>(null)
+  const [parsedList, setParsedList] = useState<ParsedTransaction[]>([])
   const [parseError, setParseError] = useState<string | null>(null)
-  const [showEditForm, setShowEditForm] = useState(false)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const cancelledRef = useRef(false)
@@ -82,7 +82,7 @@ export default function VoiceTab() {
 
   const handleVoiceStart = async () => {
     setTranscript('')
-    setParsed(null)
+    setParsedList([])
     setParseError(null)
     cancelledRef.current = false
 
@@ -124,10 +124,12 @@ export default function VoiceTab() {
             const errData = await mistralRes.json().catch(() => ({}))
             throw new Error(errData.error || `Parse failed (${mistralRes.status})`)
           }
-          const result: ParsedTransaction = await mistralRes.json()
-          result.date = validateTransactionDate(result.date)
-          fillForm(result)
-          setParsed(result)
+          const result = await mistralRes.json()
+          // API now returns { transactions: [...] }
+          const txs: ParsedTransaction[] = result.transactions || [result]
+          txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
+          if (txs.length === 1) fillForm(txs[0])
+          setParsedList(txs)
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'Voice processing failed'
           setParseError(msg)
@@ -155,27 +157,41 @@ export default function VoiceTab() {
     mediaRecorderRef.current?.stop()
     setIsListening(false)
     setTranscript('')
-    setParsed(null)
+    setParsedList([])
     setParseError(null)
   }
 
   const handleVoiceReRecord = () => {
-    setParsed(null)
+    setParsedList([])
     setParseError(null)
     setTranscript('')
-    setShowEditForm(false)
+    setEditingIndex(null)
   }
 
-  const handleSave = () => {
-    if (!parsed) return
+  const handleSaveSingle = (index: number) => {
+    const p = parsedList[index]
+    if (!p) return
     saveTransaction([{
       user_id: currentUser?.userId,
-      amount: Number(parsed.amount) || 0,
-      type: parsed.type || 'expense',
-      category: resolveCategory(parsed.category),
-      note: parsed.note || parsed.description || '',
-      date: validateTransactionDate(parsed.date),
+      amount: Number(p.amount) || 0,
+      type: p.type || 'expense',
+      category: resolveCategory(p.category),
+      note: p.note || p.description || '',
+      date: validateTransactionDate(p.date),
     }])
+    setParsedList(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSaveAll = () => {
+    const txs = parsedList.map(p => ({
+      user_id: currentUser?.userId,
+      amount: Number(p.amount) || 0,
+      type: (p.type || 'expense') as 'income' | 'expense',
+      category: resolveCategory(p.category),
+      note: p.note || p.description || '',
+      date: validateTransactionDate(p.date),
+    }))
+    saveTransaction(txs)
   }
 
   const handleConfirmEdit = () => {
@@ -200,13 +216,17 @@ export default function VoiceTab() {
       note,
       date: validateTransactionDate(date),
     }])
+    if (editingIndex !== null) {
+      setParsedList(prev => prev.filter((_, i) => i !== editingIndex))
+      setEditingIndex(null)
+    }
   }
 
   const discard = () => {
-    setParsed(null)
+    setParsedList([])
     setParseError(null)
     setTranscript('')
-    setShowEditForm(false)
+    setEditingIndex(null)
     setAmount('')
     setCategory('')
     setNote('')
@@ -216,24 +236,12 @@ export default function VoiceTab() {
     setCategoryError('')
   }
 
-  /* ── Voice Preview (after successful parse) ── */
-  if (parsed && !showEditForm) {
-    return (
-      <PreviewCard
-        parsed={parsed}
-        onEdit={handleVoiceReRecord}
-        onConfirm={handleSave}
-        onDiscard={discard}
-        isSubmitting={isSubmitting}
-        confirmLabel="Save Transaction"
-        headerIcon={<span style={{ fontSize: 18 }}>🎤</span>}
-        headerText="Voice captured"
-      />
-    )
+  const discardSingle = (index: number) => {
+    setParsedList(prev => prev.filter((_, i) => i !== index))
   }
 
-  /* ── Edit form (not shown in voice flow — kept for completeness) ── */
-  if (parsed && showEditForm) {
+  /* ── Edit form ── */
+  if (editingIndex !== null) {
     return (
       <ManualForm
         amount={amount} setAmount={setAmount}
@@ -246,9 +254,72 @@ export default function VoiceTab() {
         availableCategories={availableCategories}
         isSubmitting={isSubmitting}
         onSave={handleConfirmEdit}
-        onDiscard={discard}
+        onDiscard={() => setEditingIndex(null)}
         confirmMode
       />
+    )
+  }
+
+  /* ── Voice Preview: single transaction ── */
+  if (parsedList.length === 1) {
+    return (
+      <PreviewCard
+        parsed={parsedList[0]}
+        onEdit={() => { fillForm(parsedList[0]); setEditingIndex(0) }}
+        onConfirm={() => handleSaveSingle(0)}
+        onDiscard={discard}
+        isSubmitting={isSubmitting}
+        confirmLabel="Save Transaction"
+        headerIcon={<span style={{ fontSize: 18 }}>🎤</span>}
+        headerText="Voice captured"
+      />
+    )
+  }
+
+  /* ── Voice Preview: multiple transactions ── */
+  if (parsedList.length > 1) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: FONT }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: 15, color: '#374151', fontWeight: 600 }}>
+            🎤 {parsedList.length} transactions found
+          </p>
+          <button
+            onClick={discard}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#9ca3af', fontSize: 13, fontFamily: FONT,
+            }}
+          >
+            Discard all
+          </button>
+        </div>
+        {parsedList.map((p, i) => (
+          <PreviewCard
+            key={i}
+            parsed={p}
+            onEdit={() => { fillForm(p); setEditingIndex(i) }}
+            onConfirm={() => handleSaveSingle(i)}
+            onDiscard={() => discardSingle(i)}
+            isSubmitting={isSubmitting}
+            confirmLabel="Save"
+          />
+        ))}
+        <button
+          onClick={handleSaveAll}
+          disabled={isSubmitting}
+          style={{
+            width: '100%', padding: 14,
+            background: isSubmitting ? '#d1d5db' : TEAL,
+            color: '#fff', border: 'none', borderRadius: 14,
+            fontSize: 16, fontWeight: 600,
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            fontFamily: FONT,
+          }}
+        >
+          {isSubmitting ? 'Saving...' : `Save All (${parsedList.length})`}
+        </button>
+      </div>
     )
   }
 
@@ -349,7 +420,7 @@ export default function VoiceTab() {
       )}
 
       {/* Transcript display */}
-      {transcript && !loading && !parsed && !parseError && (
+      {transcript && !loading && parsedList.length === 0 && !parseError && (
         <div style={{
           width: '100%', padding: 16, background: '#f0fdf4',
           borderRadius: 12, marginTop: 8,
