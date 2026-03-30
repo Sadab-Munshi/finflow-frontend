@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ChevronLeft, Edit, Printer, Trash2 } from 'lucide-react'
+import { ChevronLeft, Edit, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,9 +12,49 @@ import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { getTransactionById, updateTransaction, deleteTransaction } from '@/lib/db'
 import { getCategoriesByType, getCategoryByName } from '@/lib/categories'
-import { cn, formatIndianCurrency, formatIST } from '@/lib/utils'
+import { cn, formatIndianCurrency } from '@/lib/utils'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import { Transaction } from '@/lib/types'
+
+const categoryIcons: Record<string, React.ReactNode> = {
+  'Food & Dining': <Utensils className="w-7 h-7" />,
+  'Transport': <Car className="w-7 h-7" />,
+  'Shopping': <ShoppingBag className="w-7 h-7" />,
+  'Bills & Utilities': <Zap className="w-7 h-7" />,
+  'Entertainment': <Film className="w-7 h-7" />,
+  'Health': <Heart className="w-7 h-7" />,
+  'Education': <GraduationCap className="w-7 h-7" />,
+  'Rent': <Building className="w-7 h-7" />,
+  'Groceries': <ShoppingCart className="w-7 h-7" />,
+  'Personal Care': <Sparkles className="w-7 h-7" />,
+  'Salary': <Wallet className="w-7 h-7" />,
+  'Freelance': <Briefcase className="w-7 h-7" />,
+  'Business': <Briefcase className="w-7 h-7" />,
+  'Investment': <TrendingUp className="w-7 h-7" />,
+  'Gift': <Gift className="w-7 h-7" />,
+  'Other': <CircleDot className="w-7 h-7" />,
+}
+
+function formatDateDisplay(dateStr: string): string {
+  if (!dateStr) return ''
+  const parts = dateStr.split('-').map(Number)
+  if (parts.length !== 3) return dateStr
+  const date = new Date(parts[0], parts[1] - 1, parts[2])
+  if (isNaN(date.getTime())) return dateStr
+  return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function formatTimeDisplay(isoStr: string | undefined): string {
+  if (!isoStr) return ''
+  const date = new Date(isoStr)
+  if (isNaN(date.getTime())) return ''
+  return date.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
 
 export default function TransactionDetailPage() {
   const router = useRouter()
@@ -101,6 +141,11 @@ export default function TransactionDetailPage() {
             ) : (
               <>
                 <div className="text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: `${cat?.color}20` }}>
+                      <span style={{ color: cat?.color }}>{categoryIcons[transaction.category] || categoryIcons['Other']}</span>
+                    </div>
+                  </div>
                   <p className={cn("text-4xl font-bold", transaction.type === 'income' ? "text-emerald-600" : "text-orange-600")}>
                     {transaction.type === 'income' ? '+' : '-'}{formatIndianCurrency(transaction.amount)}
                   </p>
@@ -108,17 +153,34 @@ export default function TransactionDetailPage() {
                     {transaction.type === 'income' ? t('income') : t('expense')}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><p className="text-sm text-gray-500">{t('category')}</p><div className="flex items-center gap-2 mt-1"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat?.color }} /><span className="font-medium">{cat?.name}</span></div></div>
-                  <div><p className="text-sm text-gray-500">{t('date')}</p><p className="font-medium">{transaction.date}</p></div>
-                  <div><p className="text-sm text-gray-500">Created At</p><p className="font-medium">{formatIST(transaction.created_at)}</p></div>
+                <div className="grid grid-cols-2 border border-gray-100 rounded-xl overflow-hidden">
+                  <div className="p-3 border-r border-b border-gray-100">
+                    <p className="text-xs text-gray-400 mb-0.5">{t('category')}</p>
+                    <p className="text-sm font-semibold text-gray-800">{transaction.category}</p>
+                  </div>
+                  <div className="p-3 border-b border-gray-100">
+                    <p className="text-xs text-gray-400 mb-0.5">{t('type')}</p>
+                    <p className="text-sm font-semibold text-gray-800">{transaction.type === 'income' ? t('income') : t('expense')}</p>
+                  </div>
+                  <div className="p-3 border-r border-gray-100">
+                    <p className="text-xs text-gray-400 mb-0.5">{t('date')}</p>
+                    <p className="text-sm font-semibold text-gray-800">{formatDateDisplay(transaction.date)}</p>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-xs text-gray-400 mb-0.5">Time</p>
+                    <p className="text-sm font-semibold text-gray-800">{formatTimeDisplay(transaction.created_at)}</p>
+                  </div>
                 </div>
-                <div><p className="text-sm text-gray-500">{t('description')}</p><p className="font-medium">{transaction.note}</p></div>
-                <div className="flex flex-wrap gap-2 no-print">
-                  <Button variant="outline" onClick={() => setEditing(true)} className="border-gray-200"><Edit className="w-4 h-4 mr-2" />{t('edit')}</Button>
-                  <Button variant="outline" onClick={() => window.print()} className="border-gray-200"><Printer className="w-4 h-4 mr-2" />{t('print')}</Button>
+                {transaction.note ? (
+                  <div className="p-3 bg-gray-50 rounded-xl">
+                    <p className="text-xs text-gray-400 mb-0.5">Note</p>
+                    <p className="text-sm text-gray-700">{transaction.note}</p>
+                  </div>
+                ) : null}
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setEditing(true)} className="border border-teal-500 text-teal-600 rounded-xl flex-1 py-2.5"><Edit className="w-4 h-4 mr-2" />{t('edit')}</Button>
                   <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <AlertDialogTrigger asChild><Button variant="destructive"><Trash2 className="w-4 h-4 mr-2" />{t('delete')}</Button></AlertDialogTrigger>
+                    <AlertDialogTrigger asChild><Button className="bg-red-500 hover:bg-red-600 text-white rounded-xl flex-1 py-2.5"><Trash2 className="w-4 h-4 mr-2" />{t('delete')}</Button></AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader><AlertDialogTitle>{t('deleteConfirmTitle')}</AlertDialogTitle><AlertDialogDescription>{t('deleteConfirmMessage')}</AlertDialogDescription></AlertDialogHeader>
                       <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">{t('delete')}</AlertDialogAction></AlertDialogFooter>
