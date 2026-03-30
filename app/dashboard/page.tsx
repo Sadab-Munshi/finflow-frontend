@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
@@ -132,9 +132,6 @@ export default function DashboardPage() {
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
   const balance = totalIncome - totalExpenses
-  const savingsRate = totalIncome > 0
-    ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100)
-    : 0
 
   // Recent 5 transactions (already sorted newest first from DB)
   const recentTx = transactions.slice(0, 5)
@@ -144,6 +141,19 @@ export default function DashboardPage() {
     const ymd = normalizeDateToYMD(tx.date)
     return ymd.startsWith(istNow)
   })
+
+  // This month income/expense/savings for the stats cards
+  const monthIncome = thisMonthTx
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + Number(t.amount), 0)
+
+  const monthExpenses = thisMonthTx
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + Number(t.amount), 0)
+
+  const monthSavingsRate = monthIncome > 0
+    ? Math.round(((monthIncome - monthExpenses) / monthIncome) * 100)
+    : 0
 
   const thisMonthExpense = thisMonthTx
     .filter(t => t.type === 'expense')
@@ -212,6 +222,7 @@ export default function DashboardPage() {
             )}>
               {formatIndianCurrency(balance)}
             </p>
+            <p className="text-white/70 text-xs mt-1">All time</p>
           </CardContent>
         </Card>
 
@@ -219,27 +230,24 @@ export default function DashboardPage() {
         <div className="grid grid-cols-3 gap-2">
           {/* Income Card */}
           <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
-            <span className="text-xs text-gray-500 mb-1">Income</span>
-            <span className="text-sm font-bold text-green-600">₹{totalIncome.toLocaleString('en-IN')}</span>
+            <span className="text-xs text-gray-500 mb-0.5">Income</span>
+            <span className="text-[10px] text-gray-400 mb-1">This Month</span>
+            <span className="text-sm font-bold text-green-600">₹{monthIncome.toLocaleString('en-IN')}</span>
           </div>
           {/* Expense Card */}
           <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
-            <span className="text-xs text-gray-500 mb-1">Expense</span>
-            <span className="text-sm font-bold text-red-500">₹{totalExpenses.toLocaleString('en-IN')}</span>
+            <span className="text-xs text-gray-500 mb-0.5">Expense</span>
+            <span className="text-[10px] text-gray-400 mb-1">This Month</span>
+            <span className="text-sm font-bold text-red-500">₹{monthExpenses.toLocaleString('en-IN')}</span>
           </div>
           {/* Savings Card */}
           <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
-            <span className="text-xs text-gray-500 mb-1">Savings</span>
+            <span className="text-xs text-gray-500 mb-0.5">Savings</span>
+            <span className="text-[10px] text-gray-400 mb-1">This Month</span>
             <span className={cn(
               "text-sm font-bold",
-              savingsRate >= 0 ? "text-green-600" : "text-red-500"
-            )}>{savingsRate}%</span>
-            <span className={cn(
-              "text-[10px] mt-0.5",
-              savingsRate < 0 ? "text-red-400" : "text-green-500"
-            )}>
-              {savingsRate < 0 ? "Over budget" : "Great job!"}
-            </span>
+              monthSavingsRate >= 0 ? "text-green-600" : "text-red-500"
+            )}>{monthSavingsRate}%</span>
           </div>
         </div>
 
@@ -272,29 +280,16 @@ export default function DashboardPage() {
           <CardContent className="p-2 md:p-6 pt-0">
             <div className="h-48 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyData || []} margin={{ top: 5, right: 5, left: -20, bottom: 5 }} barGap={2}>
+                <BarChart data={weeklyData || []} margin={{ top: 5, right: 5, left: 5, bottom: 5 }} barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                   <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: '#6b7280' }}
-                    tickFormatter={(v) => {
-                      if (v === 0) return '0'
-                      if (v >= 100000) return `${(v / 100000).toFixed(0)}L`
-                      if (v >= 1000) return `${(v / 1000).toFixed(0)}k`
-                      return `${v}`
-                    }}
-                    domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.1)]}
-                    width={40}
-                    axisLine={false}
-                    tickLine={false}
-                  />
                   <Tooltip
-                    formatter={(value) => formatIndianCurrency(Number(value))}
+                    formatter={(value, name) => [formatIndianCurrency(Number(value)), name]}
                     contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
                   />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="income" name={t('income')} fill="#0D9488" barSize={18} radius={[4, 4, 0, 0]} minPointSize={3} />
-                  <Bar dataKey="expense" name={t('expense')} fill="#F43F5E" barSize={18} radius={[4, 4, 0, 0]} minPointSize={3} />
+                  <Bar dataKey="income" name={t('income')} fill="#0D9488" barSize={22} radius={[4, 4, 0, 0]} minPointSize={3} />
+                  <Bar dataKey="expense" name={t('expense')} fill="#F43F5E" barSize={22} radius={[4, 4, 0, 0]} minPointSize={3} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
