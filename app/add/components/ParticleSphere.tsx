@@ -1,197 +1,167 @@
 'use client'
 
-import { useRef, useMemo, useCallback, useEffect } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { useRef, useMemo, useEffect } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { MeshDistortMaterial } from '@react-three/drei'
 import * as THREE from 'three'
-
-const PARTICLE_COUNT = 600
-const SPHERE_RADIUS = 2.2
-const TEAL_COLOR = new THREE.Color('#00b894')
-const WHITE_COLOR = new THREE.Color('#ffffff')
-const GREEN_ACCENT = new THREE.Color('#55efc4')
-const BG_GRADIENT = 'radial-gradient(circle, #0d1f1a 0%, #0a0a0a 100%)'
 
 interface ParticleSphereProps {
   isRecording: boolean
+  isProcessing?: boolean
+  hasError?: boolean
   onTap: () => void
 }
 
-function Particles({ isRecording }: { isRecording: boolean }) {
-  const meshRef = useRef<THREE.Points>(null)
-  const mouseRef = useRef(new THREE.Vector2(0, 0))
-  const { viewport } = useThree()
+function GlobeMesh({
+  isRecording,
+  isProcessing,
+  hasError,
+}: {
+  isRecording: boolean
+  isProcessing: boolean
+  hasError: boolean
+}) {
+  const meshRef = useRef<THREE.Mesh>(null)
+  const errorTimeRef = useRef<number | null>(null)
+  const scaleRef = useRef(1)
 
-  const { positions, basePositions, colors, sizes } = useMemo(() => {
-    const pos = new Float32Array(PARTICLE_COUNT * 3)
-    const base = new Float32Array(PARTICLE_COUNT * 3)
-    const col = new Float32Array(PARTICLE_COUNT * 3)
-    const sz = new Float32Array(PARTICLE_COUNT)
+  const gradientTexture = useMemo(() => {
+    if (typeof window === 'undefined') return null
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 512
+    const ctx = canvas.getContext('2d')!
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      // Distribute on sphere surface using fibonacci sphere
-      const phi = Math.acos(1 - (2 * (i + 0.5)) / PARTICLE_COUNT)
-      const theta = Math.PI * (1 + Math.sqrt(5)) * i
-      const r = SPHERE_RADIUS * (0.85 + Math.random() * 0.3)
+    // Diagonal gradient: white → light teal → teal → purple
+    const grad = ctx.createLinearGradient(0, 0, 512, 512)
+    grad.addColorStop(0, '#f0fdf4')
+    grad.addColorStop(0.2, '#ccfbf1')
+    grad.addColorStop(0.5, '#14b8a6')
+    grad.addColorStop(0.8, '#7c3aed')
+    grad.addColorStop(1, '#4c1d95')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, 512, 512)
 
-      const x = r * Math.sin(phi) * Math.cos(theta)
-      const y = r * Math.sin(phi) * Math.sin(theta)
-      const z = r * Math.cos(phi)
+    // Soft white highlight near top-left for depth illusion
+    ctx.globalAlpha = 0.55
+    const highlight = ctx.createRadialGradient(170, 140, 0, 170, 140, 220)
+    highlight.addColorStop(0, 'rgba(255,255,255,0.9)')
+    highlight.addColorStop(1, 'transparent')
+    ctx.fillStyle = highlight
+    ctx.fillRect(0, 0, 512, 512)
+    ctx.globalAlpha = 1
 
-      pos[i * 3] = x
-      pos[i * 3 + 1] = y
-      pos[i * 3 + 2] = z
-      base[i * 3] = x
-      base[i * 3 + 1] = y
-      base[i * 3 + 2] = z
+    return new THREE.CanvasTexture(canvas)
+  }, [])
 
-      // Random color between teal, white and green accent
-      const t = Math.random()
-      const color = t < 0.5
-        ? TEAL_COLOR.clone().lerp(WHITE_COLOR, Math.random() * 0.4)
-        : GREEN_ACCENT.clone().lerp(TEAL_COLOR, Math.random() * 0.6)
-
-      col[i * 3] = color.r
-      col[i * 3 + 1] = color.g
-      col[i * 3 + 2] = color.b
-
-      sz[i] = 2 + Math.random() * 3
+  useEffect(() => {
+    if (hasError) {
+      errorTimeRef.current = performance.now()
     }
-
-    return { positions: pos, basePositions: base, colors: col, sizes: sz }
-  }, [])
-
-  const handlePointerMove = useCallback((e: { clientX: number; clientY: number }) => {
-    mouseRef.current.set(
-      (e.clientX / window.innerWidth) * 2 - 1,
-      -(e.clientY / window.innerHeight) * 2 + 1,
-    )
-  }, [])
+  }, [hasError])
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return
-    const time = clock.getElapsedTime()
-    const geo = meshRef.current.geometry
-    const posAttr = geo.getAttribute('position') as THREE.BufferAttribute
-    const sizeAttr = geo.getAttribute('size') as THREE.BufferAttribute
+    const t = clock.getElapsedTime()
 
-    const recordingIntensity = isRecording ? 1.0 : 0.0
-    const pulse = isRecording
-      ? 1 + Math.sin(time * 3) * 0.15 + Math.sin(time * 7) * 0.08
-      : 1 + Math.sin(time * 0.8) * 0.03
+    // Continuous rotation — faster when processing
+    meshRef.current.rotation.y += isProcessing ? 0.014 : isRecording ? 0.006 : 0.003
+    meshRef.current.rotation.x = Math.sin(t * 0.4) * 0.05
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const bx = basePositions[i * 3]
-      const by = basePositions[i * 3 + 1]
-      const bz = basePositions[i * 3 + 2]
+    // Scale: breathe/pulse when recording
+    const targetScale = isRecording ? 1.1 + Math.sin(t * 2.5) * 0.055 : 1.0
+    scaleRef.current += (targetScale - scaleRef.current) * 0.08
+    meshRef.current.scale.setScalar(scaleRef.current)
 
-      // Gentle float
-      const floatOffset = Math.sin(time * 0.5 + i * 0.1) * 0.05
-      // Recording: vigorous wave
-      const waveOffset = isRecording
-        ? Math.sin(time * 4 + i * 0.3) * 0.25 + Math.cos(time * 3 + i * 0.2) * 0.15
-        : 0
-
-      // Mouse repulsion (simplified)
-      const mx = mouseRef.current.x * viewport.width * 0.5
-      const my = mouseRef.current.y * viewport.height * 0.5
-      const dx = bx * pulse - mx
-      const dy = by * pulse - my
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      const repulsion = dist < 2 ? (2 - dist) * 0.3 : 0
-
-      posAttr.setXYZ(
-        i,
-        bx * pulse + (dx / (dist || 1)) * repulsion + floatOffset + waveOffset,
-        by * pulse + (dy / (dist || 1)) * repulsion + floatOffset + waveOffset * 0.5,
-        bz * pulse + floatOffset * 0.5 + waveOffset * 0.3,
-      )
-
-      // Pulsing sizes when recording
-      const baseSize = sizes[i]
-      sizeAttr.setX(
-        i,
-        baseSize * (1 + recordingIntensity * Math.sin(time * 5 + i) * 0.5),
-      )
+    // Error shake: brief horizontal oscillation (~0.5 s)
+    if (errorTimeRef.current !== null) {
+      const elapsed = (performance.now() - errorTimeRef.current) / 1000
+      if (elapsed < 0.5) {
+        meshRef.current.position.x =
+          Math.sin(elapsed * 60) * 0.08 * Math.max(0, 1 - elapsed * 2)
+      } else {
+        meshRef.current.position.x = 0
+        errorTimeRef.current = null
+      }
     }
-
-    posAttr.needsUpdate = true
-    sizeAttr.needsUpdate = true
-    meshRef.current.rotation.y = time * (isRecording ? 0.3 : 0.1)
   })
 
-  // Listen for pointer moves on window
-  useEffect(() => {
-    window.addEventListener('pointermove', handlePointerMove)
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-    }
-  }, [handlePointerMove])
+  if (!gradientTexture) return null
 
   return (
-    <points ref={meshRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
+    <>
+      {/* Main globe */}
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[1.5, 64, 64]} />
+        <MeshDistortMaterial
+          map={gradientTexture}
+          distort={isRecording ? 0.35 : 0.18}
+          speed={isRecording ? 2.5 : 1.2}
+          roughness={0.15}
+          metalness={0.08}
+          transparent
+          opacity={0.92}
         />
-        <bufferAttribute
-          attach="attributes-color"
-          args={[colors, 3]}
+      </mesh>
+      {/* Outer halo */}
+      <mesh scale={1.18}>
+        <sphereGeometry args={[1.5, 32, 32]} />
+        <meshBasicMaterial
+          color={isRecording ? '#14b8a6' : '#8b5cf6'}
+          transparent
+          opacity={isRecording ? 0.07 : 0.03}
+          side={THREE.BackSide}
+          depthWrite={false}
         />
-        <bufferAttribute
-          attach="attributes-size"
-          args={[sizes, 1]}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        vertexColors
-        size={3}
-        sizeAttenuation
-        transparent
-        opacity={0.85}
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-      />
-    </points>
+      </mesh>
+    </>
   )
 }
 
-export default function ParticleSphere({ isRecording, onTap }: ParticleSphereProps) {
+export default function ParticleSphere({
+  isRecording,
+  isProcessing = false,
+  hasError = false,
+  onTap,
+}: ParticleSphereProps) {
   return (
     <div
       onClick={onTap}
       style={{
-        width: '100%',
-        height: 280,
+        width: 240,
+        height: 240,
         cursor: 'pointer',
-        borderRadius: 20,
-        overflow: 'hidden',
-        background: BG_GRADIENT,
         position: 'relative',
+        margin: '0 auto',
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 6], fov: 50 }}
-        dpr={[1, 1.5]}
-        style={{ touchAction: 'none' }}
+        camera={{ position: [0, 0, 5], fov: 45 }}
+        gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
+        dpr={[1, 2]}
+        style={{ width: '240px', height: '240px' }}
       >
-        <ambientLight intensity={0.3} />
-        <pointLight position={[5, 5, 5]} intensity={0.5} color="#00b894" />
-        <Particles isRecording={isRecording} />
+        <ambientLight intensity={0.7} />
+        <pointLight position={[4, 4, 4]} intensity={1.0} color="#ffffff" />
+        <pointLight position={[-3, -2, 2]} intensity={0.5} color="#0d9488" />
+        <GlobeMesh
+          isRecording={isRecording}
+          isProcessing={isProcessing}
+          hasError={hasError}
+        />
       </Canvas>
-      {/* Center glow */}
+
+      {/* CSS glow ring — no Three.js needed */}
       <div
         style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: isRecording ? 120 : 80,
-          height: isRecording ? 120 : 80,
+          inset: '-12px',
           borderRadius: '50%',
-          background: `radial-gradient(circle, ${isRecording ? 'rgba(0,184,148,0.25)' : 'rgba(0,184,148,0.1)'} 0%, transparent 70%)`,
-          transition: 'all 0.5s ease',
+          boxShadow: isRecording
+            ? '0 0 55px 18px rgba(20,184,166,0.28)'
+            : '0 0 30px 8px rgba(139,92,246,0.12)',
           pointerEvents: 'none',
+          transition: 'box-shadow 0.5s ease',
         }}
       />
     </div>
