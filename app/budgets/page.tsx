@@ -47,15 +47,7 @@ function mk(y: number, m: number) {
   return `${y}-${String(m).padStart(2, '0')}`
 }
 
-function getMonthPickerOptions(): string[] {
-  const now = new Date()
-  const out: string[] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    out.push(mk(d.getFullYear(), d.getMonth() + 1))
-  }
-  return out
-}
+
 
 const categoryIconMap: Record<string, typeof Utensils> = {
   'Food & Dining': Utensils,
@@ -90,11 +82,7 @@ function statusBadge(pct: number) {
   return { label: 'Over Budget', cls: 'bg-red-50 text-red-700' }
 }
 
-function borderCls(pct: number) {
-  if (pct <= 50) return 'border-green-500'
-  if (pct <= 80) return 'border-amber-500'
-  return 'border-red-500'
-}
+
 
 /* ── Component ────────────────────────────────────────────────────────── */
 
@@ -262,8 +250,9 @@ export default function BudgetsPage() {
   if (!mounted) return null
 
   const curMonth = getCurrentMonth()
+  const isCurrentMonth = selectedMonth === curMonth
   const cats = getExpenseCategories()
-  const monthOpts = getMonthPickerOptions()
+
 
   /* ── Render ─────────────────────────────────────────────────────────── */
 
@@ -274,13 +263,15 @@ export default function BudgetsPage() {
         {/* ── Section 1: Page Header ──────────────────────────────────── */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-gray-800">Budgets</h1>
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-4 py-2 font-semibold text-sm transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Create Budget
-          </button>
+          {filtered.length > 0 && (
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-4 py-2 font-semibold text-sm transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create Budget
+            </button>
+          )}
         </div>
 
         {/* Month navigation */}
@@ -369,7 +360,7 @@ export default function BudgetsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: i * 0.05 }}
-                  className={`bg-white rounded-2xl shadow-sm overflow-hidden border-l-4 ${borderCls(rawPct)}`}
+                  className="bg-white rounded-2xl shadow-sm overflow-hidden"
                 >
                   {/* Card header */}
                   <div className="flex items-center justify-between p-4 pb-2">
@@ -392,26 +383,34 @@ export default function BudgetsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}
-                      >
-                        {badge.label}
-                      </span>
-                      <button
-                        onClick={() => handleEdit(budget)}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                      >
-                        <Pencil className="w-4 h-4 text-gray-400" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setBudgetToDelete(budget)
-                          setDeleteOpen(true)
-                        }}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-400" />
-                      </button>
+                      {isCurrentMonth ? (
+                        <>
+                          <span
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}
+                          >
+                            {badge.label}
+                          </span>
+                          <button
+                            onClick={() => handleEdit(budget)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                          >
+                            <Pencil className="w-4 h-4 text-gray-400" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setBudgetToDelete(budget)
+                              setDeleteOpen(true)
+                            }}
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
+                          View Only
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -590,31 +589,19 @@ export default function BudgetsPage() {
                       <label className="text-sm font-semibold text-gray-700 mb-2 block">
                         Month
                       </label>
-                      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                        {monthOpts.map(mo => {
-                          const sel = month === mo
-                          const future = mo > curMonth
-                          const dis = future || (editingBudget !== null && mo !== month)
-                          return (
-                            <button
-                              key={mo}
-                              onClick={() => { if (!dis) setMonth(mo) }}
-                              disabled={dis}
-                              className={`shrink-0 rounded-full px-4 py-2 text-sm transition-colors ${
-                                sel
-                                  ? 'bg-teal-600 text-white font-semibold'
-                                  : future
-                                  ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                                  : dis
-                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                  : 'bg-gray-100 text-gray-600 font-medium hover:bg-gray-200'
-                              }`}
-                            >
-                              {formatMonthShort(mo)}
-                            </button>
-                          )
-                        })}
-                      </div>
+                      {editingBudget ? (
+                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                          <span className="shrink-0 rounded-full px-4 py-2 text-sm bg-teal-600 text-white font-semibold">
+                            {formatMonthShort(month)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 pb-2">
+                          <span className="rounded-full px-4 py-2 text-sm bg-teal-600 text-white font-semibold">
+                            {formatMonthShort(curMonth)}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer buttons */}
