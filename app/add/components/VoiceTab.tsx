@@ -225,7 +225,6 @@ export default function VoiceTab() {
         onConfirm={handleSave}
         onDiscard={discard}
         isSubmitting={isSubmitting}
-        editLabel="Re-record"
         confirmLabel="Save Transaction"
         headerIcon={<span style={{ fontSize: 18 }}>🎤</span>}
         headerText="Voice captured"

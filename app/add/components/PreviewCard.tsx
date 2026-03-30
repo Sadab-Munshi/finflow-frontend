@@ -11,7 +11,6 @@ interface PreviewCardProps {
   onConfirm: () => void
   onDiscard: () => void
   isSubmitting: boolean
-  editLabel?: string
   confirmLabel?: string
   headerIcon?: React.ReactNode
   headerText?: string
@@ -19,12 +18,13 @@ interface PreviewCardProps {
 
 export function PreviewCard({
   parsed, onEdit, onConfirm, onDiscard, isSubmitting,
-  editLabel = 'Edit',
   confirmLabel = 'Confirm Save',
   headerIcon,
   headerText = 'AI understood this as:',
 }: PreviewCardProps) {
-  const confidence = parsed.confidence ?? 90
+  // Fix 1a: normalize confidence — if value is between 0 and 1, multiply by 100
+  const rawConfidence = parsed.confidence ?? 0.9
+  const confidence = rawConfidence > 0 && rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence)
   const confidenceColor = confidence >= 90 ? TEAL : confidence >= 70 ? '#f97316' : RED
   const filledBars = Math.round((confidence / 100) * 10)
   const Icon = categoryIconMap[parsed.category] || categoryIconMap[resolveCategory(parsed.category)] || MoreHorizontal
@@ -40,13 +40,27 @@ export function PreviewCard({
         background: '#fff', borderRadius: 20, padding: 24,
         border: `1.5px solid ${TEAL}30`,
         boxShadow: `0 0 24px ${TEAL}18, 0 4px 24px rgba(0,0,0,0.06)`,
-        fontFamily: FONT,
+        fontFamily: FONT, position: 'relative',
       }}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-        {headerIcon || <Sparkles size={18} color={TEAL} />}
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>{headerText}</span>
+      {/* Header + Edit icon (top-right) — Fix 1c */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {headerIcon || <Sparkles size={18} color={TEAL} />}
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>{headerText}</span>
+        </div>
+        <button
+          onClick={onEdit}
+          style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: '#f3f4f6', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', flexShrink: 0,
+          }}
+          title="Edit"
+        >
+          <Pencil size={15} color="#6b7280" />
+        </button>
       </div>
 
       {/* Amount */}
@@ -122,19 +136,19 @@ export function PreviewCard({
         )}
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons — Fix 1b: Confirm & Discard on the same line */}
       <div style={{ display: 'flex', gap: 12 }}>
         <button
-          onClick={onEdit}
+          onClick={onDiscard}
           style={{
             flex: 1, padding: '14px 0',
-            background: '#fff', border: `1.5px solid #e5e7eb`, borderRadius: 14,
-            fontSize: 15, fontWeight: 600, color: '#374151',
+            background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 14,
+            fontSize: 15, fontWeight: 600, color: '#6b7280',
             cursor: 'pointer', fontFamily: FONT,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <Pencil size={16} /> {editLabel}
+          Discard
         </button>
         <button
           onClick={onConfirm}
@@ -152,18 +166,6 @@ export function PreviewCard({
           <Check size={16} /> {confirmLabel}
         </button>
       </div>
-
-      {/* Discard */}
-      <button
-        onClick={onDiscard}
-        style={{
-          width: '100%', padding: '10px', marginTop: 8,
-          background: 'transparent', color: '#9ca3af', border: 'none',
-          fontSize: 13, cursor: 'pointer', fontFamily: FONT,
-        }}
-      >
-        Discard
-      </button>
     </motion.div>
   )
 }
