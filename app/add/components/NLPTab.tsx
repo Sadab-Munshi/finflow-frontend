@@ -14,8 +14,9 @@ export default function NLPTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
   const [textInput, setTextInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [parsed, setParsed] = useState<ParsedTransaction | null>(null)
-  const [showEditForm, setShowEditForm] = useState(false)
+  // Support both single and multiple parsed transactions
+  const [parsedList, setParsedList] = useState<ParsedTransaction[]>([])
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   // Edit form state
   const [amount, setAmount] = useState('')
@@ -51,10 +52,11 @@ export default function NLPTab() {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `AI request failed (${res.status})`)
       }
-      const result: ParsedTransaction = await res.json()
-      result.date = validateTransactionDate(result.date)
-      fillForm(result)
-      setParsed(result)
+      const result = await res.json()
+      // API returns { transactions: [...] }, with fallback for legacy single-object format
+      const txs: ParsedTransaction[] = result.transactions || [result]
+      txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
+      setParsedList(txs)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to parse. Please try again.')
     } finally {
@@ -62,16 +64,36 @@ export default function NLPTab() {
     }
   }
 
-  const handleConfirm = () => {
-    if (!parsed) return
+  const handleConfirmSingle = (index: number) => {
+    const p = parsedList[index]
+    if (!p) return
     saveTransaction([{
       user_id: currentUser?.userId,
-      amount: Number(parsed.amount) || 0,
-      type: parsed.type || 'expense',
-      category: resolveCategory(parsed.category),
-      note: parsed.note || parsed.description || '',
-      date: validateTransactionDate(parsed.date),
+      amount: Number(p.amount) || 0,
+      type: p.type || 'expense',
+      category: resolveCategory(p.category),
+      note: p.note || p.description || '',
+      date: validateTransactionDate(p.date),
     }])
+    // Remove from list after confirm
+    setParsedList(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleConfirmAll = () => {
+    const txs = parsedList.map(p => ({
+      user_id: currentUser?.userId,
+      amount: Number(p.amount) || 0,
+      type: (p.type || 'expense') as 'income' | 'expense',
+      category: resolveCategory(p.category),
+      note: p.note || p.description || '',
+      date: validateTransactionDate(p.date),
+    }))
+    saveTransaction(txs)
+  }
+
+  const handleEditStart = (index: number) => {
+    fillForm(parsedList[index])
+    setEditingIndex(index)
   }
 
   const handleConfirmEdit = () => {
@@ -96,11 +118,19 @@ export default function NLPTab() {
       note,
       date: validateTransactionDate(date),
     }])
+    if (editingIndex !== null) {
+      setParsedList(prev => prev.filter((_, i) => i !== editingIndex))
+      setEditingIndex(null)
+    }
   }
 
-  const discard = () => {
-    setParsed(null)
-    setShowEditForm(false)
+  const discardSingle = (index: number) => {
+    setParsedList(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const discardAll = () => {
+    setParsedList([])
+    setEditingIndex(null)
     setTextInput('')
     setAmount('')
     setCategory('')
@@ -111,19 +141,8 @@ export default function NLPTab() {
     setCategoryError('')
   }
 
-  if (parsed && !showEditForm) {
-    return (
-      <PreviewCard
-        parsed={parsed}
-        onEdit={() => { fillForm(parsed); setShowEditForm(true) }}
-        onConfirm={handleConfirm}
-        onDiscard={discard}
-        isSubmitting={isSubmitting}
-      />
-    )
-  }
-
-  if (parsed && showEditForm) {
+  /* ── Editing a specific transaction ── */
+  if (editingIndex !== null) {
     return (
       <ManualForm
         amount={amount} setAmount={setAmount}
@@ -136,18 +155,77 @@ export default function NLPTab() {
         availableCategories={availableCategories}
         isSubmitting={isSubmitting}
         onSave={handleConfirmEdit}
-        onDiscard={discard}
+        onDiscard={() => setEditingIndex(null)}
         confirmMode
       />
     )
   }
 
+  /* ── Show parsed results ── */
+  if (parsedList.length === 1) {
+    return (
+      <PreviewCard
+        parsed={parsedList[0]}
+        onEdit={() => handleEditStart(0)}
+        onConfirm={() => handleConfirmSingle(0)}
+        onDiscard={discardAll}
+        isSubmitting={isSubmitting}
+      />
+    )
+  }
+
+  if (parsedList.length > 1) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: FONT }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: 15, color: '#374151', fontWeight: 600 }}>
+            {parsedList.length} transactions found
+          </p>
+          <button
+            onClick={discardAll}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#9ca3af', fontSize: 13, fontFamily: FONT,
+            }}
+          >
+            Discard all
+          </button>
+        </div>
+        {parsedList.map((p, i) => (
+          <PreviewCard
+            key={i}
+            parsed={p}
+            onEdit={() => handleEditStart(i)}
+            onConfirm={() => handleConfirmSingle(i)}
+            onDiscard={() => discardSingle(i)}
+            isSubmitting={isSubmitting}
+          />
+        ))}
+        <button
+          onClick={handleConfirmAll}
+          disabled={isSubmitting}
+          style={{
+            width: '100%', padding: 14,
+            background: isSubmitting ? '#d1d5db' : TEAL,
+            color: '#fff', border: 'none', borderRadius: 14,
+            fontSize: 16, fontWeight: 600,
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            fontFamily: FONT,
+          }}
+        >
+          {isSubmitting ? 'Saving...' : `Save All (${parsedList.length})`}
+        </button>
+      </div>
+    )
+  }
+
+  /* ── Input UI ── */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: FONT }}>
       <div style={{ position: 'relative' }}>
         <textarea
           rows={4}
-          placeholder="e.g. spent 500 on food today"
+          placeholder='e.g. "Spent 2000 on food and 290 on transport"'
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
           style={{

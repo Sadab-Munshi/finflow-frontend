@@ -1,32 +1,19 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Loader2, Mic } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getCategoriesByType } from '@/lib/categories'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
-import { TEAL, RED, FONT, WAVEFORM_BARS, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
+import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
 import { useTransaction } from '../hooks/useTransaction'
 import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
 
-const MAX_RECORDING_SECONDS = 15
+const ParticleSphere = dynamic(() => import('./ParticleSphere'), { ssr: false })
 
-function WaveformBars() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, height: 40, marginTop: 16 }}>
-      {WAVEFORM_BARS.map((bar, i) => (
-        <motion.div
-          key={i}
-          style={{ width: 3, borderRadius: 2, backgroundColor: RED }}
-          animate={{ height: [8, bar.maxHeight, 8] }}
-          transition={{ duration: bar.duration, repeat: Infinity, ease: 'easeInOut', delay: i * 0.05 }}
-        />
-      ))}
-    </div>
-  )
-}
+const MAX_RECORDING_SECONDS = 15
 
 export default function VoiceTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
@@ -34,9 +21,9 @@ export default function VoiceTab() {
   const [transcript, setTranscript] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [parsed, setParsed] = useState<ParsedTransaction | null>(null)
+  const [parsedList, setParsedList] = useState<ParsedTransaction[]>([])
   const [parseError, setParseError] = useState<string | null>(null)
-  const [showEditForm, setShowEditForm] = useState(false)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const cancelledRef = useRef(false)
@@ -82,7 +69,7 @@ export default function VoiceTab() {
 
   const handleVoiceStart = async () => {
     setTranscript('')
-    setParsed(null)
+    setParsedList([])
     setParseError(null)
     cancelledRef.current = false
 
@@ -124,10 +111,11 @@ export default function VoiceTab() {
             const errData = await mistralRes.json().catch(() => ({}))
             throw new Error(errData.error || `Parse failed (${mistralRes.status})`)
           }
-          const result: ParsedTransaction = await mistralRes.json()
-          result.date = validateTransactionDate(result.date)
-          fillForm(result)
-          setParsed(result)
+          const result = await mistralRes.json()
+          const txs: ParsedTransaction[] = result.transactions || [result]
+          txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
+          if (txs.length === 1) fillForm(txs[0])
+          setParsedList(txs)
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'Voice processing failed'
           setParseError(msg)
@@ -155,27 +143,41 @@ export default function VoiceTab() {
     mediaRecorderRef.current?.stop()
     setIsListening(false)
     setTranscript('')
-    setParsed(null)
+    setParsedList([])
     setParseError(null)
   }
 
   const handleVoiceReRecord = () => {
-    setParsed(null)
+    setParsedList([])
     setParseError(null)
     setTranscript('')
-    setShowEditForm(false)
+    setEditingIndex(null)
   }
 
-  const handleSave = () => {
-    if (!parsed) return
+  const handleSaveSingle = (index: number) => {
+    const p = parsedList[index]
+    if (!p) return
     saveTransaction([{
       user_id: currentUser?.userId,
-      amount: Number(parsed.amount) || 0,
-      type: parsed.type || 'expense',
-      category: resolveCategory(parsed.category),
-      note: parsed.note || parsed.description || '',
-      date: validateTransactionDate(parsed.date),
+      amount: Number(p.amount) || 0,
+      type: p.type || 'expense',
+      category: resolveCategory(p.category),
+      note: p.note || p.description || '',
+      date: validateTransactionDate(p.date),
     }])
+    setParsedList(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSaveAll = () => {
+    const txs = parsedList.map(p => ({
+      user_id: currentUser?.userId,
+      amount: Number(p.amount) || 0,
+      type: (p.type || 'expense') as 'income' | 'expense',
+      category: resolveCategory(p.category),
+      note: p.note || p.description || '',
+      date: validateTransactionDate(p.date),
+    }))
+    saveTransaction(txs)
   }
 
   const handleConfirmEdit = () => {
@@ -200,13 +202,17 @@ export default function VoiceTab() {
       note,
       date: validateTransactionDate(date),
     }])
+    if (editingIndex !== null) {
+      setParsedList(prev => prev.filter((_, i) => i !== editingIndex))
+      setEditingIndex(null)
+    }
   }
 
   const discard = () => {
-    setParsed(null)
+    setParsedList([])
     setParseError(null)
     setTranscript('')
-    setShowEditForm(false)
+    setEditingIndex(null)
     setAmount('')
     setCategory('')
     setNote('')
@@ -216,25 +222,12 @@ export default function VoiceTab() {
     setCategoryError('')
   }
 
-  /* ── Voice Preview (after successful parse) ── */
-  if (parsed && !showEditForm) {
-    return (
-      <PreviewCard
-        parsed={parsed}
-        onEdit={handleVoiceReRecord}
-        onConfirm={handleSave}
-        onDiscard={discard}
-        isSubmitting={isSubmitting}
-        editLabel="Re-record"
-        confirmLabel="Save Transaction"
-        headerIcon={<span style={{ fontSize: 18 }}>🎤</span>}
-        headerText="Voice captured"
-      />
-    )
+  const discardSingle = (index: number) => {
+    setParsedList(prev => prev.filter((_, i) => i !== index))
   }
 
-  /* ── Edit form (not shown in voice flow — kept for completeness) ── */
-  if (parsed && showEditForm) {
+  /* ── Edit form ── */
+  if (editingIndex !== null) {
     return (
       <ManualForm
         amount={amount} setAmount={setAmount}
@@ -247,36 +240,90 @@ export default function VoiceTab() {
         availableCategories={availableCategories}
         isSubmitting={isSubmitting}
         onSave={handleConfirmEdit}
-        onDiscard={discard}
+        onDiscard={() => setEditingIndex(null)}
         confirmMode
       />
     )
   }
 
-  /* ── Recording / idle UI ── */
+  /* ── Voice Preview: single transaction ── */
+  if (parsedList.length === 1) {
+    return (
+      <PreviewCard
+        parsed={parsedList[0]}
+        onEdit={() => { fillForm(parsedList[0]); setEditingIndex(0) }}
+        onConfirm={() => handleSaveSingle(0)}
+        onDiscard={discard}
+        isSubmitting={isSubmitting}
+        confirmLabel="Save Transaction"
+        headerIcon={<span style={{ fontSize: 18 }}>🎤</span>}
+        headerText="Voice captured"
+      />
+    )
+  }
+
+  /* ── Voice Preview: multiple transactions ── */
+  if (parsedList.length > 1) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: FONT }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: 15, color: '#374151', fontWeight: 600 }}>
+            🎤 {parsedList.length} transactions found
+          </p>
+          <button
+            onClick={discard}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#9ca3af', fontSize: 13, fontFamily: FONT,
+            }}
+          >
+            Discard all
+          </button>
+        </div>
+        {parsedList.map((p, i) => (
+          <PreviewCard
+            key={i}
+            parsed={p}
+            onEdit={() => { fillForm(p); setEditingIndex(i) }}
+            onConfirm={() => handleSaveSingle(i)}
+            onDiscard={() => discardSingle(i)}
+            isSubmitting={isSubmitting}
+            confirmLabel="Save"
+          />
+        ))}
+        <button
+          onClick={handleSaveAll}
+          disabled={isSubmitting}
+          style={{
+            width: '100%', padding: 14,
+            background: isSubmitting ? '#d1d5db' : TEAL,
+            color: '#fff', border: 'none', borderRadius: 14,
+            fontSize: 16, fontWeight: 600,
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            fontFamily: FONT,
+          }}
+        >
+          {isSubmitting ? 'Saving...' : `Save All (${parsedList.length})`}
+        </button>
+      </div>
+    )
+  }
+
+  /* ── Recording / idle UI with Three.js particle sphere ── */
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: 16, paddingTop: 32, fontFamily: FONT,
+      gap: 16, fontFamily: FONT,
     }}>
-      {/* Mic button */}
-      <motion.button
-        onClick={isListening ? handleVoiceStop : handleVoiceStart}
-        whileTap={{ scale: 0.9 }}
-        style={{
-          width: 96, height: 96, borderRadius: '50%',
-          background: isListening ? RED : TEAL,
-          border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: isListening ? `0 0 0 8px ${RED}30` : `0 0 0 8px ${TEAL}30`,
-          transition: 'all 0.3s',
-        }}
-      >
-        <Mic size={40} color="#fff" />
-      </motion.button>
+      {/* Three.js Particle Sphere — tap to start/stop recording */}
+      <ParticleSphere
+        isRecording={isListening}
+        onTap={isListening ? handleVoiceStop : handleVoiceStart}
+      />
 
-      <p style={{ color: isListening ? RED : '#6b7280', fontSize: 16, fontWeight: 500 }}>
-        {isListening ? 'Listening... Tap to stop' : 'Tap to speak'}
+      {/* Status text */}
+      <p style={{ color: isListening ? TEAL : '#6b7280', fontSize: 16, fontWeight: 500 }}>
+        {isListening ? 'Listening... Tap to stop' : 'Tap the sphere to speak'}
       </p>
       <p style={{ color: '#9ca3af', fontSize: 12 }}>
         Supports Hindi, Bengali, Tamil, Telugu & more
@@ -285,9 +332,8 @@ export default function VoiceTab() {
       {/* Recording progress + Cancel */}
       {isListening && (
         <>
-          <WaveformBars />
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 14, color: RED, fontWeight: 500 }}>
+            <p style={{ fontSize: 14, color: TEAL, fontWeight: 500 }}>
               {recordingTime}s / {MAX_RECORDING_SECONDS}s
             </p>
             <div style={{
@@ -296,7 +342,7 @@ export default function VoiceTab() {
             }}>
               <div style={{
                 width: `${(recordingTime / MAX_RECORDING_SECONDS) * 100}%`,
-                height: '100%', background: RED,
+                height: '100%', background: TEAL,
                 borderRadius: 2, transition: 'width 0.3s',
               }} />
             </div>
@@ -307,7 +353,7 @@ export default function VoiceTab() {
             onClick={handleVoiceCancel}
             style={{
               padding: '10px 28px', borderRadius: 20,
-              border: '1.5px solid #e5e7eb',
+              border: `1.5px solid ${TEAL}40`,
               background: '#fff', color: '#6b7280',
               fontSize: 14, fontWeight: 500, cursor: 'pointer',
               fontFamily: FONT,
@@ -326,19 +372,19 @@ export default function VoiceTab() {
         </div>
       )}
 
-      {/* Parse error → Re-record only */}
+      {/* Parse error → Re-record */}
       {parseError && !loading && (
         <div style={{
-          width: '100%', padding: 16, background: '#fef2f2',
-          borderRadius: 12, border: `1px solid ${RED}30`,
+          width: '100%', padding: 16, background: '#fef9f0',
+          borderRadius: 12, border: '1px solid #f9731630',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
         }}>
-          <p style={{ fontSize: 14, color: RED, textAlign: 'center' }}>{parseError}</p>
+          <p style={{ fontSize: 14, color: '#b45309', textAlign: 'center' }}>{parseError}</p>
           <button
             onClick={handleVoiceReRecord}
             style={{
               padding: '10px 24px', borderRadius: 20,
-              border: '1.5px solid #e5e7eb',
+              border: `1.5px solid ${TEAL}40`,
               background: '#fff', color: '#374151',
               fontSize: 14, fontWeight: 500, cursor: 'pointer',
               fontFamily: FONT,
@@ -350,7 +396,7 @@ export default function VoiceTab() {
       )}
 
       {/* Transcript display */}
-      {transcript && !loading && !parsed && !parseError && (
+      {transcript && !loading && parsedList.length === 0 && !parseError && (
         <div style={{
           width: '100%', padding: 16, background: '#f0fdf4',
           borderRadius: 12, marginTop: 8,
