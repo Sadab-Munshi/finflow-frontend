@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Clock, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, Download, FileSpreadsheet, FileText, Share2, X } from 'lucide-react'
+import { Clock, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, Download, FileSpreadsheet, FileText, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,7 +16,7 @@ import { categories, getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD } from '@/lib/utils'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import { Transaction } from '@/lib/types'
-import toast from 'react-hot-toast'
+
 
 const categoryIcons: Record<string, React.ReactNode> = {
   'Food & Dining': <Utensils className="w-4 h-4" />,
@@ -265,25 +265,6 @@ function HistoryContent() {
     doc.save(filename)
   }
 
-  const handleShare = async () => {
-    setDropdownOpen(false)
-    const totalIncome = filtered.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0)
-    const totalExpense = filtered.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0)
-    const balance = totalIncome - totalExpense
-    const shareText = `FinFlow Transaction Summary\n\nTransactions: ${filtered.length}\nTotal Income: ₹${totalIncome.toLocaleString('en-IN')}\nTotal Expenses: ₹${totalExpense.toLocaleString('en-IN')}\nBalance: ₹${balance.toLocaleString('en-IN')}\n\nExported from FinFlow`
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: 'FinFlow Transactions', text: shareText })
-      } else {
-        await navigator.clipboard.writeText(shareText)
-        toast.success('Summary copied to clipboard!')
-      }
-    } catch {
-      await navigator.clipboard.writeText(shareText)
-      toast.success('Summary copied to clipboard!')
-    }
-  }
-
   const perPage = 20
   const totalPages = Math.ceil(filtered.length / perPage)
   const paginated = filtered.slice((page - 1) * perPage, page * perPage)
@@ -320,17 +301,10 @@ function HistoryContent() {
                 </button>
                 <button
                   onClick={handleExportPDF}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-teal-50 hover:text-teal-700"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-teal-50 hover:text-teal-700 rounded-b-lg"
                 >
                   <FileText className="w-4 h-4 flex-shrink-0" />
                   Export as PDF (.pdf)
-                </button>
-                <button
-                  onClick={handleShare}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-teal-50 hover:text-teal-700 border-t border-gray-100 rounded-b-lg"
-                >
-                  <Share2 className="w-4 h-4 flex-shrink-0" />
-                  Share
                 </button>
               </div>
             )}
@@ -425,7 +399,7 @@ function HistoryContent() {
                           <span style={{ color: category?.color }}>{categoryIcons[tx.category] || categoryIcons['Other']}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-800 text-sm truncate">{tx.note}</p>
+                          <p className="font-medium text-gray-800 text-sm truncate">{tx.note || tx.category}</p>
                           <p className="text-xs text-gray-500">{formatIST(tx.created_at)}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
