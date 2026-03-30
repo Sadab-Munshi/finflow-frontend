@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { Loader2 } from 'lucide-react'
-import toast from 'react-hot-toast'
 import { getCategoriesByType } from '@/lib/categories'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
 import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
@@ -14,6 +13,8 @@ import { ManualForm } from './ManualTab'
 const ParticleSphere = dynamic(() => import('./ParticleSphere'), { ssr: false })
 
 const MAX_RECORDING_SECONDS = 15
+const VOICE_ERROR_PROCESSING = 'error'
+const VOICE_ERROR_MIC = 'mic'
 
 export default function VoiceTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
@@ -26,7 +27,6 @@ export default function VoiceTab() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const cancelledRef = useRef(false)
 
   // Edit form state
   const [amount, setAmount] = useState('')
@@ -39,7 +39,7 @@ export default function VoiceTab() {
 
   const availableCategories = getCategoriesByType(type)
 
-  /* Recording timer */
+  /* Recording auto-stop timer (hidden from UI) */
   useEffect(() => {
     if (!isListening) { setRecordingTime(0); return }
     const timer = setInterval(() => {
@@ -71,7 +71,6 @@ export default function VoiceTab() {
     setTranscript('')
     setParsedList([])
     setParseError(null)
-    cancelledRef.current = false
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -82,12 +81,6 @@ export default function VoiceTab() {
 
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop())
-
-        if (cancelledRef.current) {
-          cancelledRef.current = false
-          return
-        }
-
         setLoading(true)
         try {
           const audioBlob = new Blob(chunks, { type: 'audio/webm' })
@@ -116,10 +109,8 @@ export default function VoiceTab() {
           txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
           if (txs.length === 1) fillForm(txs[0])
           setParsedList(txs)
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : 'Voice processing failed'
-          setParseError(msg)
-          toast.error(msg)
+        } catch {
+          setParseError(VOICE_ERROR_PROCESSING)
         } finally {
           setLoading(false)
         }
@@ -129,29 +120,13 @@ export default function VoiceTab() {
       mediaRecorderRef.current = recorder
       setIsListening(true)
     } catch {
-      toast.error('Microphone access denied')
+      setParseError(VOICE_ERROR_MIC)
     }
   }
 
   const handleVoiceStop = () => {
     mediaRecorderRef.current?.stop()
     setIsListening(false)
-  }
-
-  const handleVoiceCancel = () => {
-    cancelledRef.current = true
-    mediaRecorderRef.current?.stop()
-    setIsListening(false)
-    setTranscript('')
-    setParsedList([])
-    setParseError(null)
-  }
-
-  const handleVoiceReRecord = () => {
-    setParsedList([])
-    setParseError(null)
-    setTranscript('')
-    setEditingIndex(null)
   }
 
   const handleSaveSingle = (index: number) => {
@@ -309,97 +284,68 @@ export default function VoiceTab() {
     )
   }
 
-  /* ── Recording / idle UI with Three.js particle sphere ── */
+  /* ── Recording / idle UI with gradient globe ── */
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: 16, fontFamily: FONT,
+      gap: 24, fontFamily: FONT,
     }}>
-      {/* Three.js Particle Sphere — tap to start/stop recording */}
+      {/* Gradient Globe — tap to start/stop recording */}
       <ParticleSphere
         isRecording={isListening}
-        onTap={isListening ? handleVoiceStop : handleVoiceStart}
+        isProcessing={loading}
+        hasError={parseError !== null}
+        onTap={loading ? () => {} : (isListening ? handleVoiceStop : handleVoiceStart)}
       />
 
       {/* Status text */}
-      <p style={{ color: isListening ? TEAL : '#6b7280', fontSize: 16, fontWeight: 500 }}>
-        {isListening ? 'Listening... Tap to stop' : 'Tap the sphere to speak'}
-      </p>
-      <p style={{ color: '#9ca3af', fontSize: 12 }}>
-        Supports Hindi, Bengali, Tamil, Telugu & more
-      </p>
-
-      {/* Recording progress + Cancel */}
-      {isListening && (
-        <>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 14, color: TEAL, fontWeight: 500 }}>
-              {recordingTime}s / {MAX_RECORDING_SECONDS}s
-            </p>
-            <div style={{
-              width: 200, height: 4, background: '#e5e7eb',
-              borderRadius: 2, marginTop: 4,
-            }}>
-              <div style={{
-                width: `${(recordingTime / MAX_RECORDING_SECONDS) * 100}%`,
-                height: '100%', background: TEAL,
-                borderRadius: 2, transition: 'width 0.3s',
-              }} />
-            </div>
+      <div style={{ textAlign: 'center' }}>
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEAL, justifyContent: 'center' }}>
+            <Loader2 size={16} className="animate-spin" />
+            <span style={{ fontSize: 16, fontWeight: 500 }}>Processing...</span>
           </div>
+        ) : isListening ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEAL, justifyContent: 'center' }}>
+            <span
+              className="animate-pulse"
+              style={{
+                display: 'inline-block',
+                width: 8, height: 8,
+                borderRadius: '50%',
+                background: TEAL,
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontSize: 16, fontWeight: 500 }}>Listening… Tap to stop</span>
+          </div>
+        ) : (
+          <p style={{ color: '#6b7280', fontSize: 16, fontWeight: 500 }}>
+            Tap to speak
+          </p>
+        )}
+        <p style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>
+          Supports Hindi, Bengali, Tamil, Telugu & more
+        </p>
+      </div>
 
-          {/* Cancel button */}
-          <button
-            onClick={handleVoiceCancel}
-            style={{
-              padding: '10px 28px', borderRadius: 20,
-              border: `1.5px solid ${TEAL}40`,
-              background: '#fff', color: '#6b7280',
-              fontSize: 14, fontWeight: 500, cursor: 'pointer',
-              fontFamily: FONT,
-            }}
-          >
-            Cancel
-          </button>
-        </>
-      )}
-
-      {/* Processing spinner */}
-      {loading && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEAL }}>
-          <Loader2 size={18} className="animate-spin" />
-          <span>Processing...</span>
-        </div>
-      )}
-
-      {/* Parse error → Re-record */}
+      {/* Friendly inline error — no red, no raw API message */}
       {parseError && !loading && (
-        <div style={{
-          width: '100%', padding: 16, background: '#fef9f0',
-          borderRadius: 12, border: '1px solid #f9731630',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+        <p style={{
+          fontSize: 14, color: '#9ca3af', textAlign: 'center',
+          maxWidth: 260, lineHeight: 1.6,
         }}>
-          <p style={{ fontSize: 14, color: '#b45309', textAlign: 'center' }}>{parseError}</p>
-          <button
-            onClick={handleVoiceReRecord}
-            style={{
-              padding: '10px 24px', borderRadius: 20,
-              border: `1.5px solid ${TEAL}40`,
-              background: '#fff', color: '#374151',
-              fontSize: 14, fontWeight: 500, cursor: 'pointer',
-              fontFamily: FONT,
-            }}
-          >
-            Re-record
-          </button>
-        </div>
+          {parseError === VOICE_ERROR_MIC
+            ? 'Microphone access denied. Please allow access and try again.'
+            : "Couldn\u2019t catch that. Please tap and try again."}
+        </p>
       )}
 
-      {/* Transcript display */}
+      {/* Transcript display (only when no error and no parsed result) */}
       {transcript && !loading && parsedList.length === 0 && !parseError && (
         <div style={{
           width: '100%', padding: 16, background: '#f0fdf4',
-          borderRadius: 12, marginTop: 8,
+          borderRadius: 12,
         }}>
           <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Transcript:</p>
           <p style={{ fontWeight: 500 }}>{transcript}</p>
