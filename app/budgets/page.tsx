@@ -95,6 +95,7 @@ export default function BudgetsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth())
+  const [earliestBudgetMonth, setEarliestBudgetMonth] = useState<string | null>(null)
 
   /* modal state */
   const [modalOpen, setModalOpen] = useState(false)
@@ -119,6 +120,13 @@ export default function BudgetsPage() {
     ])
     setBudgets(budgetsData)
     setTransactions(transactionsData)
+    if (budgetsData.length > 0) {
+      const earliest = budgetsData.reduce(
+        (min, b) => (b.month < min ? b.month : min),
+        budgetsData[0].month,
+      )
+      setEarliestBudgetMonth(earliest)
+    }
     setLoading(false)
     setMounted(true)
   }
@@ -178,6 +186,8 @@ export default function BudgetsPage() {
     const now = new Date()
     return new Date(y, m, 1) > new Date(now.getFullYear(), now.getMonth(), 1)
   })()
+
+  const prevDisabled = earliestBudgetMonth !== null && selectedMonth <= earliestBudgetMonth
 
   /* ── Handlers (logic preserved) ─────────────────────────────────────── */
 
@@ -278,7 +288,12 @@ export default function BudgetsPage() {
         <div className="flex items-center justify-center gap-4 mb-4">
           <button
             onClick={goPrev}
-            className="w-8 h-8 rounded-full bg-teal-50 hover:bg-teal-100 flex items-center justify-center text-teal-600 transition-colors"
+            disabled={prevDisabled}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              prevDisabled
+                ? 'bg-gray-100 text-gray-300 opacity-30 cursor-not-allowed pointer-events-none'
+                : 'bg-teal-50 hover:bg-teal-100 text-teal-600'
+            }`}
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -299,6 +314,7 @@ export default function BudgetsPage() {
         </div>
 
         {/* Summary pills */}
+        {filtered.length > 0 && (
         <div className="flex gap-2 mb-6">
           {[
             { label: 'Total Budget', value: formatIndianCurrency(totalBudget), color: 'text-gray-800' },
@@ -311,6 +327,7 @@ export default function BudgetsPage() {
             </div>
           ))}
         </div>
+        )}
 
         {/* ── Section 2 & 3: Cards or Empty state ─────────────────────── */}
         {filtered.length === 0 ? (
@@ -364,17 +381,17 @@ export default function BudgetsPage() {
                 >
                   {/* Card header */}
                   <div className="flex items-center justify-between p-4 pb-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center"
                         style={{ backgroundColor: `${catData?.color}15` }}
                       >
                         <span style={{ color: catData?.color }}>
                           <Icon className="w-4 h-4" />
                         </span>
                       </div>
-                      <div>
-                        <p className="font-semibold text-gray-800">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden text-ellipsis max-w-[160px]">
                           {catData?.name || budget.category}
                         </p>
                         <p className="text-xs text-gray-400">
@@ -382,14 +399,9 @@ export default function BudgetsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {isCurrentMonth ? (
                         <>
-                          <span
-                            className={`text-xs font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}
-                          >
-                            {badge.label}
-                          </span>
                           <button
                             onClick={() => handleEdit(budget)}
                             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -459,13 +471,20 @@ export default function BudgetsPage() {
                     </div>
                   </div>
 
-                  {/* Percentage label */}
-                  <p
-                    className="px-4 pb-3 text-right text-xs font-medium"
-                    style={{ color: progColor }}
-                  >
-                    {Math.round(rawPct)}% used
-                  </p>
+                  {/* Percentage label + badge row */}
+                  <div className="px-4 pb-3 flex items-center justify-between">
+                    <span
+                      className={`text-xs font-semibold whitespace-nowrap px-2 py-0.5 rounded-full ${badge.cls}`}
+                    >
+                      {badge.label}
+                    </span>
+                    <p
+                      className="text-xs font-medium"
+                      style={{ color: progColor }}
+                    >
+                      {Math.round(rawPct)}% used
+                    </p>
+                  </div>
                 </motion.div>
               )
             })}
@@ -497,31 +516,31 @@ export default function BudgetsPage() {
                   <div className="bg-white rounded-t-3xl md:rounded-2xl max-h-[90vh] overflow-y-auto">
                     {/* Header */}
                     <div
-                      className="p-5 relative rounded-t-3xl md:rounded-t-2xl"
+                      className="p-3 relative rounded-t-3xl md:rounded-t-2xl"
                       style={{ background: 'linear-gradient(135deg, #0D9488, #059669)' }}
                     >
-                      <h2 className="text-white font-bold text-lg">
+                      <h2 className="text-white font-bold text-base">
                         {editingBudget ? 'Edit Budget' : 'Create Budget'}
                       </h2>
-                      <p className="text-white/80 text-sm mt-0.5">
-                        {editingBudget
-                          ? 'Update your spending limit'
-                          : 'Set a spending limit for a category'}
-                      </p>
+                      {editingBudget && (
+                        <p className="text-white/80 text-sm mt-0.5">
+                          Update your spending limit
+                        </p>
+                      )}
                       <button
                         onClick={closeModal}
-                        className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
 
                     {/* Category selector */}
-                    <div className="mt-4 px-5">
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                    <div className="mt-3 px-5">
+                      <label className="text-sm font-semibold text-gray-700 mb-1 block">
                         Category
                       </label>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-3 gap-1.5">
                         {cats.map(c => {
                           const CI = categoryIconMap[c.name] || categoryIconMap['Other']
                           const sel = category === c.name
@@ -532,7 +551,7 @@ export default function BudgetsPage() {
                               whileTap={!dis && !sel ? { scale: 0.95 } : undefined}
                               onClick={() => { if (!dis) setCategory(c.name) }}
                               disabled={dis}
-                              className={`rounded-xl p-2.5 text-center transition-all ${
+                              className={`rounded-xl p-2 text-center transition-all ${
                                 sel
                                   ? 'bg-teal-50 border-2 border-teal-500'
                                   : dis
@@ -541,7 +560,7 @@ export default function BudgetsPage() {
                               }`}
                             >
                               <span style={{ color: sel ? '#0D9488' : c.color }}>
-                                <CI className="w-5 h-5 mx-auto" />
+                                <CI className="w-4 h-4 mx-auto" />
                               </span>
                               <p
                                 className={`text-xs mt-1 truncate ${
@@ -557,8 +576,8 @@ export default function BudgetsPage() {
                     </div>
 
                     {/* Amount field */}
-                    <div className="mt-4 px-5">
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                    <div className="mt-3 px-5">
+                      <label className="text-sm font-semibold text-gray-700 mb-1 block">
                         Budget Amount
                       </label>
                       <div className="bg-gray-50 rounded-xl border border-gray-200 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100 flex items-center px-4 transition-all">
@@ -568,7 +587,7 @@ export default function BudgetsPage() {
                           placeholder="0"
                           value={amount}
                           onChange={e => setAmount(e.target.value)}
-                          className="flex-1 bg-transparent py-3.5 text-xl font-bold text-gray-800 outline-none ml-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="flex-1 bg-transparent py-2.5 text-xl font-bold text-gray-800 outline-none ml-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <div className="flex gap-2 flex-wrap mt-2">
@@ -576,7 +595,7 @@ export default function BudgetsPage() {
                           <button
                             key={v}
                             onClick={() => setAmount(String(v))}
-                            className="bg-teal-50 text-teal-700 text-xs rounded-full px-3 py-1.5 border border-teal-200 font-medium hover:bg-teal-100 transition-colors"
+                            className="bg-teal-50 text-teal-700 text-xs rounded-full px-2 py-1 border border-teal-200 font-medium hover:bg-teal-100 transition-colors"
                           >
                             ₹{v.toLocaleString('en-IN')}
                           </button>
@@ -585,19 +604,19 @@ export default function BudgetsPage() {
                     </div>
 
                     {/* Month selector */}
-                    <div className="mt-4 px-5">
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                    <div className="mt-3 px-5">
+                      <label className="text-sm font-semibold text-gray-700 mb-1 block">
                         Month
                       </label>
                       {editingBudget ? (
                         <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                          <span className="shrink-0 rounded-full px-4 py-2 text-sm bg-teal-600 text-white font-semibold">
+                          <span className="shrink-0 rounded-full px-3 py-1.5 text-sm bg-teal-600 text-white font-semibold">
                             {formatMonthShort(month)}
                           </span>
                         </div>
                       ) : (
                         <div className="flex gap-2 pb-2">
-                          <span className="rounded-full px-4 py-2 text-sm bg-teal-600 text-white font-semibold">
+                          <span className="rounded-full px-3 py-1.5 text-sm bg-teal-600 text-white font-semibold">
                             {formatMonthShort(curMonth)}
                           </span>
                         </div>
@@ -605,17 +624,17 @@ export default function BudgetsPage() {
                     </div>
 
                     {/* Footer buttons */}
-                    <div className="p-5 pt-4 flex gap-3">
+                    <div className="p-3 flex gap-3">
                       <button
                         onClick={closeModal}
-                        className="flex-1 border border-gray-200 rounded-xl py-3 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
+                        className="flex-1 border border-gray-200 rounded-xl py-2.5 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleSave}
                         disabled={!category || !amount || !month || saving}
-                        className={`flex-1 rounded-xl py-3 font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                        className={`flex-1 rounded-xl py-2.5 font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
                           !category || !amount || !month
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             : saving
