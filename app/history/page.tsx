@@ -340,12 +340,23 @@ function HistoryContent() {
                 Select All
               </button>
             </div>
-            <button
-              onClick={exitSelectionMode}
-              className="text-sm font-medium text-gray-600 px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
+            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-3 py-1.5 rounded-xl shadow-sm transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete {selectedIds.length}
+                </button>
+              )}
+              <button
+                onClick={exitSelectionMode}
+                className="text-sm font-medium text-gray-600 px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-between no-print">
@@ -543,19 +554,6 @@ function HistoryContent() {
           </div>
         )}
       </div>
-
-      {/* Fixed delete button */}
-      {selectionMode && selectedIds.length > 0 && (
-        <div className="fixed bottom-20 left-0 right-0 px-4 z-40 no-print">
-          <button
-            onClick={() => setDeleteDialogOpen(true)}
-            className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl py-3 font-semibold flex items-center justify-center gap-2 shadow-lg transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete {selectedIds.length} transaction{selectedIds.length !== 1 ? 's' : ''}
-          </button>
-        </div>
-      )}
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
