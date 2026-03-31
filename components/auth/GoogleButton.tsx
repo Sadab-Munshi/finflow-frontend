@@ -26,7 +26,7 @@ export default function GoogleButton({ disabled }: GoogleButtonProps) {
     <button
       onClick={handleGoogleLogin}
       disabled={loading || disabled}
-      className="flex items-center justify-center gap-3 bg-black text-white rounded-2xl px-6 py-3 font-medium hover:bg-gray-900 transition-all mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full py-3 font-medium flex items-center justify-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {/* Google SVG Icon */}
       <svg width="20" height="20" viewBox="0 0 24 24">
