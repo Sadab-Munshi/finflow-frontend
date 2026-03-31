@@ -76,11 +76,11 @@ export default function LandingPage() {
               priority={true}
               quality={85}
             />
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 tracking-tight leading-tight mb-6 reveal">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 tracking-tight leading-tight mb-6 reveal">
               <span className="block">Spend less time counting,</span>
               <span className="block">more time living</span>
             </h1>
-            <p className="text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto mb-10 reveal">
+            <p className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-10 reveal">
               Track every rupee effortlessly. Voice, camera or text — in your language, backed by a secured database.
             </p>
             <p className="text-sm text-neutral-400 mt-[-24px] mb-6 reveal">

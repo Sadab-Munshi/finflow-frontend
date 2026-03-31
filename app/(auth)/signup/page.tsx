@@ -17,7 +17,7 @@ export default function SignupPage() {
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Create Your Account</h1>
-            <p className="text-gray-500 text-sm mt-1">Track every rupee — effortlessly and securely.</p>
+            <p className="text-gray-500 text-sm mt-1">Join thousands managing their finances smarter with AI</p>
           </div>
 
           <SignupForm />

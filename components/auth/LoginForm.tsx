@@ -145,7 +145,7 @@ export default function LoginForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-neutral-600 mb-1">Email</label>
+          <label className="block text-xs font-semibold uppercase tracking-widest text-gray-800 mb-2">Email</label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -161,7 +161,7 @@ export default function LoginForm() {
         {/* Password */}
         <div>
           <div className="flex justify-between items-center mb-2">
-          <label className="block text-sm font-medium text-neutral-600 mb-1">Password</label>
+            <label className="block text-xs font-semibold uppercase tracking-widest text-gray-800">Password</label>
             <Link href="/forgot-password" className="text-xs text-gray-800 font-semibold hover:text-black hover:underline">Forgot password?</Link>
           </div>
           <div className="relative">
@@ -196,7 +196,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-full font-semibold text-white bg-teal-600 hover:bg-teal-700 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 rounded-full font-semibold text-white bg-black hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
