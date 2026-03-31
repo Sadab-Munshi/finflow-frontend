@@ -30,7 +30,13 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'FinFlow – Track Every Rupee by Voice, Camera or Text',
-    images: ['https://app.sadabmunshi.online/og-image.png'],
+    description: 'Track every rupee — by voice, camera or text. Free and secure.',
+    images: [{
+      url: 'https://app.sadabmunshi.online/og-image.png',
+      width: 1200,
+      height: 630,
+      alt: 'FinFlow – Smart personal finance tracker by Sadab Munshi',
+    }],
   },
   alternates: { canonical: 'https://app.sadabmunshi.online' },
 }
