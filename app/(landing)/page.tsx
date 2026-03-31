@@ -72,10 +72,11 @@ export default function LandingPage() {
               <br />
               more time living
             </h1>
-            <p className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-10 reveal">
+            <p className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-6 reveal">
               Track every rupee effortlessly. Voice, camera or text — in your language, backed by a secured database.
             </p>
-            <div className="mt-8 flex flex-row items-center justify-center gap-3 flex-wrap">
+            <p className="text-sm text-neutral-400 text-center mb-8">✦ Be among the first to manage money the smarter way</p>
+            <div className="mt-0 flex flex-row items-center justify-center gap-3 flex-wrap">
               <Link href="/signup" className="bg-gray-900 text-white px-7 py-3 rounded-full text-sm font-medium hover:bg-gray-700 transition-all">
                 Get Started
               </Link>
