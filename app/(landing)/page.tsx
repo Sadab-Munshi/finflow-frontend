@@ -67,6 +67,14 @@ export default function LandingPage() {
           className="relative z-0 min-h-fit flex flex-col items-center justify-center text-center px-6 pb-16"
         >
           <div className="hero-content max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <Image
+              src="/hero-dashboard.webp"
+              alt="FinFlow Dashboard"
+              width={384}
+              height={384}
+              className="w-full max-w-sm mx-auto mb-10 drop-shadow-sm"
+              priority
+            />
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 tracking-tight leading-tight mb-6 reveal">
               Spend less time counting,
               <br />
@@ -84,14 +92,6 @@ export default function LandingPage() {
                 Login
               </Link>
             </div>
-            <Image
-              src="/hero-dashboard.webp"
-              alt="FinFlow Dashboard"
-              width={384}
-              height={384}
-              className="w-full max-w-sm mx-auto mt-10 drop-shadow-sm"
-              priority
-            />
           </div>
 
           {/* Background blobs */}
