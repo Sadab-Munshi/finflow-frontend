@@ -55,7 +55,7 @@ export default function LandingShell({ children }: { children: React.ReactNode }
 
       {/* ── HEADER ── */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-2.5
+        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-1.5 sm:py-2.5
           bg-white/85 backdrop-blur-md border-b border-gray-100 shadow-sm
           transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}
       >
@@ -66,7 +66,7 @@ export default function LandingShell({ children }: { children: React.ReactNode }
             alt="FinFlow – Smart Finance Tracker"
             width={120}
             height={38}
-            className="h-8 w-auto object-contain"
+            className="h-7 sm:h-8 w-auto object-contain"
             priority
           />
         </Link>
@@ -173,7 +173,7 @@ export default function LandingShell({ children }: { children: React.ReactNode }
             </div>
           </div>
           <div className="border-t border-gray-800 pt-6 text-sm text-gray-500">
-            © 2026 FinFlow by Sadab Munshi. All rights reserved.
+            © 2026 FinFlow. All rights reserved.
           </div>
         </div>
       </footer>
