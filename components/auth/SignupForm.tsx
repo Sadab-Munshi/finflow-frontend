@@ -168,7 +168,7 @@ export default function SignupForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Full Name */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-widest text-gray-800 mb-2">Full Name</label>
+          <label className="block text-sm font-medium text-neutral-600 mb-1">Full Name</label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -182,7 +182,7 @@ export default function SignupForm() {
 
         {/* Email */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-widest text-gray-800 mb-2">Email</label>
+          <label className="block text-sm font-medium text-neutral-600 mb-1">Email</label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -197,7 +197,7 @@ export default function SignupForm() {
 
         {/* Password */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-widest text-gray-800 mb-2">Password</label>
+          <label className="block text-sm font-medium text-neutral-600 mb-1">Password</label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -226,7 +226,7 @@ export default function SignupForm() {
 
         {/* Confirm Password */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-widest text-gray-800 mb-2">Confirm Password</label>
+          <label className="block text-sm font-medium text-neutral-600 mb-1">Confirm Password</label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -240,19 +240,6 @@ export default function SignupForm() {
             </button>
           </div>
           {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
-        </div>
-
-        {/* Turnstile */}
-        <div>
-          <TurnstileWidget
-            ref={turnstileRef}
-            onSuccess={handleTurnstileSuccess}
-            onError={handleTurnstileError}
-            onExpire={handleTurnstileExpire}
-          />
-          {turnstileError && (
-            <p className="text-red-500 text-xs mt-2">Please complete the security verification</p>
-          )}
         </div>
 
         {/* Terms Agreement */}
@@ -278,11 +265,24 @@ export default function SignupForm() {
           )}
         </div>
 
+        {/* Turnstile */}
+        <div>
+          <TurnstileWidget
+            ref={turnstileRef}
+            onSuccess={handleTurnstileSuccess}
+            onError={handleTurnstileError}
+            onExpire={handleTurnstileExpire}
+          />
+          {turnstileError && (
+            <p className="text-red-500 text-xs mt-2">Please complete the security verification</p>
+          )}
+        </div>
+
         {/* Submit */}
         <button
           type="submit"
           disabled={loading || !agreedToTerms}
-          className="w-full py-3 rounded-full font-semibold text-white bg-black hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 rounded-full font-semibold text-white bg-teal-600 hover:bg-teal-700 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Creating Account...' : 'Create Account'}
         </button>
