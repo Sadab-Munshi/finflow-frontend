@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button'
 import { Mic, ScanLine, Brain, FileText, PiggyBank, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import PhoneSlider from '@/components/landing/PhoneSlider'
+import { BorderGlow } from '@/components/ui/border-glow'
+import { Antigravity } from '@/components/ui/antigravity'
 
 export default function LandingPage() {
   const router = useRouter()
   const heroRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => { document.title = 'FinFlow | Home' }, [])
 
   /* ── auth redirect ── */
   useEffect(() => {
@@ -68,12 +68,13 @@ export default function LandingPage() {
         >
           <div className="hero-content max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Image
-              src="/hero-illustration.png"
-              alt="FinFlow Dashboard"
-              width={384}
-              height={384}
-              className="w-full max-w-sm mx-auto mb-8 drop-shadow-sm"
-              priority
+              src="/hero-dashboard.webp"
+              alt="FinFlow dashboard showing total balance of ₹2,58,750 with expense overview chart, spending categories breakdown and recent transactions"
+              width={700}
+              height={493}
+              className="w-full max-w-lg mx-auto mb-8 drop-shadow-xl rounded-2xl"
+              priority={true}
+              quality={85}
             />
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 tracking-tight leading-tight mb-6 reveal">
               Spend less time counting,
@@ -82,6 +83,9 @@ export default function LandingPage() {
             </h1>
             <p className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-10 reveal">
               Track every rupee effortlessly. Voice, camera or text — in your language, backed by a secured database.
+            </p>
+            <p className="text-sm text-neutral-400 mt-[-24px] mb-6 reveal">
+              ✦ Join early users tracking their rupees smarter with FinFlow
             </p>
             <div className="mt-8 flex flex-row items-center justify-center gap-3 flex-wrap">
               <Link href="/signup" className="bg-gray-900 text-white px-7 py-3 rounded-full text-sm font-medium hover:bg-gray-700 transition-all">
@@ -114,16 +118,20 @@ export default function LandingPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {features.map((feature) => (
-                <div
+                <BorderGlow
                   key={feature.title}
-                  className="group p-6 rounded-2xl border border-neutral-100 hover:border-neutral-200 hover:shadow-lg transition-all bg-white reveal"
+                  glowColor="teal"
+                  borderRadius="16px"
+                  className="reveal"
                 >
-                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-neutral-100 text-neutral-700 mb-4 group-hover:bg-teal-700 group-hover:text-white transition-colors">
-                    <feature.icon className="w-6 h-6" />
+                  <div className="group p-6 rounded-2xl bg-white h-full transition-all">
+                    <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-neutral-100 text-neutral-700 mb-4 group-hover:bg-teal-700 group-hover:text-white transition-colors">
+                      <feature.icon className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-neutral-900 mb-2">{feature.title}</h3>
+                    <p className="text-neutral-600 leading-relaxed">{feature.description}</p>
                   </div>
-                  <h3 className="text-lg font-semibold text-neutral-900 mb-2">{feature.title}</h3>
-                  <p className="text-neutral-600 leading-relaxed">{feature.description}</p>
-                </div>
+                </BorderGlow>
               ))}
             </div>
           </div>
@@ -140,11 +148,61 @@ export default function LandingPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {steps.map((step) => (
-                <div key={step.number} className="text-center reveal">
-                  <div className="text-5xl font-bold text-neutral-200 mb-4">{step.number}</div>
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-3">{step.title}</h3>
-                  <p className="text-neutral-600 leading-relaxed">{step.description}</p>
-                </div>
+                <Antigravity key={step.number} className="reveal">
+                  <div className="text-center p-6">
+                    <div className="text-5xl font-bold text-neutral-200 mb-4">{step.number}</div>
+                    <h3 className="text-xl font-semibold text-neutral-900 mb-3">{step.title}</h3>
+                    <p className="text-neutral-600 leading-relaxed">{step.description}</p>
+                  </div>
+                </Antigravity>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        <section className="py-24 bg-gradient-to-b from-[#f0f9f4] to-[#e8f4fd]">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-4 reveal">
+                Frequently Asked Questions
+              </h2>
+            </div>
+            <div className="space-y-4">
+              {[
+                {
+                  q: 'Is FinFlow free to use?',
+                  a: 'Yes, FinFlow is completely free. Sign up and start tracking your expenses immediately with no hidden charges.',
+                },
+                {
+                  q: 'Which languages does FinFlow support?',
+                  a: 'FinFlow supports multiple Indian languages. You can speak your transactions naturally and FinFlow will understand your language and accent.',
+                },
+                {
+                  q: 'Is my financial data secure?',
+                  a: 'Absolutely. Your data is encrypted and stored in a secured database with industry-standard protection at all times.',
+                },
+                {
+                  q: 'How do I add a transaction?',
+                  a: 'You can add transactions by speaking naturally, scanning a receipt with your camera, or typing it manually — whichever is most convenient.',
+                },
+                {
+                  q: 'Who made FinFlow?',
+                  a: 'FinFlow is built by Sadab Munshi, designed to make personal finance effortless for everyone.',
+                },
+              ].map((item, i) => (
+                <details
+                  key={i}
+                  className="group border border-neutral-200 rounded-2xl bg-white overflow-hidden reveal"
+                >
+                  <summary className="flex items-center justify-between px-6 py-4 font-semibold text-neutral-900 cursor-pointer list-none select-none hover:bg-neutral-50 transition-colors">
+                    {item.q}
+                    <span className="text-teal-600 text-xl group-open:rotate-45 transition-transform duration-200">+</span>
+                  </summary>
+                  <p className="px-6 pb-5 text-neutral-600 text-sm leading-relaxed border-t border-neutral-100 pt-3">
+                    {item.a}
+                  </p>
+                </details>
               ))}
             </div>
           </div>
