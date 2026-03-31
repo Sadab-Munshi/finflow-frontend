@@ -191,28 +191,62 @@ Do NOT change any props, callbacks, or verification logic on it.
 
 ---
 
-## STEP 8 — Add Back-to-Home Link
+## STEP 8 — Add Back-to-Home Link (`app/(auth)/layout.tsx`)
 
-### In `components/auth/SignupForm.tsx` AND `components/auth/LoginForm.tsx`
+### ✅ Correct Architecture — One file covers ALL auth pages
 
-Find the top of each form — there's likely an icon/logo at the top.
+Do NOT add the back button inside SignupForm or LoginForm.
+Instead, add it ONCE in `app/(auth)/layout.tsx` — it will automatically
+appear on login, signup, forgot-password, and reset-password pages.
 
-After the logo/icon element, add this link:
+### 8a — Check if `app/(auth)/layout.tsx` exists
+
+- **If it exists** → read it fully, then add the back button inside
+- **If it does NOT exist** → create it
+
+### 8b — Add or update `app/(auth)/layout.tsx`
+
+If file does not exist, create it with this content:
+
 ```tsx
 import Link from 'next/link'
 
-<Link
-  href="/"
-  className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-teal-600 transition-colors mb-6 self-start"
->
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-  Back to home
-</Link>
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative min-h-screen">
+      <div className="fixed top-4 left-4 z-50">
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 text-sm text-neutral-500
+            hover:text-teal-600 bg-white/80 backdrop-blur-sm px-3 py-1.5
+            rounded-full border border-gray-200 shadow-sm transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path
+              d="M10 12L6 8L10 4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Back
+        </Link>
+      </div>
+      {children}
+    </div>
+  )
+}
 ```
 
-Place it ABOVE the "Create Your Account" / "Welcome Back" heading.
+If file already exists, find the return statement and add the
+fixed back button div INSIDE the outermost wrapper, before `{children}`.
+
+### Why this is correct
+- One change → covers login, signup, forgot-password, reset-password
+- `fixed top-4 left-4` → floats above auth background, never shifts layout
+- `bg-white/80 backdrop-blur-sm` → readable on any background color
+- Do NOT add Link import or back button anywhere in SignupForm or LoginForm
 
 ---
 
@@ -264,7 +298,8 @@ After all edits confirm:
 ✅ Sign In button: bg-teal-600 hover:bg-teal-700
 ✅ Google button: white bg, gray border, gray text
 ✅ TurnstileWidget moved: above submit button, below checkbox
-✅ Back to home link added in both SignupForm and LoginForm
+✅ Back button added in app/(auth)/layout.tsx ONLY — not in form components
+✅ Back button is fixed top-left, covers all 4 auth pages automatically
 ✅ Landing h1: text-3xl sm:text-4xl md:text-5xl lg:text-6xl
 ✅ Landing p: text-base sm:text-lg
 ✅ Zero auth logic touched
@@ -280,17 +315,19 @@ After all edits confirm:
 ## ✅ Auth UI Fixes Applied
 
 ### Files Edited:
+- app/(auth)/layout.tsx
+  → Back button added — fixed top-left, covers ALL auth pages
+    (login, signup, forgot-password, reset-password)
+
 - components/auth/SignupForm.tsx
   → Subtext: removed "thousands" — authentic copy
   → Labels: text-sm, no uppercase
   → Create Account button: teal-600
   → Turnstile: moved above submit button
-  → Back to home link added
 
 - components/auth/LoginForm.tsx
   → Labels: text-sm, no uppercase
   → Sign In button: teal-600
-  → Back to home link added
 
 - components/auth/GoogleButton.tsx
   → White background, gray border — Google brand compliant
