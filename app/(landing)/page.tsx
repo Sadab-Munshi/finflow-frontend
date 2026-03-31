@@ -67,23 +67,16 @@ export default function LandingPage() {
           className="relative z-0 min-h-fit flex flex-col items-center justify-center text-center px-6 pb-16"
         >
           <div className="hero-content max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <Image
-              src="/hero-illustration.png"
-              alt="FinFlow Dashboard"
-              width={384}
-              height={384}
-              className="w-full max-w-sm mx-auto mb-8 drop-shadow-sm"
-              priority
-            />
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 tracking-tight leading-tight mb-6 reveal">
               Spend less time counting,
               <br />
               more time living
             </h1>
-            <p className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-10 reveal">
+            <p className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-6 reveal">
               Track every rupee effortlessly. Voice, camera or text — in your language, backed by a secured database.
             </p>
-            <div className="mt-8 flex flex-row items-center justify-center gap-3 flex-wrap">
+            <p className="text-sm text-neutral-400 text-center mb-8">✦ Be among the first to manage money the smarter way</p>
+            <div className="mt-0 flex flex-row items-center justify-center gap-3 flex-wrap">
               <Link href="/signup" className="bg-gray-900 text-white px-7 py-3 rounded-full text-sm font-medium hover:bg-gray-700 transition-all">
                 Get Started
               </Link>
@@ -91,6 +84,14 @@ export default function LandingPage() {
                 Login
               </Link>
             </div>
+            <Image
+              src="/hero-dashboard.webp"
+              alt="FinFlow Dashboard"
+              width={384}
+              height={384}
+              className="w-full max-w-sm mx-auto mt-10 drop-shadow-sm"
+              priority
+            />
           </div>
 
           {/* Background blobs */}
