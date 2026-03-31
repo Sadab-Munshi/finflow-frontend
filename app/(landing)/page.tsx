@@ -72,13 +72,14 @@ export default function LandingPage() {
               alt="FinFlow dashboard showing total balance of ₹2,58,750 with expense overview chart, spending categories breakdown and recent transactions"
               width={700}
               height={493}
-              className="w-full max-w-[280px] sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl mx-auto mb-8 drop-shadow-xl rounded-2xl"
+              className="w-full max-w-lg mx-auto mb-8 drop-shadow-xl rounded-2xl"
               priority={true}
               quality={85}
             />
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 tracking-tight leading-tight mb-6 reveal">
-              <span className="block">Spend less time counting,</span>
-              <span className="block">more time living</span>
+              Spend less time counting,
+              <br />
+              more time living
             </h1>
             <p className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-10 reveal">
               Track every rupee effortlessly. Voice, camera or text — in your language, backed by a secured database.
