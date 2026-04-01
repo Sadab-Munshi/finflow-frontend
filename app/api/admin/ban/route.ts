@@ -34,8 +34,25 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'ip_ban') {
+    // Find all users with this IP address
+    const { data: ipUsers } = await supabase
+      .from('user_management')
+      .select('user_id')
+      .eq('ip_address', ipAddress)
+
+    // Ban each user at the auth level so their sessions are invalidated
+    if (ipUsers && ipUsers.length > 0) {
+      for (const u of ipUsers) {
+        await supabase.auth.admin.updateUserById(u.user_id, { ban_duration: '876600h' })
+      }
+    }
+
+    // Mark all users with this IP as both ip_banned and is_banned
     await supabase.from('user_management').update({
       ip_banned: true,
+      is_banned: true,
+      ban_reason: reason || 'IP banned by admin',
+      banned_at: new Date().toISOString(),
     }).eq('ip_address', ipAddress)
   }
 

@@ -19,12 +19,13 @@ export async function POST(req: NextRequest) {
 
     const { data } = await supabase
       .from('user_management')
-      .select('ip_banned, is_banned')
+      .select('ip_banned')
       .eq('ip_address', ipAddress)
-      .maybeSingle()
+      .eq('ip_banned', true)
+      .limit(1)
 
     return NextResponse.json({ 
-      banned: data?.ip_banned === true && data?.is_banned === true 
+      banned: Array.isArray(data) && data.length > 0
     })
   } catch (e) {
     return NextResponse.json({ banned: false })

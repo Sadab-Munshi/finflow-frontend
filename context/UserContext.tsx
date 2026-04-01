@@ -71,10 +71,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       // Ban check
       const { data: banData } = await supabase
         .from('user_management')
-        .select('is_banned, ban_reason')
+        .select('is_banned, ip_banned, ban_reason')
         .eq('user_id', authUser.id)
         .single()
-      if (banData?.is_banned) {
+      if (banData?.is_banned || banData?.ip_banned) {
         await supabase.auth.signOut()
         window.location.href = '/login?banned=true'
         return
