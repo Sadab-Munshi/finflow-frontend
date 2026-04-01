@@ -155,7 +155,7 @@ export default function UserGuidePage() {
         <div className="space-y-4">
 
           {/* ──────────────────────── SECTION 01 ──────────────────────── */}
-          <GuideSection title="Getting Started &amp; Account Setup" icon={<HelpCircle size={18} />} defaultOpen>
+          <GuideSection title="Getting Started &amp; Account Setup" icon={<HelpCircle size={18} />}>
             <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-neutral-900 mb-2">What Is FinFlow?</h3>

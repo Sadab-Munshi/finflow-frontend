@@ -1,5 +1,6 @@
 import AuthBackground from '@/components/auth/AuthBackground'
 import SignupForm from '@/components/auth/SignupForm'
+import BackButton from '@/components/landing/BackButton'
 
 export const metadata = { title: 'Sign Up | FinFlow' }
 
@@ -8,6 +9,7 @@ export default function SignupPage() {
     <main className="min-h-screen overflow-y-auto flex items-center justify-center py-8 px-4">
       <AuthBackground />
       <div className="w-full max-w-md">
+        <BackButton />
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-[0_0_60px_rgba(0,212,255,0.05)]">
           {/* Logo */}
           <div className="text-center mb-8">
