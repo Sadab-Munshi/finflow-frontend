@@ -70,8 +70,8 @@ export async function updateSession(request: NextRequest) {
         url.searchParams.set('banned', 'true')
         return NextResponse.redirect(url)
       }
-    } catch {
-      // Don't block the request if ban check fails
+    } catch (error) {
+      console.error('Middleware ban check failed:', error)
     }
   }
 

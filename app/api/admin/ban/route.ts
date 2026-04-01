@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyAdmin } from '@/lib/admin-auth'
 
+const PERMANENT_BAN_DURATION = '876600h' // ~100 years
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -14,7 +16,7 @@ export async function POST(req: NextRequest) {
   const { userId, action, reason, ipAddress } = await req.json()
 
   if (action === 'ban') {
-    await supabase.auth.admin.updateUserById(userId, { ban_duration: '876600h' })
+    await supabase.auth.admin.updateUserById(userId, { ban_duration: PERMANENT_BAN_DURATION })
     await supabase.from('user_management').upsert({
       user_id: userId,
       is_banned: true,
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
     // Ban each user at the auth level so their sessions are invalidated
     if (ipUsers && ipUsers.length > 0) {
       for (const u of ipUsers) {
-        await supabase.auth.admin.updateUserById(u.user_id, { ban_duration: '876600h' })
+        await supabase.auth.admin.updateUserById(u.user_id, { ban_duration: PERMANENT_BAN_DURATION })
       }
     }
 
