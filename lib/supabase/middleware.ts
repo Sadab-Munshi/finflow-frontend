@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
@@ -48,6 +49,30 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // Check ban status for authenticated users on protected routes
+  if (user && isProtected) {
+    try {
+      const serviceClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      const { data: banData } = await serviceClient
+        .from('user_management')
+        .select('is_banned, ip_banned')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (banData?.is_banned || banData?.ip_banned) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        url.searchParams.set('banned', 'true')
+        return NextResponse.redirect(url)
+      }
+    } catch (error) {
+      console.error('Middleware ban check failed:', error)
+    }
   }
 
   return supabaseResponse
