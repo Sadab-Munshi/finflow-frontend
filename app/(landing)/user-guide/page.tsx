@@ -2,6 +2,7 @@
 
 import { MessageSquare, Camera, Mic, Bell, BarChart3, Brain, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import BackButton from '@/components/landing/BackButton'
 
 /* ── collapsible section ── */
@@ -66,7 +67,7 @@ export default function UserGuidePage() {
   }, [])
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 overflow-x-hidden">
 
       {/* ── back button ── */}
       <BackButton />
@@ -74,6 +75,18 @@ export default function UserGuidePage() {
       {/* ── header ── */}
       <div className="mb-10">
         <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-3">User Guide</h1>
+      </div>
+
+      {/* ── full-width infographic ── */}
+      <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen mb-10">
+        <Image
+          src="/finflow-infographic.webp"
+          alt="FinFlow Infographic"
+          width={1920}
+          height={1080}
+          className="w-full h-auto block"
+          priority
+        />
       </div>
 
       {/* ── quick-start banner ── */}
