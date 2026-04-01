@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createAuthClient } from '@/lib/supabase/server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,16 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   const { userId, email, ipAddress } = await req.json()
+
+  const authSupabase = await createAuthClient()
+  const { data: { user } } = await authSupabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+  }
+  if (user.id !== userId) {
+    return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+  }
 
   // Fetch city, country from IP
   let city = ''
