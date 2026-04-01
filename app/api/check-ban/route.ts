@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyInternalSecret } from '@/lib/internal-auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +8,10 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
+  if (!verifyInternalSecret(req)) {
+    return NextResponse.json({ banned: false, error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { userId } = await req.json()
   
   if (!userId) return NextResponse.json({ banned: false })

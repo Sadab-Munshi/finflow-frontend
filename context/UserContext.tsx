@@ -160,16 +160,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
         ipAddress = ipData.ip
       } catch {}
 
+      const internalSecret = process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || ''
       const banRes = await fetch('/api/check-ban', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-internal-secret': internalSecret },
         body: JSON.stringify({ userId: user.userId })
       })
       const banData = await banRes.json()
 
       const ipBanRes = await fetch('/api/check-ip-ban', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-internal-secret': internalSecret },
         body: JSON.stringify({ ipAddress })
       })
       const ipBanData = await ipBanRes.json()
