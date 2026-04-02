@@ -8,7 +8,7 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  const { userId, email, ipAddress } = await req.json()
+  const { userId, email } = await req.json()
 
   const authSupabase = await createAuthClient()
   const { data: { user } } = await authSupabase.auth.getUser()
@@ -20,9 +20,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
   }
 
-  // Fetch city, country from IP
-  let city = ''
-  let country = ''
+  // Read real client IP from headers (Vercel forwards via x-forwarded-for)
+  const rawIp =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    null
+
   const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
   const isPrivateOrReservedIp = (ip: string): boolean => {
     return (
@@ -32,7 +35,14 @@ export async function POST(req: NextRequest) {
       ip.startsWith('169.254.')
     )
   }
-  if (ipAddress && ipv4Regex.test(ipAddress) && !isPrivateOrReservedIp(ipAddress)) {
+
+  const ipAddress =
+    rawIp && ipv4Regex.test(rawIp) && !isPrivateOrReservedIp(rawIp) ? rawIp : null
+
+  // Fetch city, country from IP
+  let city = ''
+  let country = ''
+  if (ipAddress) {
     try {
       const geoRes = await fetch(`https://ip-api.com/json/${ipAddress}`)
       const geoData = await geoRes.json()
@@ -42,6 +52,7 @@ export async function POST(req: NextRequest) {
   }
 
   const device = req.headers.get('user-agent') || ''
+  const cookie_id = req.cookies.get('cookie_id')?.value || null
 
   const { error } = await supabase
     .from('user_management')
@@ -54,6 +65,7 @@ export async function POST(req: NextRequest) {
       city,
       country,
       device,
+      cookie_id,
     }, { onConflict: 'user_id' })
   
   return NextResponse.json({ ok: true })
