@@ -39,7 +39,10 @@ export async function POST(req: NextRequest) {
 
     const responseText = await response.text()
 
-    if (!response.ok) return NextResponse.json({ error: 'Sarvam API failed', details: responseText }, { status: 500 })
+    if (!response.ok) {
+      console.error('[speech-to-text] Sarvam API error:', responseText)
+      return NextResponse.json({ error: 'Speech recognition failed' }, { status: 500 })
+    }
 
     const transcript = JSON.parse(responseText).transcript
 

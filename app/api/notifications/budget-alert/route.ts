@@ -158,7 +158,8 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (settingsError) {
-      return NextResponse.json({ ok: false, error: `Settings error: ${settingsError.message}` })
+      console.error('[budget-alert] Settings error:', settingsError)
+      return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
     }
 
     if (!settings?.budget_alerts) {
@@ -192,7 +193,8 @@ export async function POST(req: NextRequest) {
       .eq('month', thisMonth)
 
     if (budgetsError) {
-      return NextResponse.json({ ok: false, error: `Budgets error: ${budgetsError.message}` })
+      console.error('[budget-alert] Budgets error:', budgetsError)
+      return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
     }
 
     if (!budgets || budgets.length === 0) {
@@ -207,7 +209,8 @@ export async function POST(req: NextRequest) {
       .eq('type', 'expense')
 
     if (txError) {
-      return NextResponse.json({ ok: false, error: `Transactions error: ${txError.message}` })
+      console.error('[budget-alert] Transactions error:', txError)
+      return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
     }
 
     // Filter to current month
@@ -300,6 +303,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, alertsSent: alerts.length, alerts })
 
   } catch (error) {
-    return NextResponse.json({ ok: false, error: String(error) })
+    console.error('[budget-alert] Unexpected error:', error)
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
   }
 }

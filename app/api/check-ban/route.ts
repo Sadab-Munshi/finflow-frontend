@@ -24,6 +24,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ 
     banned: data?.is_banned === true,
-    reason: data?.ban_reason || '',
   })
 }
