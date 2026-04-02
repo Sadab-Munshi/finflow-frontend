@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { ipAddress } = body
-    if (!ipAddress) return NextResponse.json({ banned: false })
+    if (!ipAddress || ipAddress === 'unknown') return NextResponse.json({ banned: false })
 
     const { data } = await supabase
       .from('user_management')
