@@ -5,6 +5,8 @@ import Image from 'next/image'
 
 type FeedbackType = 'all' | 'general' | 'bug' | 'feature' | 'other'
 
+const DATE_LOCALE = 'en-IN'
+
 interface FeedbackItem {
   id: string
   user_id: string
@@ -100,7 +102,7 @@ export default function AdminPanelClient() {
       `"${(f.email || '').replace(/"/g, '""')}"`,
       f.type,
       `"${(f.message || '').replace(/"/g, '""')}"`,
-      new Date(f.created_at).toLocaleString('en-IN'),
+      new Date(f.created_at).toLocaleString(DATE_LOCALE),
     ])
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -262,7 +264,7 @@ export default function AdminPanelClient() {
                         {user.is_online ? (
                           <span className="text-green-400">Online</span>
                         ) : user.last_seen ? (
-                          new Date(user.last_seen).toLocaleString('en-IN')
+                          new Date(user.last_seen).toLocaleString(DATE_LOCALE)
                         ) : '-'}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-300">{user.login_count}</td>
@@ -381,7 +383,7 @@ export default function AdminPanelClient() {
                           <p className="line-clamp-2 leading-snug" title={item.message}>{item.message}</p>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
-                          {new Date(item.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                          {new Date(item.created_at).toLocaleString(DATE_LOCALE, { dateStyle: 'medium', timeStyle: 'short' })}
                         </td>
                       </tr>
                     ))}

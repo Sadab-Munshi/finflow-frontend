@@ -11,22 +11,36 @@ export async function GET(req: NextRequest) {
   const authResult = await verifyAdmin(req)
   if (authResult instanceof NextResponse) return authResult
 
-  const { data: feedback } = await supabase
+  const { data: feedback, error: feedbackError } = await supabase
     .from('feedback')
     .select('id, user_id, message, type, created_at')
     .order('created_at', { ascending: false })
+
+  if (feedbackError) {
+    return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 })
+  }
 
   if (!feedback || feedback.length === 0) {
     return NextResponse.json({ feedback: [] })
   }
 
-  const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+  // Paginate through all auth users to handle more than 1000 users
+  const allAuthUsers: { id: string; email?: string }[] = []
+  let page = 1
+  while (true) {
+    const { data: batch } = await supabase.auth.admin.listUsers({ perPage: 1000, page })
+    if (!batch?.users.length) break
+    allAuthUsers.push(...batch.users)
+    if (batch.users.length < 1000) break
+    page++
+  }
+
   const { data: settings } = await supabase
     .from('settings')
     .select('user_id, name')
 
   const emailMap: Record<string, string> = {}
-  authUsers?.users.forEach(u => {
+  allAuthUsers.forEach(u => {
     emailMap[u.id] = u.email || ''
   })
 
