@@ -23,12 +23,23 @@ export async function POST(req: NextRequest) {
   // Fetch city, country from IP
   let city = ''
   let country = ''
-  try {
-    const geoRes = await fetch(`http://ip-api.com/json/${ipAddress}`)
-    const geoData = await geoRes.json()
-    city = geoData.city || ''
-    country = geoData.country || ''
-  } catch (e) {}
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
+  const isPrivateOrReservedIp = (ip: string): boolean => {
+    return (
+      ip.startsWith('127.') ||
+      ip.startsWith('10.') ||
+      ip.startsWith('192.168.') ||
+      ip.startsWith('169.254.')
+    )
+  }
+  if (ipAddress && ipv4Regex.test(ipAddress) && !isPrivateOrReservedIp(ipAddress)) {
+    try {
+      const geoRes = await fetch(`https://ip-api.com/json/${ipAddress}`)
+      const geoData = await geoRes.json()
+      city = geoData.city || ''
+      country = geoData.country || ''
+    } catch (e) {}
+  }
 
   const device = req.headers.get('user-agent') || ''
 
