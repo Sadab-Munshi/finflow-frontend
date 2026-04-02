@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyAdmin } from '@/lib/admin-auth'
 
 const PERMANENT_BAN_DURATION = '876600h' // ~100 years
+const PERMANENT_BAN_HOURS = parseInt(PERMANENT_BAN_DURATION, 10) // parse the numeric hours
+
+// Compute a timestamp matching the ban_duration above so user_management
+// stays in sync with the banned_until value stored in auth.users.
+const computeBannedUntil = () =>
+  new Date(Date.now() + PERMANENT_BAN_HOURS * 60 * 60 * 1000).toISOString()
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,6 +28,7 @@ export async function POST(req: NextRequest) {
       is_banned: true,
       ban_reason: reason || 'Banned by admin',
       banned_at: new Date().toISOString(),
+      banned_until: computeBannedUntil(),
     }, { onConflict: 'user_id' })
   }
 
@@ -32,6 +39,7 @@ export async function POST(req: NextRequest) {
       ip_banned: false,
       ban_reason: null,
       banned_at: null,
+      banned_until: null,
     }).eq('user_id', userId)
   }
 
@@ -55,6 +63,7 @@ export async function POST(req: NextRequest) {
       is_banned: true,
       ban_reason: reason || 'IP banned by admin',
       banned_at: new Date().toISOString(),
+      banned_until: computeBannedUntil(),
     }).eq('ip_address', ipAddress)
   }
 
