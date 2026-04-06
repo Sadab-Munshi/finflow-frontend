@@ -232,6 +232,11 @@ export default function ProfilePage() {
     if (!error) {
       setTelegramConnected(true)
       setTelegramToggle(true)
+      fetch('/api/telegram/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: telegramChatId.trim(), type: 'connected' }),
+      }).catch(() => {})
     } else {
       toast.error('Failed to connect. Please try again.')
     }
@@ -241,6 +246,22 @@ export default function ProfilePage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+
+    const { data: settings } = await supabase
+      .from('settings')
+      .select('telegram_chat_id')
+      .eq('user_id', user.id)
+      .single()
+    const currentChatId = (settings as { telegram_chat_id?: string } | null)?.telegram_chat_id
+
+    if (currentChatId) {
+      await fetch('/api/telegram/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: currentChatId, type: 'disconnected' }),
+      }).catch(() => {})
+    }
+
     await supabase.from('settings').upsert(
       { user_id: user.id, telegram_chat_id: null, telegram_id: null },
       { onConflict: 'user_id' }
