@@ -21,28 +21,16 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://app.sadabmunshi.online'),
 
   title: {
-    default: 'FinFlow | Smart Finance Tracker by Sadab Munshi',
+    default: 'FinFlow — Your Personal Finance Companion',
     template: '%s | FinFlow',
   },
 
   description:
-    'Track every rupee effortlessly — by voice, camera or text. FinFlow is your AI-powered personal finance tracker by Sadab Munshi, available in your language.',
+    'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali. Free to start.',
 
-  keywords: [
-    'FinFlow',
-    'Sadab Munshi',
-    'expense tracker',
-    'personal finance',
-    'rupee tracker',
-    'AI finance app',
-    'voice expense tracker',
-    'finance tracker India',
-    'sadab munshi app',
-  ],
-
-  authors: [{ name: 'Sadab Munshi', url: 'https://app.sadabmunshi.online' }],
-  creator: 'Sadab Munshi',
-  publisher: 'Sadab Munshi',
+  authors: [{ name: 'FinFlow' }],
+  creator: 'FinFlow',
+  publisher: 'FinFlow',
 
   applicationName: 'FinFlow',
   manifest: '/site.webmanifest',
@@ -52,46 +40,25 @@ export const metadata: Metadata = {
     title: 'FinFlow',
   },
 
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-image-preview': 'large',
-    },
-  },
+  robots: { index: true, follow: true },
 
   openGraph: {
     type: 'website',
+    locale: 'en_IN',
     url: 'https://app.sadabmunshi.online',
     siteName: 'FinFlow',
-    title: 'FinFlow | Smart Finance Tracker by Sadab Munshi',
+    title: 'FinFlow — Your Personal Finance Companion',
     description:
-      'Track every rupee — by voice, camera or text. Free, secure, and available in your language.',
-    images: [
-      {
-        url: 'https://app.sadabmunshi.online/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'FinFlow – Smart personal finance tracker by Sadab Munshi',
-        type: 'image/png',
-      },
-    ],
-    locale: 'en_IN',
+      'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali. Free to start.',
+    images: [{ url: '/finflow-logo.png', width: 1200, height: 630, alt: 'FinFlow' }],
   },
 
   twitter: {
     card: 'summary_large_image',
-    title: 'FinFlow | Smart Finance Tracker by Sadab Munshi',
+    title: 'FinFlow — Your Personal Finance Companion',
     description:
-      'Track every rupee — by voice, camera or text. Free, secure, and available in your language.',
-    images: ['https://app.sadabmunshi.online/og-image.png'],
-    creator: '@sadabmunshi',
-  },
-
-  alternates: {
-    canonical: 'https://app.sadabmunshi.online',
+      'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali.',
+    images: ['/finflow-logo.png'],
   },
 
   icons: {
