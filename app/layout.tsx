@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     title: 'FinFlow — Your Personal Finance Companion',
     description:
       'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali. Free to start.',
-    images: [{ url: '/finflow-logo.png', width: 1200, height: 630, alt: 'FinFlow' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'FinFlow' }],
   },
 
   twitter: {
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     title: 'FinFlow — Your Personal Finance Companion',
     description:
       'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali.',
-    images: ['/finflow-logo.png'],
+    images: ['/og-image.png'],
   },
 
   icons: {
