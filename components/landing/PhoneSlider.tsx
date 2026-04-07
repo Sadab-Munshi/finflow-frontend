@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { DM_Sans } from 'next/font/google'
 
-const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '600'] })
+const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], display: 'swap' })
 
 const SLIDES = [
   { src: '/screen-dashboard.png', alt: 'Dashboard screen' },

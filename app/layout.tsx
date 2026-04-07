@@ -1,21 +1,23 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import dynamic from 'next/dynamic'
 import { Toaster } from 'react-hot-toast'
 import { LanguageProvider } from '@/context/LanguageContext'
 import { UserProvider } from '@/context/UserContext'
 import AuthListener from '@/components/auth/AuthListener'
-import PostHogProvider from '@/components/PostHogProvider'
-import InstallPrompt from '@/components/ui/InstallPrompt'
-import UpdateNotification from '@/components/UpdateNotification'
 import { cookies } from 'next/headers'
 import { v4 as uuidv4 } from 'uuid'
 import './globals.css'
+
+const PostHogProvider = dynamic(() => import('@/components/PostHogProvider'))
+const InstallPrompt = dynamic(() => import('@/components/ui/InstallPrompt'))
+const UpdateNotification = dynamic(() => import('@/components/UpdateNotification'))
 
 export const viewport: Viewport = {
   themeColor: '#0d9488',
 }
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], display: 'swap', preload: true })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://app.sadabmunshi.online'),

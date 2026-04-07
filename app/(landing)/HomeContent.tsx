@@ -2,12 +2,21 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Mic, ScanLine, Brain, FileText, PiggyBank, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import PhoneSlider from '@/components/landing/PhoneSlider'
+
+const PhoneSlider = dynamic(() => import('@/components/landing/PhoneSlider'), {
+  ssr: false,
+  loading: () => (
+    <section style={{ width: '100%', background: '#ffffff', padding: '3rem 1rem 2.5rem', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: 'clamp(220px, 30vw, 280px)', aspectRatio: '9/19', borderRadius: '16px', background: '#f3f4f6' }} />
+    </section>
+  ),
+})
 
 export default function LandingPage() {
   const router = useRouter()
@@ -71,6 +80,7 @@ export default function LandingPage() {
               width={384}
               height={384}
               sizes="(max-width: 640px) 90vw, 384px"
+              quality={80}
               className="w-full max-w-sm mx-auto mb-10 drop-shadow-sm"
               priority
               fetchPriority="high"
