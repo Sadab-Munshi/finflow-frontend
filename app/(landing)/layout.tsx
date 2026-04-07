@@ -160,6 +160,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               <ul className="space-y-3 text-sm">
                 <li><a href="/support" className="hover:text-white transition-colors">Support</a></li>
                 <li><a href="/user-guide" className="hover:text-white transition-colors">User Guide</a></li>
+                <li><a href="https://status.app.sadabmunshi.online" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">System Status</a></li>
                 <li><a href="https://sadabmunshi.online/blog/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Blog</a></li>
               </ul>
             </div>
