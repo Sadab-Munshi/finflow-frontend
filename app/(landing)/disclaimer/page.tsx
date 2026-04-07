@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import BackButton from '@/components/landing/BackButton'
 
 export const metadata: Metadata = {
-  title: 'FinFlow | Disclaimer',
+  title: 'FinFlow / Disclaimer',
+  description: 'Read the FinFlow disclaimer.',
+  robots: { index: false, follow: false },
 }
 
 export default function DisclaimerPage() {

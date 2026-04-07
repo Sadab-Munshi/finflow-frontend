@@ -2,7 +2,11 @@ import AuthBackground from '@/components/auth/AuthBackground'
 import SignupForm from '@/components/auth/SignupForm'
 import BackButton from '@/components/landing/BackButton'
 
-export const metadata = { title: 'Sign Up | FinFlow' }
+export const metadata = {
+  title: 'FinFlow / Sign Up',
+  description: 'Create your free FinFlow account and start managing expenses effortlessly.',
+  robots: { index: false, follow: false },
+}
 
 export default function SignupPage() {
   return (

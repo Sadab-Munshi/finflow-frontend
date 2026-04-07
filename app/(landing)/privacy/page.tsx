@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import BackButton from '@/components/landing/BackButton'
 
 export const metadata: Metadata = {
-  title: 'FinFlow | Privacy Policy',
+  title: 'FinFlow / Privacy Policy',
+  description: 'Read the FinFlow privacy policy. Your financial data is encrypted and never sold or shared.',
+  robots: { index: false, follow: false },
 }
 
 export default function PrivacyPolicyPage() {
