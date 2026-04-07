@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Mail, ChevronDown, ChevronUp } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import BackButton from '@/components/landing/BackButton'
 
 interface FAQItemProps {
@@ -36,10 +36,6 @@ function FAQItem({ question, answer }: FAQItemProps) {
 }
 
 export default function SupportPage() {
-  useEffect(() => {
-    document.title = 'FinFlow | Support'
-  }, [])
-
   const handleContactSupport = () => {
     window.location.href = 'mailto:contact@sadabmunshi.online'
   }

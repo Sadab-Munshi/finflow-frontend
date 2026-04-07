@@ -1,7 +1,7 @@
 'use client'
 
 import { MessageSquare, Camera, Mic, Bell, BarChart3, Brain, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import BackButton from '@/components/landing/BackButton'
 
@@ -62,10 +62,6 @@ function FAQEntry({ q, a }: FAQEntryProps) {
 }
 
 export default function UserGuidePage() {
-  useEffect(() => {
-    document.title = 'FinFlow | User Guide'
-  }, [])
-
   return (
     <>
       {/* ── Global styles to prevent image saving ── */}

@@ -13,8 +13,6 @@ export default function LandingPage() {
   const router = useRouter()
   const heroRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { document.title = 'FinFlow | Home' }, [])
-
   /* ── auth redirect ── */
   useEffect(() => {
     const check = async () => {
