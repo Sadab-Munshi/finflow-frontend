@@ -152,28 +152,28 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
       <main className="flex-1 pt-14">{children}</main>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-gray-950 text-gray-400 pt-16 pb-8 px-6">
+      <footer className="bg-gray-950 text-gray-300 pt-16 pb-8 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-2 gap-10 mb-12">
             <div>
               <p className="text-white font-semibold text-sm mb-4">Navigate</p>
-              <ul className="space-y-3 text-sm">
-                <li><a href="/support" className="hover:text-white transition-colors">Support</a></li>
-                <li><a href="/user-guide" className="hover:text-white transition-colors">User Guide</a></li>
-                <li><a href="https://status.app.sadabmunshi.online" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">System Status</a></li>
-                <li><a href="https://sadabmunshi.online/blog/" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Blog</a></li>
+              <ul className="space-y-1 text-sm">
+                <li><a href="/support" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Support</a></li>
+                <li><a href="/user-guide" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">User Guide</a></li>
+                <li><a href="https://status.app.sadabmunshi.online" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">System Status</a></li>
+                <li><a href="https://sadabmunshi.online/blog/" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Blog</a></li>
               </ul>
             </div>
             <div>
               <p className="text-white font-semibold text-sm mb-4">Legal</p>
-              <ul className="space-y-3 text-sm">
-                <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
-                <li><a href="/disclaimer" className="hover:text-white transition-colors">Disclaimer</a></li>
+              <ul className="space-y-1 text-sm">
+                <li><a href="/privacy" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><a href="/terms" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Terms of Service</a></li>
+                <li><a href="/disclaimer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Disclaimer</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-6 text-sm text-gray-500">
+          <div className="border-t border-gray-800 pt-6 text-sm text-gray-400">
             © 2026 FinFlow. All rights reserved.
           </div>
         </div>

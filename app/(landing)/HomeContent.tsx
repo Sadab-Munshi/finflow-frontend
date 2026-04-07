@@ -70,8 +70,10 @@ export default function LandingPage() {
               alt="FinFlow Dashboard"
               width={384}
               height={384}
+              sizes="(max-width: 640px) 90vw, 384px"
               className="w-full max-w-sm mx-auto mb-10 drop-shadow-sm"
               priority
+              fetchPriority="high"
             />
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 tracking-tight leading-tight mb-6 reveal">
               Spend less time counting,
