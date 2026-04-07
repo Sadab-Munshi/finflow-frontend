@@ -3,7 +3,9 @@ import SignupForm from '@/components/auth/SignupForm'
 import BackButton from '@/components/landing/BackButton'
 
 export const metadata = {
-  title: 'FinFlow / Sign Up',
+  title: {
+    absolute: 'FinFlow / Sign Up',
+  },
   description: 'Create your free FinFlow account and start managing expenses effortlessly.',
   robots: { index: false, follow: false },
 }

@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import BackButton from '@/components/landing/BackButton'
 
 export const metadata: Metadata = {
-  title: 'FinFlow | Terms of Service',
+  title: {
+    absolute: 'FinFlow | Terms of Service',
+  },
 }
 
 export default function TermsOfServicePage() {
