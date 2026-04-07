@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
+import { DM_Sans } from 'next/font/google'
+
+const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '600'] })
 
 const SLIDES = [
   { src: '/screen-dashboard.png', alt: 'Dashboard screen' },
@@ -81,12 +84,9 @@ export default function PhoneSlider() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        fontFamily: "'DM Sans', sans-serif",
       }}
+      className={dmSans.className}
     >
-      {/* Google Fonts import */}
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');`}</style>
-
       {/* Slide row */}
       <div
         style={{
@@ -110,8 +110,13 @@ export default function PhoneSlider() {
             cursor: 'pointer',
             fontSize: '1.5rem',
             color: '#555',
-            padding: '0.5rem',
-            opacity: arrowLeft ? 1 : 0,
+            padding: '0.75rem',
+            minWidth: '44px',
+            minHeight: '44px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: arrowLeft ? 1 : 0.4,
             transition: 'opacity 0.25s ease',
             flexShrink: 0,
           }}
@@ -198,8 +203,13 @@ export default function PhoneSlider() {
             cursor: 'pointer',
             fontSize: '1.5rem',
             color: '#555',
-            padding: '0.5rem',
-            opacity: arrowRight ? 1 : 0,
+            padding: '0.75rem',
+            minWidth: '44px',
+            minHeight: '44px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: arrowRight ? 1 : 0.4,
             transition: 'opacity 0.25s ease',
             flexShrink: 0,
           }}
@@ -212,7 +222,7 @@ export default function PhoneSlider() {
       <div
         style={{
           display: 'flex',
-          gap: '0.5rem',
+          gap: '0.25rem',
           marginTop: '1.25rem',
         }}
       >
@@ -222,16 +232,28 @@ export default function PhoneSlider() {
             onClick={() => handleDot(i)}
             aria-label={`Go to screen ${i + 1}`}
             style={{
-              width: i === current ? '20px' : '8px',
-              height: '8px',
-              borderRadius: '4px',
-              background: i === current ? '#00b894' : '#d1d5db',
+              minWidth: '44px',
+              minHeight: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
               border: 'none',
               cursor: 'pointer',
               padding: 0,
-              transition: 'width 0.3s ease, background 0.3s ease',
             }}
-          />
+          >
+            <span
+              style={{
+                width: i === current ? '20px' : '8px',
+                height: '8px',
+                borderRadius: '4px',
+                background: i === current ? '#00b894' : '#d1d5db',
+                display: 'block',
+                transition: 'width 0.3s ease, background 0.3s ease',
+              }}
+            />
+          </button>
         ))}
       </div>
     </section>
