@@ -64,8 +64,10 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
           <Image
             src="/finflow-logo.png"
             alt="FinFlow"
-            width={978}
-            height={310}
+            width={160}
+            height={51}
+            sizes="160px"
+            quality={75}
             className="h-8 w-auto object-contain"
             priority
           />

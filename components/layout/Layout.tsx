@@ -143,6 +143,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     alt="FinFlow"
                     width={120}
                     height={40}
+                    sizes="120px"
+                    quality={75}
                     style={{ objectFit: 'contain', pointerEvents: 'none' }}
                     draggable={false}
                     onContextMenu={(e) => e.preventDefault()}
@@ -229,6 +231,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               alt="FinFlow"
               width={120}
               height={40}
+              sizes="120px"
+              quality={75}
               style={{ objectFit: 'contain', pointerEvents: 'none' }}
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
