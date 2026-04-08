@@ -20,6 +20,13 @@ import toast from 'react-hot-toast'
 
 type Language = 'en' | 'hi' | 'bn'
 
+const FEEDBACK_CATEGORIES = [
+  { value: 'general', label: 'General' },
+  { value: 'bug', label: 'Bug Report' },
+  { value: 'feature', label: 'Feature Request' },
+  { value: 'other', label: 'Other' },
+] as const
+
 function Toggle({
   checked,
   onChange,
@@ -869,6 +876,8 @@ export default function ProfilePage() {
                     onClick={() => {
                       setShowFeedbackSheet(false)
                       setFeedbackStatus('idle')
+                      setFeedbackMessage('')
+                      setFeedbackType('general')
                     }}
                     className="mt-2 w-full rounded-xl py-3 font-semibold text-sm bg-teal-500 hover:bg-teal-600 text-white cursor-pointer transition-colors"
                   >
@@ -882,12 +891,7 @@ export default function ProfilePage() {
                     Share your thoughts, report a bug, or suggest a feature.
                   </p>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {([
-                      { value: 'general', label: 'General' },
-                      { value: 'bug', label: 'Bug Report' },
-                      { value: 'feature', label: 'Feature Request' },
-                      { value: 'other', label: 'Other' },
-                    ] as const).map(opt => (
+                    {FEEDBACK_CATEGORIES.map(opt => (
                       <button
                         key={opt.value}
                         type="button"
