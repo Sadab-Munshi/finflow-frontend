@@ -14,13 +14,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { getSettings, upsertSettings, getTransactions } from '@/lib/db'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
 
@@ -866,80 +860,101 @@ export default function ProfilePage() {
               onClick={e => e.stopPropagation()}
             >
               <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-              <p className="text-base font-semibold text-gray-800 mb-2">Feedback</p>
-              <p className="text-sm text-gray-500 mb-3">
-                Share your thoughts, report a bug, or suggest a feature.
-              </p>
-              <div className="mb-3">
-                <Select value={feedbackType} onValueChange={setFeedbackType}>
-                  <SelectTrigger className="border-gray-200 h-10 text-sm w-full">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="bug">Bug Report</SelectItem>
-                    <SelectItem value="feature">Feature Request</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="relative mb-3">
-                <textarea
-                  id="feedback-message"
-                  aria-label="Feedback message"
-                  maxLength={500}
-                  rows={4}
-                  value={feedbackMessage}
-                  onChange={e => {
-                    setFeedbackMessage(e.target.value)
-                    setFeedbackStatus('idle')
-                  }}
-                  placeholder="Write your feedback here..."
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 resize-none outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all"
-                />
-                <p
-                  aria-live="polite"
-                  className={`text-xs text-right mt-0.5 ${feedbackMessage.length >= 500 ? 'text-red-400' : 'text-gray-400'}`}
-                >
-                  {feedbackMessage.length}/500
-                </p>
-              </div>
-              {feedbackStatus === 'success' && (
-                <p className="flex items-center gap-1.5 text-sm text-green-600 mb-3">
-                  <CheckCircle className="w-4 h-4 shrink-0" />
-                  Thank you! Your feedback has been submitted.
-                </p>
+              {feedbackStatus === 'success' ? (
+                <div className="flex flex-col items-center py-6 gap-3">
+                  <CheckCircle className="w-10 h-10 text-green-500" />
+                  <p className="text-base font-semibold text-gray-800">Thank you!</p>
+                  <p className="text-sm text-gray-500 text-center">Your feedback has been submitted.</p>
+                  <button
+                    onClick={() => {
+                      setShowFeedbackSheet(false)
+                      setFeedbackStatus('idle')
+                    }}
+                    className="mt-2 w-full rounded-xl py-3 font-semibold text-sm bg-teal-500 hover:bg-teal-600 text-white cursor-pointer transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-base font-semibold text-gray-800 mb-2">Feedback</p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Share your thoughts, report a bug, or suggest a feature.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {([
+                      { value: 'general', label: 'General' },
+                      { value: 'bug', label: 'Bug Report' },
+                      { value: 'feature', label: 'Feature Request' },
+                      { value: 'other', label: 'Other' },
+                    ] as const).map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setFeedbackType(opt.value)}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          feedbackType === opt.value
+                            ? 'bg-teal-500 text-white'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="relative mb-3">
+                    <textarea
+                      id="feedback-message"
+                      aria-label="Feedback message"
+                      maxLength={500}
+                      rows={4}
+                      value={feedbackMessage}
+                      onChange={e => {
+                        setFeedbackMessage(e.target.value)
+                        setFeedbackStatus('idle')
+                      }}
+                      placeholder="Write your feedback here..."
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 resize-none outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all"
+                    />
+                    <p
+                      aria-live="polite"
+                      className={`text-xs text-right mt-0.5 ${feedbackMessage.length >= 500 ? 'text-red-400' : 'text-gray-400'}`}
+                    >
+                      {feedbackMessage.length}/500
+                    </p>
+                  </div>
+                  {feedbackStatus === 'ratelimit' && (
+                    <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      You&apos;ve reached the feedback limit (3 per 24 hours). Please try again later.
+                    </p>
+                  )}
+                  {feedbackStatus === 'error' && (
+                    <p className="flex items-center gap-1.5 text-sm text-red-500 mb-3">
+                      <XCircle className="w-4 h-4 shrink-0" />
+                      Something went wrong. Please try again.
+                    </p>
+                  )}
+                  <button
+                    onClick={handleFeedbackSubmit}
+                    disabled={feedbackSubmitting || !feedbackMessage.trim()}
+                    className={`w-full rounded-xl py-3 font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
+                      feedbackSubmitting || !feedbackMessage.trim()
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-teal-500 hover:bg-teal-600 text-white cursor-pointer'
+                    }`}
+                  >
+                    {feedbackSubmitting ? (
+                      <>
+                        <Loader2 className="animate-spin w-4 h-4" />
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Feedback'
+                    )}
+                  </button>
+                </>
               )}
-              {feedbackStatus === 'ratelimit' && (
-                <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  You&apos;ve reached the feedback limit (3 per 24 hours). Please try again later.
-                </p>
-              )}
-              {feedbackStatus === 'error' && (
-                <p className="flex items-center gap-1.5 text-sm text-red-500 mb-3">
-                  <XCircle className="w-4 h-4 shrink-0" />
-                  Something went wrong. Please try again.
-                </p>
-              )}
-              <button
-                onClick={handleFeedbackSubmit}
-                disabled={feedbackSubmitting || !feedbackMessage.trim()}
-                className={`w-full rounded-xl py-3 font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
-                  feedbackSubmitting || !feedbackMessage.trim()
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-teal-500 hover:bg-teal-600 text-white cursor-pointer'
-                }`}
-              >
-                {feedbackSubmitting ? (
-                  <>
-                    <Loader2 className="animate-spin w-4 h-4" />
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit Feedback'
-                )}
-              </button>
             </div>
           </div>
         )}
