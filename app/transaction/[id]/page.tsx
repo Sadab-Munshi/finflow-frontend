@@ -11,7 +11,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { getTransactionById, updateTransaction, deleteTransaction } from '@/lib/db'
 import { getCategoriesByType, getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency } from '@/lib/utils'
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import TransactionDetailSkeleton from '@/components/skeletons/TransactionDetailSkeleton'
 import { Transaction } from '@/lib/types'
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -105,7 +105,7 @@ export default function TransactionDetailPage() {
     load()
   }, [id])
 
-  if (loading) return <LoadingScreen />
+  if (loading) return <TransactionDetailSkeleton />
   if (!transaction) return <Layout><div className="flex items-center justify-center h-64"><p className="text-gray-500">{t('noResults')}</p></div></Layout>
 
   const cat = getCategoryByName(transaction.category)

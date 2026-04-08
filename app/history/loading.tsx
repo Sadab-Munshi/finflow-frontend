@@ -1,5 +1,5 @@
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import HistorySkeleton from '@/components/skeletons/HistorySkeleton'
 
 export default function HistoryLoading() {
-  return <LoadingScreen />
+  return <HistorySkeleton />
 }

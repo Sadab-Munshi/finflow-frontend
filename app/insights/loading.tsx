@@ -1,5 +1,5 @@
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import InsightsSkeleton from '@/components/skeletons/InsightsSkeleton'
 
 export default function InsightsLoading() {
-  return <LoadingScreen />
+  return <InsightsSkeleton />
 }

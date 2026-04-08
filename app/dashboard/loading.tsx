@@ -1,5 +1,5 @@
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 
 export default function DashboardLoading() {
-  return <LoadingScreen />
+  return <DashboardSkeleton />
 }

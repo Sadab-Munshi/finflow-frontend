@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { FileText, Download, Calendar, Info, Loader2 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import ReportsSkeleton from '@/components/skeletons/ReportsSkeleton'
 import toast from 'react-hot-toast'
 
 interface Report {
@@ -98,7 +98,7 @@ export default function ReportsPage() {
     }
   }
 
-  if (loading) return <LoadingScreen />
+  if (loading) return <ReportsSkeleton />
 
   const { nextMonthName, nextYear } = getNextMonthInfo()
 

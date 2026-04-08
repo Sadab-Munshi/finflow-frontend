@@ -10,7 +10,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions } from '@/lib/db'
 import { getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, getStartOfMonth, getEndOfMonth, isDateInRange, formatIST, normalizeDateToYMD, getISTDateOffset } from '@/lib/utils'
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import { Transaction } from '@/lib/types'
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -113,7 +113,7 @@ export default function DashboardPage() {
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  if (loading) return <LoadingScreen />
+  if (loading) return <DashboardSkeleton />
   if (!mounted) return null
 
   // Current IST month prefix YYYY-MM

@@ -7,7 +7,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { useUser } from '@/context/UserContext'
 import { getTransactions } from '@/lib/db'
 import { cn } from '@/lib/utils'
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import InsightsSkeleton from '@/components/skeletons/InsightsSkeleton'
 import { Transaction } from '@/lib/types'
 
 // Type for insights
@@ -64,7 +64,7 @@ export default function InsightsPage() {
     }
   }, [userId])
 
-  if (loading) return <LoadingScreen />
+  if (loading) return <InsightsSkeleton />
   if (!mounted) return null
 
   const handleGenerate = async () => {
