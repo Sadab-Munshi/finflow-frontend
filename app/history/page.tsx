@@ -12,7 +12,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions, deleteTransactions } from '@/lib/db'
 import { categories, getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD } from '@/lib/utils'
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import HistorySkeleton from '@/components/skeletons/HistorySkeleton'
 import { Transaction } from '@/lib/types'
 import toast from 'react-hot-toast'
 
@@ -79,7 +79,7 @@ function HistoryContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [dropdownOpen])
 
-  if (loading) return <LoadingScreen />
+  if (loading) return <HistorySkeleton />
   if (!mounted) return null
 
   const getTxDate = (tx: Transaction) => tx.created_at ?? tx.date
@@ -585,5 +585,5 @@ function HistoryContent() {
 }
 
 export default function HistoryPage() {
-  return <Suspense fallback={<LoadingScreen />}><HistoryContent /></Suspense>
+  return <Suspense fallback={<HistorySkeleton />}><HistoryContent /></Suspense>
 }
