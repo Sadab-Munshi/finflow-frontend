@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { LanguageProvider } from '@/context/LanguageContext'
 import { UserProvider } from '@/context/UserContext'
 import AuthListener from '@/components/auth/AuthListener'
+import { WebsiteJsonLd, OrganizationJsonLd } from '@/components/JsonLd'
 import { cookies } from 'next/headers'
 import { v4 as uuidv4 } from 'uuid'
 import './globals.css'
@@ -20,20 +21,56 @@ export const viewport: Viewport = {
 const inter = Inter({ subsets: ['latin'], display: 'swap', preload: true })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://app.sadabmunshi.online'),
-
+  // ── Core ──────────────────────────────────────────────────
   title: {
-    default: 'FinFlow — Your Personal Finance Companion',
+    default: 'FinFlow',
     template: '%s | FinFlow',
   },
-
   description:
-    'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali. Free to start.',
+    'Track every rupee effortlessly. Add expenses by voice, photo, or text in Hindi, English, or Bengali. Free personal finance tracker for India.',
 
-  authors: [{ name: 'FinFlow' }],
-  creator: 'FinFlow',
-  publisher: 'FinFlow',
+  // ── Canonical & Indexing ──────────────────────────────────
+  metadataBase: new URL('https://app.sadabmunshi.online'),
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
 
+  // ── Open Graph (controls social share + Google brand name) ─
+  openGraph: {
+    type: 'website',
+    siteName: 'FinFlow',
+    title: 'FinFlow',
+    description:
+      'Track every rupee effortlessly. Voice, photo, or text — in your language.',
+    url: 'https://app.sadabmunshi.online',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'FinFlow — Personal Finance Tracker for India',
+      },
+    ],
+  },
+
+  // ── Twitter Card ──────────────────────────────────────────
+  twitter: {
+    card: 'summary_large_image',
+    title: 'FinFlow',
+    description:
+      'Track every rupee effortlessly. Voice, photo, or text — in your language.',
+    images: ['/og-image.png'],
+  },
+
+  // ── App / PWA Meta ────────────────────────────────────────
   applicationName: 'FinFlow',
   manifest: '/site.webmanifest',
   appleWebApp: {
@@ -41,27 +78,21 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'FinFlow',
   },
-
-  robots: { index: true, follow: true },
-
-  openGraph: {
-    type: 'website',
-    locale: 'en_IN',
-    url: 'https://app.sadabmunshi.online',
-    siteName: 'FinFlow',
-    title: 'FinFlow — Your Personal Finance Companion',
-    description:
-      'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali. Free to start.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'FinFlow' }],
-  },
-
-  twitter: {
-    card: 'summary_large_image',
-    title: 'FinFlow — Your Personal Finance Companion',
-    description:
-      'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali.',
-    images: ['/og-image.png'],
-  },
+  keywords: [
+    'expense tracker India',
+    'personal finance app',
+    'budget tracker Hindi',
+    'rupee tracker',
+    'voice expense tracker',
+    'WhatsApp expense bot',
+    'FinFlow',
+    'free finance app India',
+    'monthly budget India',
+    'Bengali expense tracker',
+  ],
+  authors: [{ name: 'Sadab Munshi', url: 'https://app.sadabmunshi.online' }],
+  creator: 'Sadab Munshi',
+  publisher: 'FinFlow',
 
   icons: {
     icon: [
@@ -83,36 +114,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     cookieId = uuidv4()
   }
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'FinFlow',
-    alternateName: ['Sadab Munshi App', 'sadab munshi finflow'],
-    url: 'https://app.sadabmunshi.online',
-    description:
-      'Track every rupee effortlessly by voice, camera or text. AI-powered personal finance tracker by Sadab Munshi.',
-    applicationCategory: 'FinanceApplication',
-    operatingSystem: 'Web, Android, iOS',
-    inLanguage: ['en', 'hi', 'bn'],
-    author: {
-      '@type': 'Person',
-      name: 'Sadab Munshi',
-      url: 'https://app.sadabmunshi.online',
-    },
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'INR',
-    },
-  }
-
   return (
     <html lang="en">
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <WebsiteJsonLd />
+        <OrganizationJsonLd />
       </head>
       <body className={inter.className}>
         <PostHogProvider>

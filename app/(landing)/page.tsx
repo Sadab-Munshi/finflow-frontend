@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 import HomeContent from './HomeContent'
 
 export const metadata: Metadata = {
-  title: {
-    absolute: 'FinFlow — Your Personal Finance Companion',
-  },
+  title: 'FinFlow',
   description:
-    'Add expenses in seconds. Speak, snap or type — FinFlow understands Hindi, English & Bengali. Free to start.',
-  alternates: { canonical: 'https://app.sadabmunshi.online' },
+    'Free personal finance tracker for India. Track expenses by voice, WhatsApp, or photo. Hindi, English & Bengali supported.',
+  alternates: {
+    canonical: 'https://app.sadabmunshi.online',
+  },
 }
 
 export default function HomePage() {

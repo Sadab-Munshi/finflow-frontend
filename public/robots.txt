@@ -1,11 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /dashboard
-Disallow: /settings
-Disallow: /api/
-Disallow: /login
-Disallow: /signup
-Disallow: /privacy
-Disallow: /disclaimer
 
 Sitemap: https://app.sadabmunshi.online/sitemap.xml

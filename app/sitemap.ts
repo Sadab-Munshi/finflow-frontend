@@ -5,20 +5,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: 'https://app.sadabmunshi.online',
       lastModified: new Date(),
-      changeFrequency: 'weekly',
+      changeFrequency: 'monthly',
       priority: 1.0,
     },
     {
-      url: 'https://app.sadabmunshi.online/user-guide',
+      url: 'https://app.sadabmunshi.online/login',
       lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
+      changeFrequency: 'yearly',
+      priority: 0.5,
     },
     {
-      url: 'https://app.sadabmunshi.online/support',
+      url: 'https://app.sadabmunshi.online/signup',
       lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
+      changeFrequency: 'yearly',
+      priority: 0.8,
     },
   ]
 }
