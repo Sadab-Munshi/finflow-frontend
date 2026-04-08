@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Camera, Pencil, Check, Bell, Lock, Database, HelpCircle,
   ChevronRight, LogOut, Send, MessageCircle, ExternalLink, Loader2, Star,
-  ClipboardList, Flame, TrendingDown,
+  ClipboardList, Flame, TrendingDown, MessageSquarePlus, CheckCircle, XCircle, AlertTriangle,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -14,6 +14,13 @@ import { useLanguage } from '@/context/LanguageContext'
 import { getSettings, upsertSettings, getTransactions } from '@/lib/db'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
 
@@ -62,6 +69,13 @@ export default function ProfilePage() {
   const [memberSince, setMemberSince] = useState('')
   const [showSignOutDialog, setShowSignOutDialog] = useState(false)
   const [showLanguageSheet, setShowLanguageSheet] = useState(false)
+
+  // Feedback
+  const [showFeedbackSheet, setShowFeedbackSheet] = useState(false)
+  const [feedbackMessage, setFeedbackMessage] = useState('')
+  const [feedbackType, setFeedbackType] = useState('general')
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
+  const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'success' | 'error' | 'ratelimit'>('idle')
 
   // Stats
   const [totalEntries, setTotalEntries] = useState(0)
@@ -371,6 +385,32 @@ export default function ProfilePage() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackMessage.trim()) return
+    setFeedbackSubmitting(true)
+    setFeedbackStatus('idle')
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: feedbackMessage.trim(), type: feedbackType }),
+      })
+      if (res.status === 429) {
+        setFeedbackStatus('ratelimit')
+      } else if (res.ok) {
+        setFeedbackStatus('success')
+        setFeedbackMessage('')
+        setFeedbackType('general')
+      } else {
+        setFeedbackStatus('error')
+      }
+    } catch {
+      setFeedbackStatus('error')
+    } finally {
+      setFeedbackSubmitting(false)
+    }
   }
 
   const totalAiUsed = aiUsage
@@ -726,7 +766,7 @@ export default function ProfilePage() {
                 href="https://app.sadabmunshi.online/support"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100"
               >
                 <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
                   <HelpCircle size={15} className="text-teal-600" />
@@ -734,6 +774,16 @@ export default function ProfilePage() {
                 <span className="flex-1 text-sm font-medium text-gray-800 text-left">Help &amp; Support</span>
                 <ChevronRight size={16} className="text-gray-300" />
               </Link>
+              <button
+                onClick={() => setShowFeedbackSheet(true)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                  <MessageSquarePlus size={15} className="text-teal-600" />
+                </div>
+                <span className="flex-1 text-sm font-medium text-gray-800 text-left">Feedback</span>
+                <ChevronRight size={16} className="text-gray-300" />
+              </button>
             </div>
           </div>
 
@@ -800,6 +850,96 @@ export default function ProfilePage() {
                   {language === lang && <Check size={16} />}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Feedback Bottom Sheet */}
+        {showFeedbackSheet && (
+          <div
+            className="fixed inset-0 z-50 flex flex-col justify-end"
+            onClick={() => setShowFeedbackSheet(false)}
+          >
+            <div className="absolute inset-0 bg-black/40" />
+            <div
+              className="relative bg-white rounded-t-3xl p-6 space-y-3"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+              <p className="text-base font-semibold text-gray-800 mb-2">Feedback</p>
+              <p className="text-sm text-gray-500 mb-3">
+                Share your thoughts, report a bug, or suggest a feature.
+              </p>
+              <div className="mb-3">
+                <Select value={feedbackType} onValueChange={setFeedbackType}>
+                  <SelectTrigger className="border-gray-200 h-10 text-sm w-full">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="bug">Bug Report</SelectItem>
+                    <SelectItem value="feature">Feature Request</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="relative mb-3">
+                <textarea
+                  id="feedback-message"
+                  aria-label="Feedback message"
+                  maxLength={500}
+                  rows={4}
+                  value={feedbackMessage}
+                  onChange={e => {
+                    setFeedbackMessage(e.target.value)
+                    setFeedbackStatus('idle')
+                  }}
+                  placeholder="Write your feedback here..."
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 resize-none outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all"
+                />
+                <p
+                  aria-live="polite"
+                  className={`text-xs text-right mt-0.5 ${feedbackMessage.length >= 500 ? 'text-red-400' : 'text-gray-400'}`}
+                >
+                  {feedbackMessage.length}/500
+                </p>
+              </div>
+              {feedbackStatus === 'success' && (
+                <p className="flex items-center gap-1.5 text-sm text-green-600 mb-3">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  Thank you! Your feedback has been submitted.
+                </p>
+              )}
+              {feedbackStatus === 'ratelimit' && (
+                <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  You&apos;ve reached the feedback limit (3 per 24 hours). Please try again later.
+                </p>
+              )}
+              {feedbackStatus === 'error' && (
+                <p className="flex items-center gap-1.5 text-sm text-red-500 mb-3">
+                  <XCircle className="w-4 h-4 shrink-0" />
+                  Something went wrong. Please try again.
+                </p>
+              )}
+              <button
+                onClick={handleFeedbackSubmit}
+                disabled={feedbackSubmitting || !feedbackMessage.trim()}
+                className={`w-full rounded-xl py-3 font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
+                  feedbackSubmitting || !feedbackMessage.trim()
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-teal-500 hover:bg-teal-600 text-white cursor-pointer'
+                }`}
+              >
+                {feedbackSubmitting ? (
+                  <>
+                    <Loader2 className="animate-spin w-4 h-4" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Feedback'
+                )}
+              </button>
             </div>
           </div>
         )}
