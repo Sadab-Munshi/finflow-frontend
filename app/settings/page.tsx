@@ -13,13 +13,6 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
@@ -51,11 +44,7 @@ export default function SettingsPage() {
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'updating' | 'latest' | 'error'>('idle')
   const [appVersion] = useState('1.0.0')
 
-  // Feedback state
-  const [feedbackMessage, setFeedbackMessage] = useState('')
-  const [feedbackType, setFeedbackType] = useState('general')
-  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
-  const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'success' | 'error' | 'ratelimit'>('idle')
+
 
   // Delete dialog state
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -76,31 +65,7 @@ export default function SettingsPage() {
     resetDelete()
   }
 
-  const handleFeedbackSubmit = async () => {
-    if (!feedbackMessage.trim()) return
-    setFeedbackSubmitting(true)
-    setFeedbackStatus('idle')
-    try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: feedbackMessage.trim(), type: feedbackType }),
-      })
-      if (res.status === 429) {
-        setFeedbackStatus('ratelimit')
-      } else if (res.ok) {
-        setFeedbackStatus('success')
-        setFeedbackMessage('')
-        setFeedbackType('general')
-      } else {
-        setFeedbackStatus('error')
-      }
-    } catch {
-      setFeedbackStatus('error')
-    } finally {
-      setFeedbackSubmitting(false)
-    }
-  }
+
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -492,85 +457,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* ── SECTION 6: FEEDBACK ── */}
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1 mt-5">
-          Feedback
-        </p>
-        <div className="border border-gray-100 rounded-2xl p-4 bg-white mb-3">
-          <p className="text-sm text-gray-500 mb-3">
-            Share your thoughts, report a bug, or suggest a feature.
-          </p>
-          <div className="mb-3">
-            <Select value={feedbackType} onValueChange={setFeedbackType}>
-              <SelectTrigger className="border-gray-200 h-10 text-sm w-full">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="general">General</SelectItem>
-                <SelectItem value="bug">Bug Report</SelectItem>
-                <SelectItem value="feature">Feature Request</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="relative mb-3">
-            <textarea
-              id="feedback-message"
-              aria-label="Feedback message"
-              maxLength={500}
-              rows={4}
-              value={feedbackMessage}
-              onChange={e => {
-                setFeedbackMessage(e.target.value)
-                setFeedbackStatus('idle')
-              }}
-              placeholder="Write your feedback here..."
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 resize-none outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all"
-            />
-            <p
-              aria-live="polite"
-              className={`text-xs text-right mt-0.5 ${feedbackMessage.length >= 500 ? 'text-red-400' : 'text-gray-400'}`}
-            >
-              {feedbackMessage.length}/500
-            </p>
-          </div>
-          {feedbackStatus === 'success' && (
-            <p className="flex items-center gap-1.5 text-sm text-green-600 mb-3">
-              <CheckCircle className="w-4 h-4 shrink-0" />
-              Thank you! Your feedback has been submitted.
-            </p>
-          )}
-          {feedbackStatus === 'ratelimit' && (
-            <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              You&apos;ve reached the feedback limit (3 per 24 hours). Please try again later.
-            </p>
-          )}
-          {feedbackStatus === 'error' && (
-            <p className="flex items-center gap-1.5 text-sm text-red-500 mb-3">
-              <XCircle className="w-4 h-4 shrink-0" />
-              Something went wrong. Please try again.
-            </p>
-          )}
-          <button
-            onClick={handleFeedbackSubmit}
-            disabled={feedbackSubmitting || !feedbackMessage.trim()}
-            className={`w-full rounded-xl py-3 font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
-              feedbackSubmitting || !feedbackMessage.trim()
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-teal-500 hover:bg-teal-600 text-white cursor-pointer'
-            }`}
-          >
-            {feedbackSubmitting ? (
-              <>
-                <Loader2 className="animate-spin w-4 h-4" />
-                Submitting...
-              </>
-            ) : (
-              'Submit Feedback'
-            )}
-          </button>
-        </div>
 
         {/* ── SECTION 7: DANGER ZONE ── */}
         <p className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 px-1 mt-5">
