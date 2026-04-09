@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Monitor, Smartphone, Tablet, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import toast from 'react-hot-toast'
 
 type Session = {
   id: string
@@ -43,7 +42,6 @@ export function ActiveSessions() {
     await fetch(`/api/sessions/${id}`, { method: 'DELETE' })
     setSessions(prev => prev.filter(s => s.id !== id))
     setLoggingOutId(null)
-    toast.success('Device logged out successfully')
   }
 
   async function logoutAllOthers() {
@@ -51,7 +49,6 @@ export function ActiveSessions() {
     await fetch('/api/sessions/logout-others', { method: 'DELETE' })
     setSessions(prev => prev.filter(s => s.is_current))
     setLoggingOutAll(false)
-    toast.success('All other devices logged out successfully')
   }
 
   function DeviceIcon({ type }: { type: string }) {
