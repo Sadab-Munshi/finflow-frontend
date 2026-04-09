@@ -134,6 +134,7 @@ export function ManualForm({
   const dateInputRef = useRef<HTMLInputElement>(null)
   const [showSheet, setShowSheet] = useState(false)
   const [shouldShowTypeColor, setShouldShowTypeColor] = useState(!!confirmMode)
+  const [isPressed, setIsPressed] = useState(false)
   const today = getTodayIST()
 
   const amountValue = parseFloat(amount)
@@ -331,14 +332,14 @@ export function ManualForm({
           cursor: isSaveDisabled ? 'not-allowed' : 'pointer',
           fontFamily: FONT,
           transition: 'all 0.2s',
-          transform: 'scale(1)',
+          transform: (!isSaveDisabled && isPressed) ? 'scale(0.98)' : 'scale(1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
-        onMouseDown={(e) => { if (!isSaveDisabled) (e.currentTarget.style.transform = 'scale(0.98)') }}
-        onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
-        onTouchStart={(e) => { if (!isSaveDisabled) (e.currentTarget.style.transform = 'scale(0.98)') }}
-        onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+        onMouseDown={() => { if (!isSaveDisabled) setIsPressed(true) }}
+        onMouseUp={() => setIsPressed(false)}
+        onMouseLeave={() => setIsPressed(false)}
+        onTouchStart={() => { if (!isSaveDisabled) setIsPressed(true) }}
+        onTouchEnd={() => setIsPressed(false)}
       >
         {isSubmitting
           ? <>
