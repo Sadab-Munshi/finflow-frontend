@@ -89,7 +89,7 @@ export default function AdminNotificationsClient() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Link href="/admin-fxk92p-sadab" className="text-gray-400 hover:text-white">
+          <Link href="/admin-dy26zyfv" className="text-gray-400 hover:text-white">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <h1 className="text-2xl font-bold">Send Notification</h1>
