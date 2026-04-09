@@ -12,8 +12,6 @@ export async function DELETE(
 
   const { id } = await params
 
-  console.log('Deleting session id:', id)
-
   await supabase
     .from('user_sessions')
     .delete()

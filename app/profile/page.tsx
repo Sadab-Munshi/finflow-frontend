@@ -385,7 +385,7 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     await fetch('/api/sessions/logout-current', { method: 'DELETE' })
     const supabase = createClient()
-    await supabase.auth.signOut({ scope: 'local' })
+    await supabase.auth.signOut()
     router.push('/login')
   }
 
