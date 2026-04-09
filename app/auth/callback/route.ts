@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       // Note: type param is standard Supabase callback param; even if manipulated,
       // worst case is user is signed out and redirected to login (safe outcome)
       if (type === 'signup') {
-        await supabase.auth.signOut()
+        await supabase.auth.signOut({ scope: 'local' })
         return NextResponse.redirect(`${origin}/login?confirmed=true`)
       }
 

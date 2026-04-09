@@ -11,11 +11,15 @@ export async function GET() {
   const cookieStore = await cookies()
   const currentToken = cookieStore.get('finflow_session')?.value
 
+  console.log('Current cookie token:', currentToken)
+
   const { data: sessions } = await supabase
     .from('user_sessions')
     .select('*')
     .eq('user_id', user.id)
     .order('last_active_at', { ascending: false })
+
+  console.log('All sessions:', sessions?.map(s => s.session_token))
 
   // Mark which one is current based on cookie token
   const enriched = (sessions ?? []).map(s => ({
