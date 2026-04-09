@@ -1,7 +1,7 @@
 import UAParser from 'ua-parser-js'
 
 export function getDeviceInfo(userAgent: string) {
-  const parser = new UAParser(userAgent)
+  const parser = new UAParser.UAParser(userAgent)
   const result = parser.getResult()
 
   const browser = result.browser.name ?? 'Unknown Browser'
