@@ -33,16 +33,13 @@ export async function POST(req: NextRequest) {
     last_active_at: new Date().toISOString(),
   })
 
-  console.log('Creating session, token:', session_token)
-  console.log('Setting cookie finflow_session')
-
   // Store session token in cookie
   const response = NextResponse.json({ success: true })
   response.cookies.set('finflow_session', session_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: 60 * 60 * 24 * 30, // 30 days
     path: '/',
   })
 

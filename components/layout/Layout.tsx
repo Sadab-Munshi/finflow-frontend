@@ -61,7 +61,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setProfileDropdownOpen(false)
     await fetch('/api/sessions/logout-current', { method: 'DELETE' })
     const supabase = createClient()
-    await supabase.auth.signOut({ scope: 'local' })
+    await supabase.auth.signOut()
     router.push('/login')
   }
 
