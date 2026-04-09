@@ -133,20 +133,20 @@ export function ManualForm({
 }: ManualFormProps) {
   const dateInputRef = useRef<HTMLInputElement>(null)
   const [showSheet, setShowSheet] = useState(false)
-  const [shouldShowTypeColor, setShouldShowTypeColor] = useState(!!confirmMode)
   const [isPressed, setIsPressed] = useState(false)
   const today = getTodayIST()
 
+  const isExpense = type === 'expense'
   const amountValue = parseFloat(amount)
   const isSaveDisabled = isSubmitting || !amount || isNaN(amountValue) || amountValue <= 0
-  // Amount color: neutral gray when 0/empty, dark for expense, teal for income
+  // Amount color: neutral gray when 0/empty, rose for expense, teal for income
   const amountColor = (!amount || isNaN(amountValue) || amountValue <= 0)
     ? '#d4d4d4' // neutral-300
-    : type === 'income'
-      ? '#0d9488' // teal-600
-      : '#171717' // neutral-900
-  // Toggle pill color (only show type color after user interaction)
-  const activeColor = shouldShowTypeColor ? (type === 'expense' ? RED : GREEN) : TEAL
+    : isExpense
+      ? RED   // rose/red for expense
+      : '#0d9488' // teal-600 for income
+  // Toggle pill color: always reflect current type
+  const activeColor = isExpense ? RED : GREEN
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, fontFamily: FONT }}>
@@ -204,7 +204,6 @@ export function ManualForm({
           <button
             key={t}
             onClick={() => {
-              setShouldShowTypeColor(true)
               if (t !== type) { setType(t); setCategory(''); setAmount('') }
             }}
             style={{
