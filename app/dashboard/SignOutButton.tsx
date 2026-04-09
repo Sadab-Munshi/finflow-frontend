@@ -7,6 +7,7 @@ export default function SignOutButton() {
   const router = useRouter()
 
   const handleSignOut = async () => {
+    await fetch('/api/sessions/logout-current', { method: 'DELETE' })
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
