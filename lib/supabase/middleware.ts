@@ -63,10 +63,8 @@ export async function updateSession(request: NextRequest) {
       const sessionToken = request.cookies.get('finflow_session')?.value
       console.log('Cookie finflow_session value:', sessionToken)
 
-      // If no session token cookie, skip blocklist check and continue
-      if (!sessionToken) {
-        // No finflow_session cookie — do not redirect, just continue
-      } else {
+      // If sessionToken is undefined, skip blocklist check and continue
+      if (sessionToken) {
         const { data: sessionData } = await serviceClient
           .from('user_sessions')
           .select('is_blocked')
