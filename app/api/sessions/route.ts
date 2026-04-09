@@ -17,9 +17,8 @@ export async function GET() {
     .from('user_sessions')
     .select('*')
     .eq('user_id', user.id)
+    .eq('is_blocked', false)
     .order('last_active_at', { ascending: false })
-
-  console.log('All sessions:', sessions?.map(s => s.session_token))
 
   // Mark which one is current based on cookie token
   const enriched = (sessions ?? []).map(s => ({

@@ -53,6 +53,23 @@ export async function updateSession(request: NextRequest) {
 
   // Check ban status for authenticated users on protected routes
   if (user && isProtected) {
+    // Check if session is blocked (blocklist approach)
+    try {
+      const requestUrl = request.nextUrl.origin
+      const sessionCheckRes = await fetch(`${requestUrl}/api/sessions/check`, {
+        headers: { cookie: request.headers.get('cookie') ?? '' },
+      })
+      const { blocked } = await sessionCheckRes.json()
+      if (blocked) {
+        await supabase.auth.signOut()
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        return NextResponse.redirect(url)
+      }
+    } catch (error) {
+      console.error('Middleware session block check failed:', error)
+    }
+
     try {
       const serviceClient = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
