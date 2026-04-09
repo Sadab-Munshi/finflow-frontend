@@ -1,0 +1,109 @@
+You are enhancing the Add Transaction page .
+and its related components in the FinFlow Next.js + TypeScript + Tailwind app.
+
+The app's brand color is teal (#0d9488). Keep all existing functionality intact.
+Do not change routing, API calls, or data logic — UI and UX only.
+
+---
+
+## CHANGE 1: Amount Display — Manual & Income tabs
+
+Current issue: Amount shows large pink/red "0.00" which looks like an error state.
+
+New behavior:
+- Amount display should be large (text-6xl or text-7xl), bold, centered
+- Color: neutral gray (text-neutral-300) when value is 0 or empty
+- Color: text-neutral-900 (dark) when user has typed a value > 0
+- For Expense mode: when amount > 0, color becomes text-neutral-900 (not red)
+- For Income mode: when amount > 0, color becomes text-teal-600 (green)
+- The ₹ symbol should match the amount color at all times
+- Smooth color transition: transition-colors duration-200
+
+---
+
+## CHANGE 2: Bug Fix — Amount must reset when switching Expense/Income
+
+Current bug: Amount entered stays when user switches between Expense and Income tabs.
+
+Fix: When user taps "Expense" or "Income" toggle, reset the amount to 0.
+Find the toggle handler for Expense/Income and add:
+  setAmount(0) // or whatever the amount state setter is named
+  
+Also reset the selected category to null/undefined when switching.
+
+---
+
+## CHANGE 3: Save Transaction button state
+
+Current issue: Button appears greyed out even when amount > 0.
+
+Fix: Button should be:
+- Disabled + greyed out (bg-neutral-200 text-neutral-400) when amount is 0
+- Active (bg-teal-600 text-white hover:bg-teal-700) when amount > 0
+- Smooth transition between states: transition-all duration-200
+- Add a subtle scale on press: active:scale-[0.98]
+
+---
+
+## CHANGE 4: Voice Tab — Replace globe with waveform animation
+
+Current issue: 3D globe is heavy and out of place.
+
+Replace the entire voice tab visual with this minimal design:
+
+A. Idle state (not listening):
+- Clean centered mic icon (use lucide-react Mic icon, size 48)
+- Circle background: w-28 h-28 rounded-full bg-neutral-100
+- Mic icon color: text-neutral-400
+- Below: "Tap to speak" in text-sm text-neutral-500
+- Below that: "Hindi · Bengali · Tamil · Telugu & more" in text-xs text-neutral-400
+
+B. Listening state (after tap):
+- Replace the static mic circle with animated waveform bars
+- 5 vertical bars, centered horizontally
+- Each bar: w-1.5 rounded-full bg-teal-500
+- Heights animate up and down with staggered CSS animation
+- Bar heights oscillate between h-2 and h-12 
+- Animation: each bar has a different animation-delay (0ms, 100ms, 200ms, 300ms, 400ms)
+- Use keyframes animation named "waveBar" that goes 0%→h-2, 50%→h-12, 100%→h-2
+- Duration: 0.8s infinite ease-in-out
+- Below bars: "Listening..." in text-sm text-teal-600 font-medium
+- The mic circle disappears and is replaced by the waveform when listening
+
+C. Implementation:
+- Add isListening state (boolean)
+- On tap of the mic circle: setIsListening(true)
+- On tap again or after result received: setIsListening(false)
+- Smooth fade transition between idle and listening states using opacity
+
+Add the keyframe CSS using a <style> tag inside the component or 
+via Tailwind's arbitrary values if supported.
+
+---
+
+## CHANGE 5: Category chips — selected state polish
+
+Current issue: Selected category chip is not visually obvious enough.
+
+When a category chip is selected:
+- Background: bg-teal-50
+- Border: border-teal-500 border
+- Text: text-teal-700 font-medium
+- Icon (if present): text-teal-600
+
+When unselected:
+- Background: bg-white
+- Border: border-neutral-200 border  
+- Text: text-neutral-600
+
+Add transition-all duration-150 to all chips.
+
+---
+
+## SUMMARY OF FILES TO CHANGE:
+- Any child components used by the add page for amount display, 
+  voice tab, or category chips
+
+Do not create new files unless absolutely necessary.
+Do not change any API calls, form submission logic, or routing.
+Give a summary of every change made when done.
