@@ -58,6 +58,26 @@ export async function updateSession(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       )
+
+      // Check if session is blocked (blocklist approach)
+      const currentToken = request.cookies.get('finflow_session')?.value
+      if (currentToken) {
+        const { data: sessionData } = await serviceClient
+          .from('user_sessions')
+          .select('is_blocked')
+          .eq('session_token', currentToken)
+          .eq('user_id', user.id)
+          .single()
+
+        if (!sessionData || sessionData.is_blocked) {
+          await supabase.auth.signOut()
+          const url = request.nextUrl.clone()
+          url.pathname = '/login'
+          return NextResponse.redirect(url)
+        }
+      }
+
+      // Check ban status
       const { data: banData } = await serviceClient
         .from('user_management')
         .select('is_banned, ip_banned')
