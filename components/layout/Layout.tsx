@@ -60,7 +60,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     setProfileDropdownOpen(false)
     const supabase = createClient()
-    await supabase.auth.signOut()
+    await supabase.auth.signOut({ scope: 'local' })
     router.push('/login')
   }
 
