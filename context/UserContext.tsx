@@ -75,7 +75,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         .eq('user_id', authUser.id)
         .single()
       if (banData?.is_banned || banData?.ip_banned) {
-        await supabase.auth.signOut()
+        await supabase.auth.signOut({ scope: 'local' })
         window.location.href = '/login?banned=true'
         return
       }
@@ -176,7 +176,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const ipBanData = await ipBanRes.json()
 
       if (banData.banned || ipBanData.banned) {
-        await supabase.auth.signOut()
+        await supabase.auth.signOut({ scope: 'local' })
         window.location.href = '/login?banned=true'
       }
     }
