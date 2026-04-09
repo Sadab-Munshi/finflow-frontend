@@ -21,9 +21,6 @@ export async function POST(req: NextRequest) {
     .update({ is_current: false })
     .eq('user_id', user.id)
 
-  // Get the current Supabase session to store refresh token
-  const { data: { session } } = await supabase.auth.getSession()
-
   // Insert new session
   await supabase.from('user_sessions').insert({
     user_id: user.id,
@@ -34,7 +31,6 @@ export async function POST(req: NextRequest) {
     ip_address,
     is_current: true,
     last_active_at: new Date().toISOString(),
-    supabase_session_id: session?.refresh_token ?? null,
   })
 
   console.log('Creating session, token:', session_token)

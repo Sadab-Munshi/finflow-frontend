@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function DELETE(
@@ -14,19 +13,6 @@ export async function DELETE(
   const { id } = await params
 
   console.log('Deleting session id:', id)
-
-  // Fetch the session's refresh token before deleting
-  const { data: target } = await supabase
-    .from('user_sessions')
-    .select('supabase_session_id')
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .single()
-
-  // Revoke the Supabase auth session if we have a refresh token
-  if (target?.supabase_session_id) {
-    await supabaseAdmin.auth.admin.signOut(target.supabase_session_id, 'others')
-  }
 
   await supabase
     .from('user_sessions')
