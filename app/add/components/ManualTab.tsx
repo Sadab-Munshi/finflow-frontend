@@ -134,11 +134,18 @@ export function ManualForm({
   const dateInputRef = useRef<HTMLInputElement>(null)
   const [showSheet, setShowSheet] = useState(false)
   const [shouldShowTypeColor, setShouldShowTypeColor] = useState(!!confirmMode)
+  const [isPressed, setIsPressed] = useState(false)
   const today = getTodayIST()
 
   const amountValue = parseFloat(amount)
   const isSaveDisabled = isSubmitting || !amount || isNaN(amountValue) || amountValue <= 0
-  // Fix 1d: neutral teal by default, color only after user interaction
+  // Amount color: neutral gray when 0/empty, dark for expense, teal for income
+  const amountColor = (!amount || isNaN(amountValue) || amountValue <= 0)
+    ? '#d4d4d4' // neutral-300
+    : type === 'income'
+      ? '#0d9488' // teal-600
+      : '#171717' // neutral-900
+  // Toggle pill color (only show type color after user interaction)
   const activeColor = shouldShowTypeColor ? (type === 'expense' ? RED : GREEN) : TEAL
 
   return (
@@ -147,8 +154,8 @@ export function ManualForm({
       <div style={{ textAlign: 'center', paddingTop: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{
-            fontSize: 48, fontWeight: 700,
-            color: activeColor, lineHeight: 1,
+            fontSize: 56, fontWeight: 700,
+            color: amountColor, lineHeight: 1,
             transition: 'color 0.2s',
           }}>
             ₹
@@ -163,8 +170,8 @@ export function ManualForm({
               if (val) setAmountError('')
             }}
             style={{
-              fontSize: 48, fontWeight: 700,
-              color: activeColor,
+              fontSize: 56, fontWeight: 700,
+              color: amountColor,
               background: 'transparent', border: 'none', outline: 'none',
               textAlign: 'center', width: '65%',
               fontFamily: FONT, lineHeight: 1,
@@ -198,7 +205,7 @@ export function ManualForm({
             key={t}
             onClick={() => {
               setShouldShowTypeColor(true)
-              if (t !== type) { setType(t); setCategory('') }
+              if (t !== type) { setType(t); setCategory(''); setAmount('') }
             }}
             style={{
               flex: 1, padding: '10px 0', background: 'none', border: 'none',
@@ -233,12 +240,12 @@ export function ManualForm({
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '8px 14px', borderRadius: 20,
-                  border: selected ? `1.5px solid ${TEAL}` : '1.5px solid #e5e7eb',
-                  background: selected ? `${TEAL}15` : '#fff',
-                  color: selected ? TEAL : '#6b7280',
-                  fontSize: 13, fontWeight: selected ? 600 : 400,
+                  border: selected ? '1.5px solid #14b8a6' : '1.5px solid #e5e7eb',
+                  background: selected ? '#f0fdfa' : '#fff',
+                  color: selected ? '#0f766e' : '#525252',
+                  fontSize: 13, fontWeight: selected ? 500 : 400,
                   cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-                  transition: 'all 0.2s', fontFamily: FONT,
+                  transition: 'all 0.15s', fontFamily: FONT,
                 }}
               >
                 <Icon size={16} />
@@ -318,14 +325,21 @@ export function ManualForm({
         disabled={isSaveDisabled}
         style={{
           width: '100%', padding: '16px',
-          background: isSaveDisabled ? '#f3f4f6' : TEAL,
-          color: isSaveDisabled ? '#9ca3af' : '#fff',
+          background: isSaveDisabled ? '#e5e5e5' : '#0d9488',
+          color: isSaveDisabled ? '#a3a3a3' : '#fff',
           border: 'none', borderRadius: 14,
           fontSize: 16, fontWeight: 600,
           cursor: isSaveDisabled ? 'not-allowed' : 'pointer',
-          fontFamily: FONT, transition: 'background 0.2s, color 0.2s',
+          fontFamily: FONT,
+          transition: 'all 0.2s',
+          transform: (!isSaveDisabled && isPressed) ? 'scale(0.98)' : 'scale(1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
+        onMouseDown={() => { if (!isSaveDisabled) setIsPressed(true) }}
+        onMouseUp={() => setIsPressed(false)}
+        onMouseLeave={() => setIsPressed(false)}
+        onTouchStart={() => { if (!isSaveDisabled) setIsPressed(true) }}
+        onTouchEnd={() => setIsPressed(false)}
       >
         {isSubmitting
           ? <>

@@ -1,16 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import dynamic from 'next/dynamic'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Mic } from 'lucide-react'
 import { getCategoriesByType } from '@/lib/categories'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
 import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
 import { useTransaction } from '../hooks/useTransaction'
 import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
-
-const ParticleSphere = dynamic(() => import('./ParticleSphere'), { ssr: false })
 
 const MAX_RECORDING_SECONDS = 15
 const VOICE_ERROR_PROCESSING = 'error'
@@ -284,19 +281,57 @@ export default function VoiceTab() {
     )
   }
 
-  /* ── Recording / idle UI with gradient globe ── */
+  /* ── Recording / idle UI with mic + waveform ── */
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       gap: 24, fontFamily: FONT,
     }}>
-      {/* Gradient Globe — tap to start/stop recording */}
-      <ParticleSphere
-        isRecording={isListening}
-        isProcessing={loading}
-        hasError={parseError !== null}
-        onTap={loading ? () => {} : (isListening ? handleVoiceStop : handleVoiceStart)}
-      />
+      {/* Waveform CSS keyframes */}
+      <style>{`
+        @keyframes waveBar {
+          0%, 100% { height: 8px; }
+          50% { height: 48px; }
+        }
+      `}</style>
+
+      {/* Mic circle (idle) / Waveform bars (listening) */}
+      <div
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: 112, cursor: loading ? 'default' : 'pointer',
+        }}
+        onClick={loading ? undefined : (isListening ? handleVoiceStop : handleVoiceStart)}
+      >
+        {isListening ? (
+          /* Waveform bars */
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6, height: 56,
+            opacity: 1, transition: 'opacity 0.3s',
+          }}>
+            {[0, 100, 200, 300, 400].map((delay, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 6, borderRadius: 9999,
+                  backgroundColor: '#14b8a6',
+                  animation: `waveBar 0.8s ${delay}ms infinite ease-in-out`,
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          /* Static mic circle */
+          <div style={{
+            width: 112, height: 112, borderRadius: '50%',
+            background: '#f5f5f5',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'opacity 0.3s',
+          }}>
+            <Mic size={48} color="#a3a3a3" />
+          </div>
+        )}
+      </div>
 
       {/* Status text */}
       <div style={{ textAlign: 'center' }}>
@@ -306,30 +341,20 @@ export default function VoiceTab() {
             <span style={{ fontSize: 16, fontWeight: 500 }}>Processing...</span>
           </div>
         ) : isListening ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEAL, justifyContent: 'center' }}>
-            <span
-              className="animate-pulse"
-              style={{
-                display: 'inline-block',
-                width: 8, height: 8,
-                borderRadius: '50%',
-                background: TEAL,
-                flexShrink: 0,
-              }}
-            />
-            <span style={{ fontSize: 16, fontWeight: 500 }}>Listening… Tap to stop</span>
-          </div>
+          <p style={{ color: '#0d9488', fontSize: 14, fontWeight: 500 }}>
+            Listening...
+          </p>
         ) : (
-          <p style={{ color: '#6b7280', fontSize: 16, fontWeight: 500 }}>
+          <p style={{ color: '#737373', fontSize: 14 }}>
             Tap to speak
           </p>
         )}
-        <p style={{ color: '#9ca3af', fontSize: 12, marginTop: 6 }}>
-          Supports Hindi, Bengali, Tamil, Telugu & more
+        <p style={{ color: '#a3a3a3', fontSize: 12, marginTop: 6 }}>
+          Hindi · Bengali · Tamil · Telugu &amp; more
         </p>
       </div>
 
-      {/* Friendly inline error — no red, no raw API message */}
+      {/* Friendly inline error */}
       {parseError && !loading && (
         <p style={{
           fontSize: 14, color: '#9ca3af', textAlign: 'center',
@@ -341,7 +366,7 @@ export default function VoiceTab() {
         </p>
       )}
 
-      {/* Transcript display (only when no error and no parsed result) */}
+      {/* Transcript display */}
       {transcript && !loading && parsedList.length === 0 && !parseError && (
         <div style={{
           width: '100%', padding: 16, background: '#f0fdf4',
