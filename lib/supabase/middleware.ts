@@ -60,20 +60,14 @@ export async function updateSession(request: NextRequest) {
       )
 
       // Check if session is blocked (blocklist approach)
-      const sessionToken = request.cookies.get('finflow_session')?.value
-      console.log('Cookie finflow_session value:', sessionToken)
-
-      // If sessionToken is undefined, skip blocklist check and continue
-      if (sessionToken) {
+      const currentToken = request.cookies.get('finflow_session')?.value
+      if (currentToken) {
         const { data: sessionData } = await serviceClient
           .from('user_sessions')
           .select('is_blocked')
-          .eq('session_token', sessionToken)
+          .eq('session_token', currentToken)
           .eq('user_id', user.id)
           .single()
-
-        console.log('Middleware checking token:', sessionToken)
-        console.log('Session blocked status:', sessionData?.is_blocked)
 
         if (!sessionData || sessionData.is_blocked) {
           await supabase.auth.signOut()
