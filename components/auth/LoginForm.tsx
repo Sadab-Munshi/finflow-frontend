@@ -112,8 +112,6 @@ export default function LoginForm() {
       }
 
       toast.success('Welcome back!')
-      // Create a session record for this device
-      await fetch('/api/sessions/create', { method: 'POST' })
       router.push('/dashboard')
       router.refresh()
     } catch {

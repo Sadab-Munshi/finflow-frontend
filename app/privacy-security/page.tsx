@@ -6,7 +6,6 @@ import { Eye, EyeOff, Lock, ArrowLeft, CheckCircle, Loader2, BarChart2, Circle }
 import Layout from '@/components/layout/Layout'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
-import { ActiveSessions } from '@/components/ActiveSessions'
 
 export default function PrivacySecurityPage() {
   const router = useRouter()
@@ -419,9 +418,6 @@ export default function PrivacySecurityPage() {
         <p className="text-xs text-gray-400 px-1 mb-6">
           We never sell your data. Analytics are fully anonymous and contain no personal or financial information.
         </p>
-
-        {/* ── ACTIVE SESSIONS ── */}
-        <ActiveSessions />
 
       </div>
     </Layout>
