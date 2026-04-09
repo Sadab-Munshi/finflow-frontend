@@ -11,11 +11,15 @@ export async function DELETE() {
   const cookieStore = await cookies()
   const currentToken = cookieStore.get('finflow_session')?.value
 
+  if (!currentToken) {
+    return NextResponse.json({ error: 'No active session token found' }, { status: 400 })
+  }
+
   await supabase
     .from('user_sessions')
     .delete()
     .eq('user_id', user.id)
-    .neq('session_token', currentToken ?? '') // keep current session
+    .neq('session_token', currentToken) // keep current session
 
   return NextResponse.json({ success: true })
 }

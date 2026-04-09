@@ -17,8 +17,8 @@ type Session = {
 export function ActiveSessions() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
-  const [logoutingId, setLogoutingId] = useState<string | null>(null)
-  const [logoutingAll, setLogoutingAll] = useState(false)
+  const [loggingOutId, setLoggingOutId] = useState<string | null>(null)
+  const [loggingOutAll, setLoggingOutAll] = useState(false)
 
   useEffect(() => {
     fetchSessions()
@@ -26,24 +26,29 @@ export function ActiveSessions() {
 
   async function fetchSessions() {
     setLoading(true)
-    const res = await fetch('/api/sessions')
-    const data = await res.json()
-    setSessions(data.sessions ?? [])
-    setLoading(false)
+    try {
+      const res = await fetch('/api/sessions')
+      const data = await res.json()
+      setSessions(data.sessions ?? [])
+    } catch {
+      setSessions([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function logoutSession(id: string) {
-    setLogoutingId(id)
+    setLoggingOutId(id)
     await fetch(`/api/sessions/${id}`, { method: 'DELETE' })
     setSessions(prev => prev.filter(s => s.id !== id))
-    setLogoutingId(null)
+    setLoggingOutId(null)
   }
 
   async function logoutAllOthers() {
-    setLogoutingAll(true)
+    setLoggingOutAll(true)
     await fetch('/api/sessions/logout-others', { method: 'DELETE' })
     setSessions(prev => prev.filter(s => s.is_current))
-    setLogoutingAll(false)
+    setLoggingOutAll(false)
   }
 
   function DeviceIcon({ type }: { type: string }) {
@@ -99,10 +104,10 @@ export function ActiveSessions() {
                 {!session.is_current && (
                   <button
                     onClick={() => logoutSession(session.id)}
-                    disabled={logoutingId === session.id}
+                    disabled={loggingOutId === session.id}
                     className="text-xs text-red-500 font-medium shrink-0 hover:text-red-700 disabled:opacity-50 min-h-[44px] px-2 flex items-center"
                   >
-                    {logoutingId === session.id ? (
+                    {loggingOutId === session.id ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
                     ) : (
                       'Log out'
@@ -124,10 +129,10 @@ export function ActiveSessions() {
               <div className="p-4">
                 <button
                   onClick={logoutAllOthers}
-                  disabled={logoutingAll}
+                  disabled={loggingOutAll}
                   className="w-full py-2.5 rounded-xl border border-red-200 text-red-500 text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {logoutingAll ? (
+                  {loggingOutAll ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Logging out...</>
                   ) : (
                     'Log out all other devices'
