@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, FlaskConical } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -27,7 +27,7 @@ export default function LoginForm() {
   const turnstileRef = useRef<TurnstileInstance>(null)
   const router = useRouter()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
 
@@ -191,6 +191,19 @@ export default function LoginForm() {
             <p className="text-red-500 text-xs mt-2">Please complete the security verification</p>
           )}
         </div>
+
+        {/* Try Demo */}
+        <button
+          type="button"
+          onClick={() => {
+            setValue('email', 'demo@finflow.com')
+            setValue('password', '#demofinflow2026')
+          }}
+          className="w-full py-2.5 rounded-full border border-dashed border-gray-300 text-gray-500 text-sm font-medium hover:border-gray-400 hover:text-gray-700 transition-all duration-200 flex items-center justify-center gap-2"
+        >
+          <FlaskConical className="w-4 h-4" />
+          Try Demo Account
+        </button>
 
         {/* Submit */}
         <button
