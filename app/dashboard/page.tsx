@@ -75,6 +75,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [pieChartHeight, setPieChartHeight] = useState(250)
   const [isDesktop, setIsDesktop] = useState(false)
+  const [balanceView, setBalanceView] = useState<'month' | 'all'>('month')
 
   useEffect(() => {
     const load = async () => {
@@ -215,14 +216,40 @@ export default function DashboardPage() {
         {/* Balance Card */}
         <Card className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800 text-white border-0 shadow-xl overflow-hidden relative">
           <CardContent className="p-4 md:p-6 relative">
-            <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
+              <div className="flex bg-white/15 rounded-full p-0.5">
+                <button
+                  onClick={() => setBalanceView('month')}
+                  className={cn(
+                    "text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-medium transition-colors",
+                    balanceView === 'month'
+                      ? "bg-white text-teal-700"
+                      : "text-white/70 hover:text-white"
+                  )}
+                >
+                  This Month
+                </button>
+                <button
+                  onClick={() => setBalanceView('all')}
+                  className={cn(
+                    "text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-medium transition-colors",
+                    balanceView === 'all'
+                      ? "bg-white text-teal-700"
+                      : "text-white/70 hover:text-white"
+                  )}
+                >
+                  All Time
+                </button>
+              </div>
+            </div>
             <p className={cn(
               "text-2xl md:text-4xl font-bold mt-1 md:mt-2 tracking-tight",
-              balance >= 0 ? "text-white" : "text-red-300"
+              (balanceView === 'month' ? monthIncome - monthExpenses : balance) >= 0 ? "text-white" : "text-red-300"
             )}>
-              {formatIndianCurrency(balance)}
+              {formatIndianCurrency(balanceView === 'month' ? monthIncome - monthExpenses : balance)}
             </p>
-            <p className="text-white/70 text-xs mt-1">All time</p>
+            <p className="text-white/70 text-xs mt-1">{balanceView === 'month' ? 'This month' : 'All time'}</p>
           </CardContent>
         </Card>
 
