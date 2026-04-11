@@ -75,8 +75,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [pieChartHeight, setPieChartHeight] = useState(250)
   const [isDesktop, setIsDesktop] = useState(false)
-  const [balanceView, setBalanceView] = useState<'month' | 'all'>('month')
-  const [pieView, setPieView] = useState<'month' | 'all'>('month')
+  const [dashboardView, setDashboardView] = useState<'month' | 'all'>('month')
 
   useEffect(() => {
     const load = async () => {
@@ -157,6 +156,10 @@ export default function DashboardPage() {
     ? Math.round(((monthIncome - monthExpenses) / monthIncome) * 100)
     : 0
 
+  const allTimeSavingsRate = totalIncome > 0
+    ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100)
+    : 0
+
   const thisMonthExpense = thisMonthTx
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0)
@@ -217,51 +220,51 @@ export default function DashboardPage() {
     totalExpenses
   )
 
-  const pieData = pieView === 'month' ? monthPieData : allTimePieData
-  const pieExpenseTotal = pieView === 'month' ? thisMonthExpense : totalExpenses
+  const pieData = dashboardView === 'month' ? monthPieData : allTimePieData
+  const pieExpenseTotal = dashboardView === 'month' ? thisMonthExpense : totalExpenses
 
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-800">{t('dashboard')}</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800">{t('dashboard')}</h1>
+          <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+            <button
+              onClick={() => setDashboardView('month')}
+              className={cn(
+                "px-3 py-1 rounded-full text-xs font-medium transition-all",
+                dashboardView === 'month'
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              This Month
+            </button>
+            <button
+              onClick={() => setDashboardView('all')}
+              className={cn(
+                "px-3 py-1 rounded-full text-xs font-medium transition-all",
+                dashboardView === 'all'
+                  ? "bg-white text-gray-800 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              All Time
+            </button>
+          </div>
+        </div>
 
         {/* Balance Card */}
         <Card className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800 text-white border-0 shadow-xl overflow-hidden relative">
           <CardContent className="p-4 md:p-6 relative">
-            <div className="flex items-center justify-between">
-              <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
-              <div className="flex bg-white/15 rounded-full p-0.5">
-                <button
-                  onClick={() => setBalanceView('month')}
-                  className={cn(
-                    "text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-medium transition-colors",
-                    balanceView === 'month'
-                      ? "bg-white text-teal-700"
-                      : "text-white/70 hover:text-white"
-                  )}
-                >
-                  This Month
-                </button>
-                <button
-                  onClick={() => setBalanceView('all')}
-                  className={cn(
-                    "text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-medium transition-colors",
-                    balanceView === 'all'
-                      ? "bg-white text-teal-700"
-                      : "text-white/70 hover:text-white"
-                  )}
-                >
-                  All Time
-                </button>
-              </div>
-            </div>
+            <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
             <p className={cn(
               "text-2xl md:text-4xl font-bold mt-1 md:mt-2 tracking-tight",
-              (balanceView === 'month' ? monthIncome - monthExpenses : balance) >= 0 ? "text-white" : "text-red-300"
+              (dashboardView === 'month' ? monthIncome - monthExpenses : balance) >= 0 ? "text-white" : "text-red-300"
             )}>
-              {formatIndianCurrency(balanceView === 'month' ? monthIncome - monthExpenses : balance)}
+              {formatIndianCurrency(dashboardView === 'month' ? monthIncome - monthExpenses : balance)}
             </p>
-            <p className="text-white/70 text-xs mt-1">{balanceView === 'month' ? 'This month' : 'All time'}</p>
+            <p className="text-white/70 text-xs mt-1">{dashboardView === 'month' ? 'This month' : 'All time'}</p>
           </CardContent>
         </Card>
 
@@ -270,23 +273,23 @@ export default function DashboardPage() {
           {/* Income Card */}
           <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
             <span className="text-xs text-gray-500 mb-0.5">Income</span>
-            <span className="text-[10px] text-gray-400 mb-1">This Month</span>
-            <span className="text-sm font-bold text-green-600">₹{monthIncome.toLocaleString('en-IN')}</span>
+            <span className="text-[10px] text-gray-400 mb-1">{dashboardView === 'month' ? 'This Month' : 'All Time'}</span>
+            <span className="text-sm font-bold text-green-600">₹{(dashboardView === 'month' ? monthIncome : totalIncome).toLocaleString('en-IN')}</span>
           </div>
           {/* Expense Card */}
           <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
             <span className="text-xs text-gray-500 mb-0.5">Expense</span>
-            <span className="text-[10px] text-gray-400 mb-1">This Month</span>
-            <span className="text-sm font-bold text-red-500">₹{monthExpenses.toLocaleString('en-IN')}</span>
+            <span className="text-[10px] text-gray-400 mb-1">{dashboardView === 'month' ? 'This Month' : 'All Time'}</span>
+            <span className="text-sm font-bold text-red-500">₹{(dashboardView === 'month' ? monthExpenses : totalExpenses).toLocaleString('en-IN')}</span>
           </div>
           {/* Savings Card */}
           <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
             <span className="text-xs text-gray-500 mb-0.5">Savings</span>
-            <span className="text-[10px] text-gray-400 mb-1">This Month</span>
+            <span className="text-[10px] text-gray-400 mb-1">{dashboardView === 'month' ? 'This Month' : 'All Time'}</span>
             <span className={cn(
               "text-sm font-bold",
-              monthSavingsRate >= 0 ? "text-green-600" : "text-red-500"
-            )}>{monthSavingsRate}%</span>
+              (dashboardView === 'month' ? monthSavingsRate : allTimeSavingsRate) >= 0 ? "text-green-600" : "text-red-500"
+            )}>{dashboardView === 'month' ? monthSavingsRate : allTimeSavingsRate}%</span>
           </div>
         </div>
 
@@ -339,38 +342,10 @@ export default function DashboardPage() {
         {pieExpenseTotal > 0 && pieData.length > 0 && (
           <Card className="border-gray-200 bg-white shadow-sm">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base md:text-lg text-gray-800">Expense Breakdown</CardTitle>
-                  <CardDescription className="text-xs text-gray-500">
-                    {pieView === 'month' ? 'This month by category' : 'All time by category'}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center bg-gray-100 rounded-full p-0.5">
-                  <button
-                    onClick={() => setPieView('month')}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium transition-all",
-                      pieView === 'month'
-                        ? "bg-white text-gray-800 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
-                    )}
-                  >
-                    This Month
-                  </button>
-                  <button
-                    onClick={() => setPieView('all')}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium transition-all",
-                      pieView === 'all'
-                        ? "bg-white text-gray-800 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
-                    )}
-                  >
-                    All Time
-                  </button>
-                </div>
-              </div>
+              <CardTitle className="text-base md:text-lg text-gray-800">Expense Breakdown</CardTitle>
+              <CardDescription className="text-xs text-gray-500">
+                {dashboardView === 'month' ? 'This month by category' : 'All time by category'}
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-2 md:p-6 pt-0">
               <div className={cn("flex items-center gap-4", isDesktop ? "flex-row" : "flex-col")}>
