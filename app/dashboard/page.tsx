@@ -9,7 +9,7 @@ import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions } from '@/lib/db'
 import { getCategoryByName } from '@/lib/categories'
-import { cn, formatIndianCurrency, getStartOfMonth, getEndOfMonth, isDateInRange, formatIST, normalizeDateToYMD, getISTDateOffset } from '@/lib/utils'
+import { cn, formatIndianCurrency, getStartOfMonth, getEndOfMonth, isDateInRange, formatIST, formatDateIST, normalizeDateToYMD, getISTDateOffset } from '@/lib/utils'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import { Transaction } from '@/lib/types'
 
@@ -432,7 +432,7 @@ export default function DashboardPage() {
                       <div className="flex-1 min-w-0 text-left">
                         <p className="font-medium text-gray-800 text-sm truncate">{tx.note || tx.category}</p>
                         <p className="text-xs text-gray-500">
-                          {formatIST(tx.created_at ?? tx.date)} · {cat?.name}
+                          {tx.created_at ? formatIST(tx.created_at) : formatDateIST(tx.date)} · {cat?.name}
                         </p>
                       </div>
                       <p className={cn(

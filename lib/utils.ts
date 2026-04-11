@@ -143,3 +143,19 @@ export function formatIST(dateString: string): string {
     hour12: true,
   })
 }
+
+/**
+ * Format a date string to IST date only (no time)
+ * e.g. "03 Mar 2026"
+ */
+export function formatDateIST(dateString: string): string {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return dateString
+  return date.toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
