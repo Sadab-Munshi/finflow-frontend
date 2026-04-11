@@ -183,55 +183,38 @@ export default function DashboardPage() {
 
   const weeklyData = getLast7Days()
 
-  // Pie chart — this month expenses by category
-  const categoryTotals: Record<string, number> = {}
-  thisMonthTx
-    .filter(tx => tx.type === 'expense')
-    .forEach(tx => {
+  // Helper: compute pie chart data from a list of expense transactions
+  const buildPieData = (expenseTxs: Transaction[], totalExpense: number) => {
+    const totals: Record<string, number> = {}
+    expenseTxs.forEach(tx => {
       const cat = getCategoryByName(tx.category)
       const catName = cat?.name || tx.category.trim()
-      categoryTotals[catName] = (categoryTotals[catName] || 0) + Number(tx.amount)
+      totals[catName] = (totals[catName] || 0) + Number(tx.amount)
     })
+    return Object.entries(totals)
+      .map(([catName, catAmount]) => {
+        const cat = getCategoryByName(catName)
+        return {
+          name: catName,
+          value: catAmount,
+          color: cat?.color || '#6b7280',
+          percentage: totalExpense > 0
+            ? ((catAmount / totalExpense) * 100).toFixed(1)
+            : '0.0',
+        }
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6)
+  }
 
-  const monthPieData = Object.entries(categoryTotals)
-    .map(([catName, catAmount]) => {
-      const cat = getCategoryByName(catName)
-      return {
-        name: catName,
-        value: catAmount,
-        color: cat?.color || '#6b7280',
-        percentage: thisMonthExpense > 0
-          ? ((catAmount / thisMonthExpense) * 100).toFixed(1)
-          : '0.0',
-      }
-    })
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6)
-
-  // Pie chart — all time expenses by category
-  const allCategoryTotals: Record<string, number> = {}
-  transactions
-    .filter(tx => tx.type === 'expense')
-    .forEach(tx => {
-      const cat = getCategoryByName(tx.category)
-      const catName = cat?.name || tx.category.trim()
-      allCategoryTotals[catName] = (allCategoryTotals[catName] || 0) + Number(tx.amount)
-    })
-
-  const allTimePieData = Object.entries(allCategoryTotals)
-    .map(([catName, catAmount]) => {
-      const cat = getCategoryByName(catName)
-      return {
-        name: catName,
-        value: catAmount,
-        color: cat?.color || '#6b7280',
-        percentage: totalExpenses > 0
-          ? ((catAmount / totalExpenses) * 100).toFixed(1)
-          : '0.0',
-      }
-    })
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6)
+  const monthPieData = buildPieData(
+    thisMonthTx.filter(tx => tx.type === 'expense'),
+    thisMonthExpense
+  )
+  const allTimePieData = buildPieData(
+    transactions.filter(tx => tx.type === 'expense'),
+    totalExpenses
+  )
 
   const pieData = pieView === 'month' ? monthPieData : allTimePieData
   const pieExpenseTotal = pieView === 'month' ? thisMonthExpense : totalExpenses
