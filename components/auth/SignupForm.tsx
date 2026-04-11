@@ -142,6 +142,7 @@ export default function SignupForm() {
   const handleTurnstileSuccess = (token: string) => {
     setTurnstileToken(token)
     setTurnstileError(false)
+    toast.success('Security verified', { duration: 2000 })
   }
 
   const handleTurnstileError = () => {
