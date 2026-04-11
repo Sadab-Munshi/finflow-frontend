@@ -133,6 +133,7 @@ function buildAlertEmail(userName: string, alerts: any[], appUrl: string): strin
 export async function POST(req: NextRequest) {
   try {
     let userId: string
+    let transactionCategory: string | undefined
 
     const botSecret = req.headers.get('x-bot-secret')
     if (botSecret && botSecret === process.env.WEBHOOK_SECRET) {
@@ -141,6 +142,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: false, error: 'Missing user_id' }, { status: 400 })
       }
       userId = body.user_id
+      transactionCategory = body.category
     } else {
       const authSupabase = await createAuthClient()
       const { data: { user: authUser } } = await authSupabase.auth.getUser()
@@ -148,6 +150,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
       }
       userId = authUser.id
+      try {
+        const body = await req.json()
+        transactionCategory = body.category
+      } catch {
+        // No body or invalid JSON — category not provided
+      }
+    }
+
+    // Category is required — only check the budget for the transaction's category
+    if (!transactionCategory) {
+      return NextResponse.json({ ok: false, error: 'Missing category' }, { status: 400 })
     }
 
     // Fetch settings
@@ -185,7 +198,8 @@ export async function POST(req: NextRequest) {
       timeZone: 'Asia/Kolkata'
     }).slice(0, 7)
 
-    // Fetch budgets
+    // Fetch only the budget matching the transaction's category
+    const normalizedCategory = transactionCategory.trim().toLowerCase()
     const { data: budgets, error: budgetsError } = await supabase
       .from('budgets')
       .select('*')
@@ -197,14 +211,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
     }
 
-    if (!budgets || budgets.length === 0) {
-      return NextResponse.json({ ok: false, reason: 'no budgets for this month' })
+    // Find the budget that matches the transaction's category
+    const matchingBudget = (budgets || []).find(
+      b => b.category?.trim().toLowerCase() === normalizedCategory
+    )
+
+    if (!matchingBudget) {
+      return NextResponse.json({ ok: false, reason: 'no budget set for this category', category: transactionCategory })
     }
 
-    // Fetch expense transactions
+    // Fetch expense transactions for this specific category in the current month
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
-      .select('*')
+      .select('amount, date, category')
       .eq('user_id', userId)
       .eq('type', 'expense')
 
@@ -213,43 +232,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
     }
 
-    // Filter to current month
-    const monthTx = (transactions || []).filter(t =>
-      normalizeDateToYMD(t.date).startsWith(thisMonth)
-    )
+    // Filter to current month and matching category
+    const spent = (transactions || [])
+      .filter(t =>
+        normalizeDateToYMD(t.date).startsWith(thisMonth) &&
+        t.category?.trim().toLowerCase() === normalizedCategory
+      )
+      .reduce((sum, t) => sum + Number(t.amount), 0)
 
-    // Calculate alerts
-    const alerts: any[] = []
-    const spentPerCategory: Record<string, number> = {}
+    const budgetAmount = Number(matchingBudget.amount)
+    const percentage = budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0
 
-    for (const budget of budgets) {
-      const bCat = budget.category?.trim().toLowerCase()
-      const spent = monthTx
-        .filter(t => t.category?.trim().toLowerCase() === bCat)
-        .reduce((sum, t) => sum + Number(t.amount), 0)
-
-      spentPerCategory[budget.category] = spent
-      const budgetAmount = Number(budget.amount)
-      const percentage = budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0
-
-      if (percentage >= 80) {
-        alerts.push({
-          category: budget.category,
-          budget: budgetAmount,
-          spent,
-          percentage: Math.round(percentage),
-          remaining: Math.max(0, budgetAmount - spent),
-        })
-      }
-    }
-
-    if (alerts.length === 0) {
+    if (percentage < 80) {
       return NextResponse.json({
         ok: false,
-        reason: 'all budgets under 80%',
-        spentPerCategory,
+        reason: 'budget under 80%',
+        category: transactionCategory,
+        spent,
+        budget: budgetAmount,
+        percentage: Math.round(percentage),
       })
     }
+
+    const alerts = [{
+      category: matchingBudget.category,
+      budget: budgetAmount,
+      spent,
+      percentage: Math.round(percentage),
+      remaining: Math.max(0, budgetAmount - spent),
+    }]
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sadabmunshi.online'
     const html = buildAlertEmail(userName, alerts, appUrl)
