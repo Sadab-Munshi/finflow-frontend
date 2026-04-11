@@ -76,6 +76,7 @@ export default function DashboardPage() {
   const [pieChartHeight, setPieChartHeight] = useState(250)
   const [isDesktop, setIsDesktop] = useState(false)
   const [balanceView, setBalanceView] = useState<'month' | 'all'>('month')
+  const [pieView, setPieView] = useState<'month' | 'all'>('month')
 
   useEffect(() => {
     const load = async () => {
@@ -183,30 +184,41 @@ export default function DashboardPage() {
 
   const weeklyData = getLast7Days()
 
-  // Pie chart — this month expenses by category
-  const categoryTotals: Record<string, number> = {}
-  thisMonthTx
-    .filter(tx => tx.type === 'expense')
-    .forEach(tx => {
+  // Helper: compute pie chart data from a list of expense transactions
+  const buildPieData = (expenseTxs: Transaction[], totalExpense: number) => {
+    const totals: Record<string, number> = {}
+    expenseTxs.forEach(tx => {
       const cat = getCategoryByName(tx.category)
       const catName = cat?.name || tx.category.trim()
-      categoryTotals[catName] = (categoryTotals[catName] || 0) + Number(tx.amount)
+      totals[catName] = (totals[catName] || 0) + Number(tx.amount)
     })
+    return Object.entries(totals)
+      .map(([catName, catAmount]) => {
+        const cat = getCategoryByName(catName)
+        return {
+          name: catName,
+          value: catAmount,
+          color: cat?.color || '#6b7280',
+          percentage: totalExpense > 0
+            ? ((catAmount / totalExpense) * 100).toFixed(1)
+            : '0.0',
+        }
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6)
+  }
 
-  const pieData = Object.entries(categoryTotals)
-    .map(([catName, catAmount]) => {
-      const cat = getCategoryByName(catName)
-      return {
-        name: catName,
-        value: catAmount,
-        color: cat?.color || '#6b7280',
-        percentage: thisMonthExpense > 0
-          ? ((catAmount / thisMonthExpense) * 100).toFixed(1)
-          : '0.0',
-      }
-    })
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6)
+  const monthPieData = buildPieData(
+    thisMonthTx.filter(tx => tx.type === 'expense'),
+    thisMonthExpense
+  )
+  const allTimePieData = buildPieData(
+    transactions.filter(tx => tx.type === 'expense'),
+    totalExpenses
+  )
+
+  const pieData = pieView === 'month' ? monthPieData : allTimePieData
+  const pieExpenseTotal = pieView === 'month' ? thisMonthExpense : totalExpenses
 
   return (
     <Layout>
@@ -324,11 +336,41 @@ export default function DashboardPage() {
         </Card>
 
         {/* Expense Breakdown Pie */}
-        {thisMonthExpense > 0 && pieData.length > 0 && (
+        {pieExpenseTotal > 0 && pieData.length > 0 && (
           <Card className="border-gray-200 bg-white shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base md:text-lg text-gray-800">Expense Breakdown</CardTitle>
-              <CardDescription className="text-xs text-gray-500">This month by category</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base md:text-lg text-gray-800">Expense Breakdown</CardTitle>
+                  <CardDescription className="text-xs text-gray-500">
+                    {pieView === 'month' ? 'This month by category' : 'All time by category'}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+                  <button
+                    onClick={() => setPieView('month')}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium transition-all",
+                      pieView === 'month'
+                        ? "bg-white text-gray-800 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                    )}
+                  >
+                    This Month
+                  </button>
+                  <button
+                    onClick={() => setPieView('all')}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium transition-all",
+                      pieView === 'all'
+                        ? "bg-white text-gray-800 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                    )}
+                  >
+                    All Time
+                  </button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-2 md:p-6 pt-0">
               <div className={cn("flex items-center gap-4", isDesktop ? "flex-row" : "flex-col")}>
@@ -352,7 +394,7 @@ export default function DashboardPage() {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-sm md:text-base font-bold text-gray-800">{formatIndianCurrency(thisMonthExpense)}</span>
+                    <span className="text-sm md:text-base font-bold text-gray-800">{formatIndianCurrency(pieExpenseTotal)}</span>
                     <span className="text-[10px] md:text-xs text-gray-400">Spent</span>
                   </div>
                 </div>
