@@ -52,12 +52,14 @@ const categoryIconMap: Record<string, typeof Utensils> = {
   'Other': CircleDot,
 }
 
+const IST_DATE_OPTIONS: Intl.DateTimeFormatOptions = { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }
+
 function formatDateDisplay(dateStr: string, createdAt?: string): string {
   // Prefer created_at timestamp with IST conversion to avoid UTC date mismatch
   if (createdAt) {
     const date = new Date(createdAt)
     if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })
+      return date.toLocaleDateString('en-IN', IST_DATE_OPTIONS)
     }
   }
   if (!dateStr) return ''
@@ -65,7 +67,7 @@ function formatDateDisplay(dateStr: string, createdAt?: string): string {
   if (parts.length !== 3) return dateStr
   const date = new Date(parts[0], parts[1] - 1, parts[2])
   if (isNaN(date.getTime())) return dateStr
-  return date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })
+  return date.toLocaleDateString('en-IN', IST_DATE_OPTIONS)
 }
 
 function formatTimeDisplay(isoStr: string | undefined): string {
