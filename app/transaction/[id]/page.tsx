@@ -52,13 +52,20 @@ const categoryIconMap: Record<string, typeof Utensils> = {
   'Other': CircleDot,
 }
 
-function formatDateDisplay(dateStr: string): string {
+function formatDateDisplay(dateStr: string, createdAt?: string): string {
+  // Prefer created_at timestamp with IST conversion to avoid UTC date mismatch
+  if (createdAt) {
+    const date = new Date(createdAt)
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })
+    }
+  }
   if (!dateStr) return ''
   const parts = dateStr.split('-').map(Number)
   if (parts.length !== 3) return dateStr
   const date = new Date(parts[0], parts[1] - 1, parts[2])
   if (isNaN(date.getTime())) return dateStr
-  return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+  return date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function formatTimeDisplay(isoStr: string | undefined): string {
@@ -273,7 +280,7 @@ export default function TransactionDetailPage() {
                   </div>
                   <div className="p-3 border-r border-gray-100">
                     <p className="text-xs text-gray-400 mb-0.5">{t('date')}</p>
-                    <p className="text-sm font-semibold text-gray-800">{formatDateDisplay(transaction.date)}</p>
+                    <p className="text-sm font-semibold text-gray-800">{formatDateDisplay(transaction.date, transaction.created_at)}</p>
                   </div>
                   <div className="p-3">
                     <p className="text-xs text-gray-400 mb-0.5">Time</p>

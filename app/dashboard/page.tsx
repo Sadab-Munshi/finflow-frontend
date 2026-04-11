@@ -432,7 +432,7 @@ export default function DashboardPage() {
                       <div className="flex-1 min-w-0 text-left">
                         <p className="font-medium text-gray-800 text-sm truncate">{tx.note || tx.category}</p>
                         <p className="text-xs text-gray-500">
-                          {tx.created_at ? formatIST(tx.created_at) : tx.date} · {cat?.name}
+                          {formatIST(tx.created_at ?? tx.date)} · {cat?.name}
                         </p>
                       </div>
                       <p className={cn(
