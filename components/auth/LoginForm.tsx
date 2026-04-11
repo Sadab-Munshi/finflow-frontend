@@ -199,7 +199,7 @@ export default function LoginForm() {
             setValue('email', 'demo@finflow.com')
             setValue('password', '#demofinflow2026')
           }}
-          className="w-full py-2.5 rounded-full border border-dashed border-gray-300 text-gray-500 text-sm font-medium hover:border-gray-400 hover:text-gray-700 transition-all duration-200 flex items-center justify-center gap-2"
+          className="w-full py-2.5 px-4 rounded-full border-2 border-dashed border-black text-gray-500 text-sm font-medium hover:text-gray-700 transition-all duration-200 flex items-center justify-center gap-2"
         >
           <FlaskConical className="w-4 h-4" />
           Try Demo Account
