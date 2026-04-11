@@ -126,6 +126,7 @@ export default function LoginForm() {
   const handleTurnstileSuccess = (token: string) => {
     setTurnstileToken(token)
     setTurnstileError(false)
+    toast.success('Security verified', { duration: 2000 })
   }
 
   const handleTurnstileError = () => {
@@ -187,9 +188,6 @@ export default function LoginForm() {
             onError={handleTurnstileError}
             onExpire={handleTurnstileExpire}
           />
-          {turnstileError && (
-            <p className="text-red-500 text-xs mt-2">Please complete the security verification</p>
-          )}
         </div>
 
         {/* Try Demo */}

@@ -24,8 +24,8 @@ export default function SignupPage() {
                 <path d="M3 17 Q8 7 12 12 Q16 17 21 7" stroke="#00D4FF" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Create Your Account</h1>
-            <p className="text-gray-500 text-sm mt-1">Less stress, more savings. AI finance tracking made simple.✨</p>
+            <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
+            <p className="text-gray-500 text-sm mt-1">Know where your money goes.</p>
           </div>
 
           <SignupForm />
