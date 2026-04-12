@@ -13,13 +13,9 @@ export function useTransaction() {
   const { user: currentUser } = useUser()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const checkBudgetAlert = async (category: string) => {
+  const checkBudgetAlert = async () => {
     try {
-      await fetch('/api/notifications/budget-alert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category }),
-      })
+      await fetch('/api/notifications/budget-alert', { method: 'POST' })
     } catch (e) {
       console.error('[checkBudgetAlert] Failed:', e)
     }
@@ -34,21 +30,15 @@ export function useTransaction() {
 
     void (async () => {
       try {
-        const expenseCategories = new Set<string>()
         for (const tx of transactions) {
           const result = await addTransaction(tx)
           if (!result) throw new Error('Save failed')
           posthog.capture('transaction_added', {
             type: tx.type, category: tx.category, amount: tx.amount,
           })
-          if (tx.type === 'expense' && tx.category) {
-            expenseCategories.add(tx.category)
-          }
         }
         toast.success('Saved ✅', { id: toastId })
-        for (const category of Array.from(expenseCategories)) {
-          try { await checkBudgetAlert(category) } catch (e) { console.error('[checkBudgetAlert]', e) }
-        }
+        try { await checkBudgetAlert() } catch (e) { console.error('[checkBudgetAlert]', e) }
       } catch {
         toast.error('Failed, retry?', { id: toastId, duration: 5000 })
       }
