@@ -21,7 +21,6 @@ export const viewport: Viewport = {
 const inter = Inter({ subsets: ['latin'], display: 'swap', preload: true })
 
 export const metadata: Metadata = {
-  // ── Core ──────────────────────────────────────────────────
   title: {
     default: 'FinFlow',
     template: '%s | FinFlow',
@@ -29,7 +28,6 @@ export const metadata: Metadata = {
   description:
     'Track every rupee effortlessly. Add expenses by voice, photo, or text in Hindi, English, or Bengali. Free personal finance tracker for India.',
 
-  // ── Canonical & Indexing ──────────────────────────────────
   metadataBase: new URL('https://app.sadabmunshi.online'),
   alternates: {
     canonical: '/',
@@ -43,7 +41,6 @@ export const metadata: Metadata = {
     },
   },
 
-  // ── Open Graph (controls social share + Google brand name) ─
   openGraph: {
     type: 'website',
     siteName: 'FinFlow',
@@ -61,7 +58,6 @@ export const metadata: Metadata = {
     ],
   },
 
-  // ── Twitter Card ──────────────────────────────────────────
   twitter: {
     card: 'summary_large_image',
     title: 'FinFlow',
@@ -70,7 +66,6 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
 
-  // ── App / PWA Meta ────────────────────────────────────────
   applicationName: 'FinFlow',
   manifest: '/site.webmanifest',
   appleWebApp: {
@@ -119,25 +114,39 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <WebsiteJsonLd />
         <OrganizationJsonLd />
+        {/* Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(reg) { console.log('SW registered:', reg.scope); })
+                    .catch(function(err) { console.log('SW registration failed:', err); });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className={inter.className}>
         <PostHogProvider>
           <LanguageProvider>
             <UserProvider>
-            <AuthListener />
-            <UpdateNotification />
-            <InstallPrompt />
-            {children}
-            <Toaster
-            position="top-right"
-            toastOptions={{
-              style: { background: '#111827', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' },
-              success: { iconTheme: { primary: '#10b981', secondary: '#0A0F1E' } },
-              error: { iconTheme: { primary: '#ef4444', secondary: '#0A0F1E' } },
-            }}
-          />
-        </UserProvider>
-        </LanguageProvider>
+              <AuthListener />
+              <UpdateNotification />
+              <InstallPrompt />
+              {children}
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  style: { background: '#111827', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' },
+                  success: { iconTheme: { primary: '#10b981', secondary: '#0A0F1E' } },
+                  error: { iconTheme: { primary: '#ef4444', secondary: '#0A0F1E' } },
+                }}
+              />
+            </UserProvider>
+          </LanguageProvider>
         </PostHogProvider>
       </body>
     </html>
