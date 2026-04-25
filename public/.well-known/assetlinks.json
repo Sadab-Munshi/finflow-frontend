@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "online.sadabmunshi.finflow",
+    "sha256_cert_fingerprints": [
+      "BC:FE:86:FC:6E:71:92:19:7E:97:F5:C8:34:71:BC:96:ED:F0:27:60:E4:88:F0:9D:F3:98:D9:32:22:AC:AA:9A"
+    ]
+  }
+}]
