@@ -9,6 +9,7 @@ import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../
 import { useTransaction } from '../hooks/useTransaction'
 import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
+import { aiParseText } from '@/lib/api-client'
 
 export default function NLPTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
@@ -43,16 +44,7 @@ export default function NLPTab() {
     if (!textInput.trim()) return
     setLoading(true)
     try {
-      const res = await fetch('/api/ai/parse-text', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: textInput }),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `AI request failed (${res.status})`)
-      }
-      const result = await res.json()
+      const result = await aiParseText(textInput)
       // API returns { transactions: [...] }, with fallback for legacy single-object format
       const txs: ParsedTransaction[] = result.transactions || [result]
       txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Send, ArrowLeft, Users, Bell, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { adminGetUsers, adminSendNotification } from '@/lib/api-client'
 
 export default function AdminNotificationsClient() {
   // Form state
@@ -23,8 +24,7 @@ export default function AdminNotificationsClient() {
 
   useEffect(() => {
     const loadUsers = async () => {
-      const res = await fetch('/api/admin/users')
-      const data = await res.json()
+      const data = await adminGetUsers()
       if (data.users) {
         setUsers(data.users.map((u: { id: string; email: string; name?: string }) => ({
           id: u.id,
@@ -47,22 +47,16 @@ export default function AdminNotificationsClient() {
     setResult(null)
 
     try {
-      const res = await fetch('/api/admin/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: notificationType,
-          title: title.trim(),
-          message: message.trim(),
-          link: link.trim() || undefined,
-          sendPush,
-          sendInApp,
-          targetType,
-          userIds: targetType === 'specific' ? selectedUserIds : undefined,
-        })
+      const data = await adminSendNotification({
+        type: notificationType,
+        title: title.trim(),
+        message: message.trim(),
+        link: link.trim() || undefined,
+        sendPush,
+        sendInApp,
+        targetType: targetType as 'all' | 'specific',
+        userIds: targetType === 'specific' ? selectedUserIds : undefined,
       })
-
-      const data = await res.json()
       if (data.success) {
         setResult(data)
         setTitle('')

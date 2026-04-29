@@ -7,6 +7,7 @@ import { addTransaction } from '@/lib/db'
 import { posthog } from '@/lib/posthog'
 import { Transaction } from '@/lib/types'
 import { useUser } from '@/context/UserContext'
+import { budgetAlertCheck } from '@/lib/api-client'
 
 export function useTransaction() {
   const router = useRouter()
@@ -15,7 +16,7 @@ export function useTransaction() {
 
   const checkBudgetAlert = async () => {
     try {
-      await fetch('/api/notifications/budget-alert', { method: 'POST' })
+      await budgetAlertCheck(currentUser?.userId || '')
     } catch (e) {
       console.error('[checkBudgetAlert] Failed:', e)
     }

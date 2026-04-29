@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import { CheckCheck, Bell, Trash2, Loader2 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { createClient } from '@/lib/supabase/client'
-import { getNotificationIcon, timeAgo } from '@/lib/notifications'
+import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
 import type { Notification } from '@/lib/types'
+import { deleteNotification } from '@/lib/api-client'
 
 const PAGE_SIZE = 20
 
@@ -82,12 +83,9 @@ export default function NotificationsPage() {
     // Optimistically remove from UI
     const removed = notifications.find(n => n.id === id)
     setNotifications(prev => prev.filter(n => n.id !== id))
-    const res = await fetch('/api/notifications/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notificationId: id }),
-    })
-    if (!res.ok) {
+    try {
+      await deleteNotification(id)
+    } catch {
       // Restore the removed notification on failure
       if (removed) {
         setNotifications(prev => {

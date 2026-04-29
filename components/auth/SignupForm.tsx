@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import TurnstileWidget, { TurnstileInstance } from './TurnstileWidget'
 import GoogleButton from './GoogleButton'
+import { authVerifyTurnstile } from '@/lib/api-client'
 
 const schema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -82,12 +83,7 @@ export default function SignupForm() {
 
     setLoading(true)
     try {
-      const verifyRes = await fetch('/api/auth/verify-turnstile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: turnstileToken }),
-      })
-      const { success } = await verifyRes.json()
+      const { success } = await authVerifyTurnstile(turnstileToken)
       if (!success) {
         toast.error('Security check failed. Please try again.')
         setTurnstileError(true)

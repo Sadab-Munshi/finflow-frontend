@@ -6,6 +6,7 @@ import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import ReportsSkeleton from '@/components/skeletons/ReportsSkeleton'
 import toast from 'react-hot-toast'
+import { getReports } from '@/lib/api-client'
 
 interface Report {
   id: string
@@ -61,11 +62,8 @@ export default function ReportsPage() {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const res = await fetch('/api/reports')
-        if (res.ok) {
-          const data = await res.json()
-          setReports(data.reports || [])
-        }
+        const data = await getReports()
+        setReports(data.reports || [])
       } catch (err) {
         console.error('Failed to fetch reports:', err)
       } finally {

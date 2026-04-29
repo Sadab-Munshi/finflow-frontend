@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/LanguageContext'
 import { useUser } from '@/context/UserContext'
 import { getTransactions } from '@/lib/db'
 import { cn } from '@/lib/utils'
+import { aiInsights } from '@/lib/api-client'
 import InsightsSkeleton from '@/components/skeletons/InsightsSkeleton'
 import { Transaction } from '@/lib/types'
 
@@ -72,12 +73,7 @@ export default function InsightsPage() {
     try {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       const recentTx = transactions.filter(tx => new Date(tx.date) >= thirtyDaysAgo).map(tx => ({ amount: tx.amount, type: tx.type, category: tx.category, note: tx.note, date: tx.date }))
-      const res = await fetch('/api/ai/insights', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transactions: recentTx }) })
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.error || `Insights generation failed (${res.status})`)
-      }
-      const result = await res.json()
+      const result = await aiInsights(recentTx)
       const timestamp = new Date().toLocaleString('en-IN')
       setInsights(result)
       setSavedTimestamp(timestamp)

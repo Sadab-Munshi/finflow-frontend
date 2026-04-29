@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
+import { trackLogin, checkBan, checkIpBan } from '@/lib/api-client'
 
 interface UserProfile {
   userId: string
@@ -88,19 +89,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
         ipAddress = ipData.ip
       } catch {}
 
-      fetch('/api/track-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: authUser.id, email: authUser.email, ipAddress })
-      })
+      trackLogin(authUser.id, authUser.email, ipAddress).catch(e => console.error('[trackLogin] Failed:', e))
 
       // Heartbeat
-      const pingHeartbeat = () =>
-        fetch('/api/heartbeat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: authUser.id })
-        })
+      const pingHeartbeat = async () => {
+        const supabase = createClient()
+        const { error } = await supabase
+          .from('user_heartbeat')
+          .upsert(
+            { user_id: authUser.id, last_seen: new Date().toISOString() },
+            { onConflict: 'user_id' }
+          )
+        if (error) console.warn('[heartbeat] Failed:', error.message)
+      }
       pingHeartbeat()
       if (heartbeatRef.current) clearInterval(heartbeatRef.current)
       heartbeatRef.current = setInterval(pingHeartbeat, 30000)
@@ -160,22 +161,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
         ipAddress = ipData.ip
       } catch {}
 
-      const internalSecret = process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || ''
-      const banRes = await fetch('/api/check-ban', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-internal-secret': internalSecret },
-        body: JSON.stringify({ userId: user.userId })
-      })
-      const banData = await banRes.json()
+      const banData = await checkBan(user.userId)
 
-      const ipBanRes = await fetch('/api/check-ip-ban', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-internal-secret': internalSecret },
-        body: JSON.stringify({ ipAddress })
-      })
-      const ipBanData = await ipBanRes.json()
+      let ipBanned = false
+      try {
+        const ipBanData = await checkIpBan(ipAddress)
+        ipBanned = ipBanData.banned || false
+      } catch {
+        // fail silently, treat as not banned
+      }
 
-      if (banData.banned || ipBanData.banned) {
+      if (banData.banned || ipBanned) {
         await supabase.auth.signOut({ scope: 'local' })
         window.location.href = '/login?banned=true'
       }

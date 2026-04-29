@@ -1,3 +1,5 @@
+import { pushSubscribe } from '@/lib/api-client'
+
 export async function subscribeToPush(): Promise<boolean> {
   console.log('[Push] subscribeToPush() called')
 
@@ -49,27 +51,21 @@ export async function subscribeToPush(): Promise<boolean> {
 
     // Step 5: Send subscription to server
     console.log('[Push] Sending subscription to server...')
-    const response = await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      await pushSubscribe({
         endpoint: subscription.endpoint,
         keys: {
           p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
           auth: arrayBufferToBase64(subscription.getKey('auth')),
         },
         userAgent: navigator.userAgent,
-      }),
-    })
-
-    if (response.ok) {
+      })
       console.log('[Push] Subscription saved to server successfully')
-    } else {
-      const errorText = await response.text()
-      console.error('[Push] Server rejected subscription — status:', response.status, 'body:', errorText)
+      return true
+    } catch (error) {
+      console.error('[Push] Server rejected subscription:', error)
+      return false
     }
-
-    return response.ok
   } catch (error) {
     console.error('[Push] Push subscription failed:', error)
     return false

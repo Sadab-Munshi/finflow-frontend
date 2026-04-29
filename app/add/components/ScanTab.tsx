@@ -11,6 +11,7 @@ import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory, RED } from
 import { useTransaction } from '../hooks/useTransaction'
 import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
+import { aiParseReceipt } from '@/lib/api-client'
 
 /* ─── Scan Progress Steps ─── */
 const SCAN_STEPS = [
@@ -174,16 +175,7 @@ export default function ScanTab() {
       await new Promise(r => setTimeout(r, 100))
       setScanStep(2)
 
-      const res = await fetch('/api/ai/parse-receipt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64, mimeType }),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `AI request failed (${res.status})`)
-      }
-      const result = await res.json()
+      const result = await aiParseReceipt(base64, mimeType)
 
       setScanStep(3)
       await new Promise(r => setTimeout(r, 300))

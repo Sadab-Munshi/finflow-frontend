@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
+import { adminClearTestNotifications, adminGetUsers, adminGetFeedback, adminBan } from '@/lib/api-client'
 
 type FeedbackType = 'all' | 'general' | 'bug' | 'feature' | 'other'
 
@@ -44,10 +45,9 @@ export default function AdminPanelClient() {
     if (!confirm('Delete all notifications with title "Test" or "Ok"?')) return
     setClearingNotifs(true)
     setClearResult('')
-    const res = await fetch('/api/admin/clear-test-notifications', { method: 'POST' })
-    const data = await res.json()
+    const data = await adminClearTestNotifications()
     setClearingNotifs(false)
-    if (data.ok) {
+    if (data.ok || data.success) {
       setClearResult(`Deleted ${data.deleted} test notification(s)`)
     } else {
       setClearResult(`Error: ${data.error}`)
@@ -56,26 +56,20 @@ export default function AdminPanelClient() {
 
   const loadUsers = useCallback(async () => {
     setUsersLoading(true)
-    const res = await fetch('/api/admin/users')
-    const data = await res.json()
+    const data = await adminGetUsers()
     setUsers(data.users || [])
     setUsersLoading(false)
   }, [])
 
   const loadFeedback = useCallback(async () => {
     setFeedbackLoading(true)
-    const res = await fetch('/api/admin/feedback')
-    const data = await res.json()
+    const data = await adminGetFeedback()
     setFeedback(data.feedback || [])
     setFeedbackLoading(false)
   }, [])
 
   const handleBan = async (userId: string, action: string, ipAddress?: string) => {
-    await fetch('/api/admin/ban', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, action, reason: banReason, ipAddress })
-    })
+    await adminBan({ userId, action: action as 'ban' | 'unban' | 'ip_ban', reason: banReason, ipAddress })
     setBanReason('')
     setSelectedUser(null)
     loadUsers()

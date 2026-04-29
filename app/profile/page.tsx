@@ -17,6 +17,7 @@ import { posthog } from '@/lib/posthog'
 
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
+import { aiUsage as fetchAiUsage, telegramNotify, whatsappNotify, submitFeedback } from '@/lib/api-client'
 
 type Language = 'en' | 'hi' | 'bn'
 
@@ -176,10 +177,7 @@ export default function ProfilePage() {
     load()
 
     // AI usage
-    fetch('/api/ai/usage')
-      .then(res => res.json())
-      .then(data => setAiUsage(data))
-      .catch(() => {})
+    fetchAiUsage().then(data => setAiUsage(data)).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -247,11 +245,7 @@ export default function ProfilePage() {
     if (!error) {
       setTelegramConnected(true)
       setTelegramToggle(true)
-      fetch('/api/telegram/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: telegramChatId.trim(), type: 'connected' }),
-      }).catch(() => {})
+      telegramNotify(telegramChatId.trim(), 'connected').catch(() => {})
     } else {
       toast.error('Failed to connect. Please try again.')
     }
@@ -270,11 +264,7 @@ export default function ProfilePage() {
     const currentChatId = (settings as { telegram_chat_id?: string } | null)?.telegram_chat_id
 
     if (currentChatId) {
-      await fetch('/api/telegram/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: currentChatId, type: 'disconnected' }),
-      }).catch(() => {})
+      await telegramNotify(currentChatId, 'disconnected').catch(() => {})
     }
 
     await supabase.from('settings').upsert(
@@ -368,11 +358,7 @@ export default function ProfilePage() {
         .eq('user_id', user.id)
 
       if (currentPhone) {
-        fetch('/api/whatsapp/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: currentPhone, type: 'disconnected', name: settingsName }),
-        }).catch(() => {})
+        whatsappNotify(currentPhone, 'disconnected', settingsName).catch(() => {})
       }
       setWhatsappConnected(false)
       setShowWhatsappDisconnectDialog(false)
@@ -393,22 +379,18 @@ export default function ProfilePage() {
     setFeedbackSubmitting(true)
     setFeedbackStatus('idle')
     try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: feedbackMessage.trim(), type: feedbackType }),
-      })
-      if (res.status === 429) {
+      await submitFeedback(feedbackMessage.trim(), feedbackType as 'general' | 'bug' | 'feature' | 'other')
+      setFeedbackStatus('success')
+      setFeedbackMessage('')
+      setFeedbackType('general')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error('[feedback] Submit failed:', err)
+      if (errorMessage.includes('429')) {
         setFeedbackStatus('ratelimit')
-      } else if (res.ok) {
-        setFeedbackStatus('success')
-        setFeedbackMessage('')
-        setFeedbackType('general')
       } else {
         setFeedbackStatus('error')
       }
-    } catch {
-      setFeedbackStatus('error')
     } finally {
       setFeedbackSubmitting(false)
     }

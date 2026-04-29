@@ -8,6 +8,7 @@ import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../
 import { useTransaction } from '../hooks/useTransaction'
 import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
+import { aiSpeechToText, aiParseText } from '@/lib/api-client'
 
 const MAX_RECORDING_SECONDS = 15
 const VOICE_ERROR_PROCESSING = 'error'
@@ -84,24 +85,10 @@ export default function VoiceTab() {
           const formData = new FormData()
           formData.append('audio', audioBlob, 'recording.webm')
 
-          const sarvamRes = await fetch('/api/ai/speech-to-text', { method: 'POST', body: formData })
-          if (!sarvamRes.ok) {
-            const errData = await sarvamRes.json().catch(() => ({}))
-            throw new Error(errData.error || `Speech-to-text failed (${sarvamRes.status})`)
-          }
-          const { transcript: t } = await sarvamRes.json()
+          const { transcript: t } = await aiSpeechToText(formData)
           setTranscript(t)
 
-          const mistralRes = await fetch('/api/ai/parse-text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: t }),
-          })
-          if (!mistralRes.ok) {
-            const errData = await mistralRes.json().catch(() => ({}))
-            throw new Error(errData.error || `Parse failed (${mistralRes.status})`)
-          }
-          const result = await mistralRes.json()
+          const result = await aiParseText(t)
           const txs: ParsedTransaction[] = result.transactions || [result]
           txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
           if (txs.length === 1) fillForm(txs[0])

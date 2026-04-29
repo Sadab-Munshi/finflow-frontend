@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { X, CheckCheck } from 'lucide-react'
-import { getNotificationIcon, timeAgo } from '@/lib/notifications'
+import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
 import type { Notification } from '@/lib/types'
 
 interface NotificationCenterProps {

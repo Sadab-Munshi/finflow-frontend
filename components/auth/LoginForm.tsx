@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import TurnstileWidget, { TurnstileInstance } from './TurnstileWidget'
 import GoogleButton from './GoogleButton'
+import { authVerifyTurnstile, authWelcomeEmail } from '@/lib/api-client'
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -44,12 +45,7 @@ export default function LoginForm() {
 
     setLoading(true)
     try {
-      const verifyRes = await fetch('/api/auth/verify-turnstile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: turnstileToken }),
-      })
-      const { success } = await verifyRes.json()
+      const { success } = await authVerifyTurnstile(turnstileToken)
       if (!success) {
         toast.error('Security check failed. Please try again.')
         setTurnstileError(true)
@@ -96,11 +92,7 @@ export default function LoginForm() {
 
           if (!settingsData.welcome_email_sent) {
             const fullName = user.user_metadata?.full_name || user.email || 'there'
-            await fetch('/api/auth/welcome-email', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fullName, email: user.email }),
-            })
+            await authWelcomeEmail(fullName, user.email)
             // Use upsert to ensure it works even if row was just created
             await supabase
               .from('settings')
@@ -114,8 +106,9 @@ export default function LoginForm() {
       toast.success('Welcome back!')
       router.push('/dashboard')
       router.refresh()
-    } catch {
-      toast.error('Something went wrong. Please try again.')
+    } catch (err) {
+      console.error('Login error:', err)
+      toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       turnstileRef.current?.reset()
       setTurnstileToken(null)
     } finally {
