@@ -203,11 +203,20 @@ export async function sendNotification(data: {
 }
 
 export async function budgetAlertCheck(userId: string) {
-  return request('/api/notifications/budget-alert', {
+  const botSecret = process.env.NEXT_PUBLIC_BOT_SECRET || ''
+  const res = await fetch(`${API_BASE}/api/notifications/budget-alert`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-bot-secret': botSecret,
+    },
     body: JSON.stringify({ user_id: userId }),
   })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error(error.error || `API error: ${res.status}`)
+  }
+  return res.json()
 }
 
 // ============ Feedback Endpoints ============
