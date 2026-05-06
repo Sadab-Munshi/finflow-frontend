@@ -63,27 +63,22 @@ export default function SignupForm() {
   const strength = getPasswordStrength(password)
 
   const onSubmit = async (data: FormData) => {
-    // Reset turnstile error state
     setTurnstileError(false)
-    
-    // Check terms agreement
     if (!agreedToTerms) {
       setTermsError(true)
       toast.error('Please agree to the Privacy Policy, Terms of Service, and Disclaimer')
       return
     }
     setTermsError(false)
-
-    // Check if Turnstile is completed
     if (!turnstileToken) {
       setTurnstileError(true)
       toast.error('Please complete the security verification')
       return
     }
-
     setLoading(true)
     try {
-      const { success } = await authVerifyTurnstile(turnstileToken)
+      // Layer 3: pass email for disposable email check
+      const { success } = await authVerifyTurnstile(turnstileToken, data.email)
       if (!success) {
         toast.error('Security check failed. Please try again.')
         setTurnstileError(true)
@@ -109,7 +104,7 @@ export default function SignupForm() {
         return
       }
 
-      // After successful signup, create settings row with notification defaults
+      // Fix 1: Send userId to welcome-email
       if (signUpData.user) {
         const { error: settingsError } = await supabase.from('settings').upsert({
           user_id: signUpData.user.id,
@@ -118,14 +113,14 @@ export default function SignupForm() {
           need_help: true,
           welcome_email_sent: false,
         }, { onConflict: 'user_id' })
-        if (settingsError) {
-          console.error('Failed to create settings row:', settingsError)
-        }
+        if (settingsError) console.error('Failed to create settings row:', settingsError)
+
+        // Send welcome email with userId
+        await authWelcomeEmail(data.fullName, data.email, signUpData.user.id)
       }
 
       toast.success("Check your email to confirm your account!")
       router.push('/login')
-
     } catch {
       toast.error('Something went wrong. Please try again.')
       turnstileRef.current?.reset()
