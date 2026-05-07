@@ -1,5 +1,5 @@
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton'
 
 export default function ProfileLoading() {
-  return <LoadingScreen />
+  return <ProfileSkeleton />
 }
