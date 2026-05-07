@@ -139,19 +139,19 @@ export async function aiReportSummary(data: {
 
 // ============ Auth Endpoints ============
 
-export async function authVerifyTurnstile(token: string, email?: string) {
+export async function authVerifyTurnstile(token: string) {
   return request('/api/auth/verify-turnstile', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, email }),
+    body: JSON.stringify({ token }),
   })
 }
 
-export async function authWelcomeEmail(fullName: string, email: string, userId?: string) {
+export async function authWelcomeEmail(fullName: string, email: string) {
   return request('/api/auth/welcome-email', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fullName, email, userId }),
+    body: JSON.stringify({ fullName, email }),
   })
 }
 
