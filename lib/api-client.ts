@@ -140,12 +140,11 @@ export async function aiReportSummary(data: {
 // ============ Auth Endpoints ============
 
 export async function authVerifyTurnstile(token: string, email?: string) {
-  const res = await fetch(`${API_BASE}/api/auth/verify-turnstile`, {
+  return request('/api/auth/verify-turnstile', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, email }),
   })
-  return res.json()
 }
 
 export async function authWelcomeEmail(fullName: string, email: string, userId?: string) {
