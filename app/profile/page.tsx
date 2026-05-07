@@ -15,7 +15,6 @@ import { getSettings, upsertSettings, getTransactions } from '@/lib/db'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
 
-import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
 import { aiUsage as fetchAiUsage, telegramNotify, whatsappNotify, submitFeedback } from '@/lib/api-client'
 
@@ -64,7 +63,6 @@ export default function ProfilePage() {
   const [mounted, setMounted] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(true)
   const [avatarUrl, setAvatarUrl] = useState('')
   const [uploading, setUploading] = useState(false)
   const [editingName, setEditingName] = useState(false)
@@ -171,7 +169,6 @@ export default function ProfilePage() {
         .reduce((sum, t) => sum + Number(t.amount), 0)
       setThisMonthSpending(spending)
 
-      setLoading(false)
       setMounted(true)
     }
     load()
@@ -186,7 +183,6 @@ export default function ProfilePage() {
     }
   }, [])
 
-  if (loading) return <LoadingScreen />
   if (!mounted) return null
 
   const uploadAvatar = async (file: File) => {
