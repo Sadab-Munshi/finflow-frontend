@@ -10,6 +10,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import Layout from '@/components/layout/Layout'
+import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton'
 import { useLanguage } from '@/context/LanguageContext'
 import { getSettings, upsertSettings, getTransactions } from '@/lib/db'
 import { createClient } from '@/lib/supabase/client'
@@ -183,7 +184,7 @@ export default function ProfilePage() {
     }
   }, [])
 
-  if (!mounted) return null
+  if (!mounted) return <ProfileSkeleton />
 
   const uploadAvatar = async (file: File) => {
     setUploading(true)
