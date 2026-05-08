@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, History, PiggyBank, BarChart2, FileText, Settings,
-  User, PenLine, LogOut, X, Menu, Plus, Mic, Camera, Sparkles
+  User, PenLine, LogOut, X, Menu, Plus
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
@@ -32,17 +32,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
-  const [fabOpen, setFabOpen] = useState(false)
-  const fabActions = [
-    { icon: Mic, label: t('voice'), tab: 'voice', color: '#9333EA', bg: '#F3E8FF' },
-    { icon: Camera, label: t('scan'), tab: 'scan', color: '#2563EB', bg: '#DBEAFE' },
-    { icon: PenLine, label: t('manual'), tab: 'manual', color: '#16A34A', bg: '#DCFCE7' },
-    { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#F6546A', bg: '#FEEDF0' },
-  ]
 
   const mobileBottomNavItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
     { path: '/history', icon: History, label: t('history') },
+    { path: '/add', icon: Plus, label: t('add'), isMain: true },
     { path: '/insights', icon: BarChart2, label: t('insights') },
     { path: '/profile', icon: User, label: t('profile') },
   ]
@@ -211,63 +205,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link
             key={item.path}
             href={item.path}
-            className="flex flex-col items-center gap-1 py-2 px-3"
+            className={cn('flex flex-col items-center gap-1 py-2 px-3', item.isMain && 'relative -top-5')}
           >
-            <item.icon className={cn('w-5 h-5 transition-colors', pathname === item.path ? 'text-teal-600' : 'text-gray-400')} />
-            <span className={cn('text-xs font-medium transition-colors', pathname === item.path ? 'text-teal-600' : 'text-gray-400')}>{item.label}</span>
+            {item.isMain ? (
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white shadow-xl shadow-violet-500/40 ring-4 ring-white">
+                <item.icon className="w-6 h-6" />
+              </div>
+            ) : (
+              <>
+                <item.icon className={cn('w-5 h-5 transition-colors', pathname === item.path ? 'text-teal-600' : 'text-gray-400')} />
+                <span className={cn('text-xs font-medium transition-colors', pathname === item.path ? 'text-teal-600' : 'text-gray-400')}>{item.label}</span>
+              </>
+            )}
           </Link>
         ))}
       </nav>
-
-      {/* FAB - Mobile Only */}
-      <div className="md:hidden">
-        {/* Backdrop */}
-        {fabOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/20"
-            onClick={() => setFabOpen(false)}
-          />
-        )}
-
-        {/* FAB Actions */}
-        <AnimatePresence>
-          {fabOpen && (
-            <div className="fixed right-4 z-50" style={{ bottom: '88px' }}>
-              {fabActions.map((action, i) => (
-                <motion.div
-                  key={action.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="mb-3 flex items-center justify-end"
-                >
-                  <button
-                    onClick={() => {
-                      router.push(`/add?tab=${action.tab}`)
-                      setFabOpen(false)
-                    }}
-                    className="px-4 py-2 rounded-full bg-white shadow-md flex items-center gap-2 hover:shadow-lg transition-shadow"
-                  >
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: action.bg }}>
-                      <action.icon className="w-4 h-4" style={{ color: action.color }} />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{action.label}</span>
-                  </button>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Main FAB Button */}
-        <button
-          onClick={() => setFabOpen(!fabOpen)}
-          className="fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white shadow-xl shadow-violet-500/40"
-        >
-          {fabOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-        </button>
-      </div>
 
       {/* Landscape Sidebar (Desktop — fixed left panel) */}
       <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-teal-700 to-teal-800 z-40 overflow-y-auto no-print shadow-xl">
