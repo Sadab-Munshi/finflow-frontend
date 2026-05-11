@@ -12,10 +12,10 @@
 - Highlights security awareness (JWT, RLS, bot protection, rate limiting)
 
 ## Live Demo
-[Insert Vercel link]
-
+https://app.sadabmunshi.online
 ## GitHub
-[Insert repo link]
+https://github.com/Sadab-Munshi/finflow-frontend
+https://github.com/Sadab-Munshi/finflow-api
 
 ## Key Technical Decisions I Made
 1. Split monolith → microservices for scalability
