@@ -215,7 +215,7 @@ export default function VoiceTab() {
         onDiscard={discard}
         isSubmitting={isSubmitting}
         confirmLabel="Save Transaction"
-        headerIcon={<span style={{ fontSize: 18 }}>🎤</span>}
+        headerIcon={<Mic className="w-4 h-4 text-muted-foreground" />}
         headerText="Voice captured"
       />
     )
