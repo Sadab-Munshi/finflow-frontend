@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { CheckCircle } from 'lucide-react'
 import { addTransaction } from '@/lib/db'
 import { posthog } from '@/lib/posthog'
 import { Transaction } from '@/lib/types'
@@ -39,7 +38,7 @@ export function useTransaction() {
             type: tx.type, category: tx.category, amount: tx.amount,
           })
         }
-        toast.success(<span>Saved <CheckCircle className="w-4 h-4 text-green-500 inline ml-1" /></span>, { id: toastId })
+        toast.success('Saved', { id: toastId })
         try { await checkBudgetAlert() } catch (e) { console.error('[checkBudgetAlert]', e) }
       } catch {
         toast.error('Failed, retry?', { id: toastId, duration: 5000 })
