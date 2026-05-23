@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, History, PiggyBank, BarChart2, FileText, Settings,
-  User, PenLine, LogOut, X, Menu, Plus, Mic, Camera, Sparkles, Type
+  User, PenLine, LogOut, X, Menu, Plus, Mic, Camera, Keyboard
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
@@ -32,6 +32,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
 
   const mobileBottomNavItems = [
@@ -42,10 +43,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ]
 
   const fabSpeedDialItems = [
-    { icon: Mic, label: 'Voice', tab: 'voice', bg: '#F3E8FF', color: '#9333EA' },
-    { icon: Camera, label: 'Scan', tab: 'scan', bg: '#DBEAFE', color: '#2563EB' },
-    { icon: Type, label: 'Type', tab: 'manual', bg: '#DCFCE7', color: '#16A34A' },
-    { icon: Sparkles, label: 'Auto', tab: 'text', bg: '#FEEDF0', color: '#F6546A' },
+    { icon: PenLine, label: 'Manual', tab: 'manual', bg: '#2563EB', color: '#ffffff' },
+    { icon: Keyboard, label: 'Type', tab: 'text', bg: '#7C3AED', color: '#ffffff' },
+    { icon: Mic, label: 'Voice', tab: 'voice', bg: '#16A34A', color: '#ffffff' },
+    { icon: Camera, label: 'Scan', tab: 'scan', bg: '#EA580C', color: '#ffffff' },
   ]
 
   // Close profile dropdown on outside click
@@ -214,46 +215,58 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="md:hidden fixed inset-0 bg-black/20 z-40 no-print"
+            className="fixed inset-0 bg-black/25 z-40 no-print"
             onClick={() => setFabOpen(false)}
           />
         )}
       </AnimatePresence>
 
-      {/* FAB — Speed Dial (fixed bottom-right) */}
-      <div className="md:hidden fixed bottom-6 right-5 z-50 no-print">
+      {/* FAB — Draggable Speed Dial */}
+      <div className="fixed bottom-[72px] right-4 md:bottom-8 md:right-8 z-50 no-print">
         <AnimatePresence>
           {fabOpen && (
-            <div className="absolute bottom-full mb-3 right-0 flex flex-col items-end gap-2">
+            <div className="absolute bottom-full mb-3 right-0 flex flex-col-reverse gap-3">
               {fabSpeedDialItems.map((item, index) => (
                 <motion.button
                   key={item.tab}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ delay: index * 0.05, duration: 0.2 }}
+                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                  transition={{ delay: index * 0.06, type: 'spring', stiffness: 300 }}
                   onClick={() => {
                     setFabOpen(false)
                     router.push(`/add?tab=${item.tab}`)
                   }}
-                  className="flex flex-row-reverse items-center gap-2 bg-white rounded-full pl-3 pr-1.5 py-1.5 shadow-lg border border-gray-100"
+                  className="flex flex-row-reverse items-center gap-3"
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: item.bg }}>
-                    <item.icon className="w-4 h-4" style={{ color: item.color }} />
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: item.bg }}>
+                    <item.icon className="w-5 h-5" style={{ color: item.color }} />
                   </div>
-                  <span className="text-xs font-medium text-[#0F172A] whitespace-nowrap">{item.label}</span>
+                  <span className="bg-white rounded-full px-4 py-2 text-sm font-medium shadow-md text-[#0F172A] whitespace-nowrap">{item.label}</span>
                 </motion.button>
               ))}
             </div>
           )}
         </AnimatePresence>
-        <button
-          onClick={() => setFabOpen(!fabOpen)}
-          className="w-14 h-14 rounded-full bg-[#0A7B7B] flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white transition-transform duration-200"
-          style={{ transform: fabOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
+        <motion.button
+          drag
+          dragMomentum={false}
+          dragElastic={0}
+          dragConstraints={{ top: -600, bottom: 0, left: -300, right: 0 }}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={() => setTimeout(() => setIsDragging(false), 100)}
+          onClick={() => { if (!isDragging) setFabOpen(prev => !prev) }}
+          className="w-14 h-14 rounded-full bg-[#0A7B7B] flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white cursor-grab active:cursor-grabbing"
+          whileTap={{ scale: 1.1 }}
         >
-          <Plus className="w-6 h-6" />
-        </button>
+          <motion.span
+            animate={{ rotate: fabOpen ? 45 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center justify-center"
+          >
+            <Plus className="w-6 h-6" />
+          </motion.span>
+        </motion.button>
       </div>
 
       {/* Mobile Bottom Nav */}
