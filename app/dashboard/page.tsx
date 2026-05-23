@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mic, Camera, PenLine, FileUp, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp } from 'lucide-react'
-import { BarChart, Bar, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, TrendingDown, PiggyBank, Eye, EyeOff, Lightbulb, ChevronRight } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions } from '@/lib/db'
 import { getCategoryByName } from '@/lib/categories'
-import { cn, formatIndianCurrency, getStartOfMonth, getEndOfMonth, isDateInRange, formatIST, normalizeDateToYMD, getISTDateOffset } from '@/lib/utils'
+import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD, getISTDateOffset } from '@/lib/utils'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import { Transaction } from '@/lib/types'
 
@@ -32,41 +31,6 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'Other': <CircleDot className="w-4 h-4" />,
 }
 
-// Normalize any date format to YYYY-MM-DD in IST
-function normalizeDateToYMD(dateStr: string): string {
-  if (!dateStr) return ''
-  if (dateStr.includes('T') || dateStr.includes('Z')) {
-    // ISO string — convert to IST date
-    const ist = new Date(dateStr).toLocaleString('en-CA', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    })
-    // en-CA returns YYYY-MM-DD
-    return ist
-  }
-  if (dateStr.includes('/')) {
-    // DD/MM/YYYY → YYYY-MM-DD
-    const [d, m, y] = dateStr.split('/')
-    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
-  }
-  // Already YYYY-MM-DD
-  return dateStr
-}
-
-// Get YYYY-MM-DD for IST "today - i days"
-function getISTDateOffset(daysAgo: number): string {
-  const now = new Date()
-  now.setDate(now.getDate() - daysAgo)
-  return now.toLocaleString('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-}
-
 export default function DashboardPage() {
   const router = useRouter()
   const { t } = useLanguage()
@@ -76,6 +40,7 @@ export default function DashboardPage() {
   const [pieChartHeight, setPieChartHeight] = useState(250)
   const [isDesktop, setIsDesktop] = useState(false)
   const [dashboardView, setDashboardView] = useState<'month' | 'all'>('month')
+  const [hideBalance, setHideBalance] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -122,7 +87,7 @@ export default function DashboardPage() {
     timeZone: 'Asia/Kolkata',
     year: 'numeric',
     month: '2-digit',
-  }).slice(0, 7) // "YYYY-MM"
+  }).slice(0, 7)
 
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -134,16 +99,13 @@ export default function DashboardPage() {
 
   const balance = totalIncome - totalExpenses
 
-  // Recent 5 transactions (already sorted newest first from DB)
   const recentTx = transactions.slice(0, 5)
 
-  // This month transactions — normalize date for comparison
   const thisMonthTx = transactions.filter(tx => {
     const ymd = normalizeDateToYMD(tx.date)
     return ymd.startsWith(istNow)
   })
 
-  // This month income/expense/savings for the stats cards
   const monthIncome = thisMonthTx
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + Number(t.amount), 0)
@@ -164,7 +126,6 @@ export default function DashboardPage() {
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
-  // ✅ Fixed: compare normalized dates in IST
   const getLast7Days = () => {
     const days = []
     for (let i = 6; i >= 0; i--) {
@@ -187,7 +148,6 @@ export default function DashboardPage() {
 
   const weeklyData = getLast7Days()
 
-  // Helper: compute pie chart data from a list of expense transactions
   const buildPieData = (expenseTxs: Transaction[], totalExpense: number) => {
     const totals: Record<string, number> = {}
     expenseTxs.forEach(tx => {
@@ -223,19 +183,73 @@ export default function DashboardPage() {
   const pieData = dashboardView === 'month' ? monthPieData : allTimePieData
   const pieExpenseTotal = dashboardView === 'month' ? thisMonthExpense : totalExpenses
 
+  // Derived values for new layout
+  const displayIncome = dashboardView === 'month' ? monthIncome : totalIncome
+  const displayExpense = dashboardView === 'month' ? monthExpenses : totalExpenses
+  const displayBalance = dashboardView === 'month' ? monthIncome - monthExpenses : balance
+  const displaySavingsRate = dashboardView === 'month' ? monthSavingsRate : allTimeSavingsRate
+  const heroLabel = dashboardView === 'month' ? 'Current Balance' : 'Total Balance'
+  const periodLabel = dashboardView === 'month' ? 'This Month' : 'All Time'
+
+  // Relative time helper
+  const getRelativeTime = (tx: Transaction): string => {
+    if (!tx.created_at) return tx.date
+    const dateStr = normalizeDateToYMD(tx.created_at)
+    const today = getISTDateOffset(0)
+    const yesterday = getISTDateOffset(1)
+    if (dateStr === today) return 'Today'
+    if (dateStr === yesterday) return 'Yesterday'
+    return formatIST(tx.created_at)
+  }
+
+  // Weekly chart totals & outlier detection
+  const weeklyIncomeTotal = weeklyData.reduce((s, d) => s + d.income, 0)
+  const weeklyExpenseTotal = weeklyData.reduce((s, d) => s + d.expense, 0)
+  const expenseValues = weeklyData.map(d => d.expense).filter(v => v > 0)
+  const expenseAvg = expenseValues.length > 0 ? expenseValues.reduce((a, b) => a + b, 0) / expenseValues.length : 0
+  const expenseMax = Math.max(...weeklyData.map(d => d.expense), 0)
+  const expenseCap = Math.ceil(expenseMax * 1.2)
+
+  // Insight card data
+  const topCategory = pieData.length > 0 ? pieData[0] : null
+  const sparklinePoints = weeklyData.map((d, i) => {
+    const maxE = Math.max(...weeklyData.map(w => w.expense), 1)
+    const x = (i / 6) * 80
+    const y = 38 - (d.expense / maxE) * 34
+    return `${x},${y}`
+  }).join(' ')
+
+  // Custom outlier label for bar chart
+  const OutlierLabel = (props: Record<string, unknown>) => {
+    const { x, y, width, value, index } = props as { x: number; y: number; width: number; value: number; index: number }
+    const isExpense = weeklyData[index]?.expense === value
+    if (!isExpense || value <= 0 || expenseAvg <= 0 || value <= 2.5 * expenseAvg) return null
+    return (
+      <g>
+        <rect x={x + width / 2 - 32} y={y - 22} width={64} height={18} rx={9} fill="#EF4444" />
+        <text x={x + width / 2} y={y - 10} textAnchor="middle" fill="white" fontSize={10} fontWeight="600">
+          High expense
+        </text>
+      </g>
+    )
+  }
+
+  const formatAmount = (val: number) => hideBalance ? '\u2022\u2022\u2022\u2022\u2022\u2022' : formatIndianCurrency(val)
+
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6">
+        {/* 1. Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-800">{t('dashboard')}</h1>
-          <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Dashboard</h1>
+          <div className="flex items-center bg-white border border-[#E2E8F0] rounded-full p-0.5">
             <button
               onClick={() => setDashboardView('month')}
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-medium transition-all",
                 dashboardView === 'month'
-                  ? "bg-white text-gray-800 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-[#0A7B7B] text-white"
+                  : "bg-white text-[#475569]"
               )}
             >
               This Month
@@ -245,8 +259,8 @@ export default function DashboardPage() {
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-medium transition-all",
                 dashboardView === 'all'
-                  ? "bg-white text-gray-800 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-[#0A7B7B] text-white"
+                  : "bg-white text-[#475569]"
               )}
             >
               All Time
@@ -254,201 +268,228 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Balance Card */}
-        <Card className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-800 text-white border-0 shadow-xl overflow-hidden relative">
-          <CardContent className="p-4 md:p-6 relative">
-            <p className="text-teal-200 text-xs md:text-sm font-medium">{t('totalBalance')}</p>
-            <p className={cn(
-              "text-2xl md:text-4xl font-bold mt-1 md:mt-2 tracking-tight",
-              (dashboardView === 'month' ? monthIncome - monthExpenses : balance) >= 0 ? "text-white" : "text-red-300"
-            )}>
-              {formatIndianCurrency(dashboardView === 'month' ? monthIncome - monthExpenses : balance)}
-            </p>
-            <p className="text-white/70 text-xs mt-1">{dashboardView === 'month' ? 'This month' : 'All time'}</p>
-          </CardContent>
-        </Card>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-2">
-          {/* Income Card */}
-          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
-            <span className="text-xs text-gray-500 mb-0.5">Income</span>
-            <span className="text-[10px] text-gray-400 mb-1">{dashboardView === 'month' ? 'This Month' : 'All Time'}</span>
-            <span className="text-sm font-bold text-green-600">₹{(dashboardView === 'month' ? monthIncome : totalIncome).toLocaleString('en-IN')}</span>
-          </div>
-          {/* Expense Card */}
-          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
-            <span className="text-xs text-gray-500 mb-0.5">Expense</span>
-            <span className="text-[10px] text-gray-400 mb-1">{dashboardView === 'month' ? 'This Month' : 'All Time'}</span>
-            <span className="text-sm font-bold text-red-500">₹{(dashboardView === 'month' ? monthExpenses : totalExpenses).toLocaleString('en-IN')}</span>
-          </div>
-          {/* Savings Card */}
-          <div className="rounded-2xl shadow-sm p-3 flex flex-col items-center text-center bg-white">
-            <span className="text-xs text-gray-500 mb-0.5">Savings</span>
-            <span className="text-[10px] text-gray-400 mb-1">{dashboardView === 'month' ? 'This Month' : 'All Time'}</span>
-            <span className={cn(
-              "text-sm font-bold",
-              (dashboardView === 'month' ? monthSavingsRate : allTimeSavingsRate) >= 0 ? "text-green-600" : "text-red-500"
-            )}>{dashboardView === 'month' ? monthSavingsRate : allTimeSavingsRate}%</span>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-2 md:gap-3">
-          {[
-            { icon: Mic, label: t('voice'), tab: 'voice', color: '#9333EA', bg: '#F3E8FF' },
-            { icon: Camera, label: t('scan'), tab: 'scan', color: '#2563EB', bg: '#DBEAFE' },
-            { icon: PenLine, label: t('manual'), tab: 'manual', color: '#16A34A', bg: '#DCFCE7' },
-            { icon: Sparkles, label: 'AI Add', tab: 'text', color: '#F6546A', bg: '#FEEDF0' },
-          ].map((action) => (
+        {/* 2. Hero Card */}
+        <div className="bg-gradient-to-br from-[#0A7B7B] to-[#0D5C5C] rounded-2xl p-5 md:p-6 shadow-lg overflow-hidden relative">
+          <svg className="absolute right-0 top-0 h-full w-48 opacity-10 pointer-events-none" viewBox="0 0 200 200" preserveAspectRatio="none">
+            <path d="M0,100 Q50,10 100,80 T200,60 L200,200 L0,200 Z" fill="white" />
+          </svg>
+          <div className="relative flex items-start justify-between">
+            <p className="text-white/80 text-sm">{heroLabel}</p>
             <button
-              key={action.label}
-              onClick={() => router.push(`/add?tab=${action.tab}`)}
-              className="flex flex-col items-center gap-1.5 p-2.5 md:p-4 rounded-xl bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all border border-gray-100"
+              onClick={() => setHideBalance(!hideBalance)}
+              className="text-white/70 hover:text-white transition-colors"
             >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: action.bg }}>
-                <action.icon className="w-5 h-5" style={{ color: action.color }} />
-              </div>
-              <span className="text-[10px] md:text-xs text-gray-600 font-medium">{action.label}</span>
+              {hideBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
-          ))}
+          </div>
+          <p className={cn(
+            "text-4xl font-bold text-white tracking-tight mt-2",
+            displayBalance < 0 && "text-red-300"
+          )}>
+            {formatAmount(displayBalance)}
+          </p>
+          <p className="text-white/70 text-xs mt-1">{periodLabel}</p>
         </div>
 
-        {/* Weekly Activity Chart */}
-        <Card className="border-gray-200 bg-white shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base md:text-lg text-gray-800">{t('weeklyActivity')}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6 pt-0">
-            <div className="h-48 md:h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyData || []} margin={{ top: 5, right: 5, left: 5, bottom: 5 }} barGap={2}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    formatter={(value, name) => [formatIndianCurrency(Number(value)), name]}
-                    contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="income" name={t('income')} fill="#0D9488" barSize={22} radius={[4, 4, 0, 0]} minPointSize={3} />
-                  <Bar dataKey="expense" name={t('expense')} fill="#F43F5E" barSize={22} radius={[4, 4, 0, 0]} minPointSize={3} />
-                </BarChart>
-              </ResponsiveContainer>
+        {/* 3. Summary Cards */}
+        <div className="grid grid-cols-3 gap-3">
+          {/* Income */}
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: '#10B98110' }}>
+              <TrendingUp className="w-5 h-5 text-[#10B981]" />
             </div>
-          </CardContent>
-        </Card>
+            <span className="text-xs text-[#475569] font-medium">Income</span>
+            <span className="text-[10px] text-[#64748B] mb-1">{periodLabel}</span>
+            <span className="text-sm font-bold text-[#0F172A]">{formatIndianCurrency(displayIncome)}</span>
+          </div>
+          {/* Expenses */}
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: '#EF444410' }}>
+              <TrendingDown className="w-5 h-5 text-[#EF4444]" />
+            </div>
+            <span className="text-xs text-[#475569] font-medium">Expenses</span>
+            <span className="text-[10px] text-[#64748B] mb-1">{periodLabel}</span>
+            <span className="text-sm font-bold text-[#0F172A]">{formatIndianCurrency(displayExpense)}</span>
+          </div>
+          {/* Saved */}
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex flex-col items-center text-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: '#0A7B7B10' }}>
+              <PiggyBank className="w-5 h-5 text-[#0A7B7B]" />
+            </div>
+            <span className="text-xs text-[#475569] font-medium">Saved</span>
+            <span className="text-[10px] text-[#64748B] mb-1">{periodLabel}</span>
+            <span className="text-sm font-bold text-[#0F172A]">{formatIndianCurrency(displayIncome - displayExpense)}</span>
+            <span className="mt-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#0A7B7B]/10 text-[#0A7B7B]">{displaySavingsRate}%</span>
+          </div>
+        </div>
 
-        {/* Expense Breakdown Pie */}
-        {pieExpenseTotal > 0 && pieData.length > 0 && (
-          <Card className="border-gray-200 bg-white shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base md:text-lg text-gray-800">Expense Breakdown</CardTitle>
-              <CardDescription className="text-xs text-gray-500">
-                {dashboardView === 'month' ? 'This month by category' : 'All time by category'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-2 md:p-6 pt-0">
-              <div className={cn("flex items-center gap-4", isDesktop ? "flex-row" : "flex-col")}>
-                <div className="relative flex-shrink-0" style={{ height: pieChartHeight, width: isDesktop ? pieChartHeight : '100%' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%" cy="50%"
-                        innerRadius={pieChartHeight * 0.22} outerRadius={pieChartHeight * 0.38}
-                        paddingAngle={3}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value) => formatIndianCurrency(Number(value))}
-                        contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-sm md:text-base font-bold text-gray-800">{formatIndianCurrency(pieExpenseTotal)}</span>
-                    <span className="text-[10px] md:text-xs text-gray-400">Spent</span>
-                  </div>
-                </div>
-                <div className="flex-1 w-full space-y-2">
-                  {pieData.map((cat, i) => (
-                    <div key={i} className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-                        <span className="text-xs md:text-sm text-gray-700 truncate">{cat.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs md:text-sm font-semibold text-gray-800">{formatIndianCurrency(cat.value)}</span>
-                        <span className="text-[10px] text-gray-400 w-10 text-right">{cat.percentage}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* 4. Insight Card */}
+        {topCategory && (
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-[#0A7B7B]/10 flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-5 h-5 text-[#0A7B7B]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[#0A7B7B] text-sm font-semibold">This Month Insight</p>
+              <p className="text-base font-semibold text-[#0F172A]">{topCategory.name}</p>
+              <p className="text-[#475569] text-sm">You spent {formatIndianCurrency(topCategory.value)} so far</p>
+            </div>
+            <div className="flex-shrink-0 hidden sm:block">
+              <svg width="80" height="40" viewBox="0 0 80 40">
+                <polyline
+                  fill="none"
+                  stroke="#0A7B7B"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  points={sparklinePoints}
+                />
+              </svg>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#64748B] flex-shrink-0" />
+          </div>
         )}
 
-        {/* Recent Transactions */}
-        <Card className="border-gray-200 bg-white shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base md:text-lg text-gray-800">{t('recentTransactions')}</CardTitle>
-              <button
-                onClick={() => router.push('/history')}
-                className="text-teal-600 text-sm font-medium hover:underline"
-              >
-                {t('viewAll')}
-              </button>
+        {/* 5. Recent Transactions */}
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-[#0F172A]">Recent Transactions</h2>
+            <button
+              onClick={() => router.push('/history')}
+              className="text-[#0A7B7B] text-sm font-medium hover:underline"
+            >
+              View All →
+            </button>
+          </div>
+          {recentTx.length === 0 ? (
+            <div className="p-8 text-center text-[#64748B]">
+              <p>No transactions yet</p>
+              <p className="text-sm">Start tracking your finances</p>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {recentTx.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">
-                <p>{t('noTransactions')}</p>
-                <p className="text-sm">{t('startTracking')}</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {recentTx.map(tx => {
-                  const cat = getCategoryByName(tx.category)
-                  return (
-                    <button
-                      key={tx.id}
-                      onClick={() => router.push(`/transaction/${tx.id}`)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors"
+          ) : (
+            <div>
+              {recentTx.map((tx, i) => {
+                const cat = getCategoryByName(tx.category)
+                return (
+                  <button
+                    key={tx.id}
+                    onClick={() => router.push(`/transaction/${tx.id}`)}
+                    className={cn(
+                      "w-full flex items-center gap-3 py-3 hover:bg-gray-50 transition-colors",
+                      i < recentTx.length - 1 && "border-b border-[#E2E8F0]"
+                    )}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${cat?.color}20` }}
                     >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${cat?.color}20` }}
-                      >
-                        <span style={{ color: cat?.color }}>
-                          {categoryIcons[tx.category] || categoryIcons['Other']}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0 text-left">
-                        <p className="font-medium text-gray-800 text-sm truncate">{tx.note || tx.category}</p>
-                        <p className="text-xs text-gray-500">
-                          {tx.created_at ? formatIST(tx.created_at) : tx.date} · {cat?.name}
-                        </p>
-                      </div>
-                      <p className={cn(
-                        "font-bold text-sm flex-shrink-0",
-                        tx.type === 'income' ? "text-green-600" : "text-rose-600"
-                      )}>
-                        {tx.type === 'income' ? '+' : '-'}{formatIndianCurrency(Number(tx.amount))}
-                      </p>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      <span style={{ color: cat?.color }}>
+                        {categoryIcons[tx.category] || categoryIcons['Other']}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="font-semibold text-[#0F172A] text-sm truncate">{tx.note || tx.category}</p>
+                      <p className="text-xs text-[#475569]">{cat?.name} • {getRelativeTime(tx)}</p>
+                    </div>
+                    <p className={cn(
+                      "font-bold text-sm flex-shrink-0",
+                      tx.type === 'income' ? "text-[#10B981]" : "text-[#EF4444]"
+                    )}>
+                      {tx.type === 'income' ? '+' : '-'}{formatIndianCurrency(Number(tx.amount))}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
+        {/* 6. Weekly Activity Chart */}
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-[#0F172A]">Weekly Activity</h2>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#0A7B7B]" />
+                <span className="text-[#475569]">{formatIndianCurrency(weeklyIncomeTotal)}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+                <span className="text-[#475569]">{formatIndianCurrency(weeklyExpenseTotal)}</span>
+              </span>
+            </div>
+          </div>
+          <div className="h-48 md:h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyData || []} margin={{ top: 20, right: 5, left: 5, bottom: 5 }} barGap={2}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#64748B' }} axisLine={false} tickLine={false} domain={[0, expenseCap]} />
+                <Tooltip
+                  formatter={(value, name) => [formatIndianCurrency(Number(value)), name]}
+                  contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: '12px' }}
+                  verticalAlign="bottom"
+                  align="center"
+                />
+                <Bar dataKey="income" name="Income" fill="#0A7B7B" barSize={22} radius={[4, 4, 0, 0]} minPointSize={3} />
+                <Bar dataKey="expense" name="Expense" fill="#EF4444" barSize={22} radius={[4, 4, 0, 0]} minPointSize={3} label={<OutlierLabel />} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 7. Expense Breakdown */}
+        {pieExpenseTotal > 0 && pieData.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5">
+            <h2 className="text-base font-semibold text-[#0F172A]">Expense Breakdown</h2>
+            <p className="text-xs text-[#64748B] mb-3">
+              {dashboardView === 'month' ? 'This month by category' : 'All time by category'}
+            </p>
+            <div className={cn("flex items-center gap-4", isDesktop ? "flex-row" : "flex-col")}>
+              <div className="relative flex-shrink-0" style={{ height: pieChartHeight, width: isDesktop ? pieChartHeight : '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%" cy="50%"
+                      innerRadius={55} outerRadius={85}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value) => formatIndianCurrency(Number(value))}
+                      contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-sm md:text-base font-bold text-[#0F172A]">{formatIndianCurrency(pieExpenseTotal)}</span>
+                  <span className="text-[10px] md:text-xs text-[#64748B]">Spent</span>
+                </div>
+              </div>
+              <div className="flex-1 w-full space-y-2">
+                {pieData.map((cat, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                      <span className="text-xs md:text-sm text-[#0F172A] truncate">{cat.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs md:text-sm font-semibold text-[#0F172A]">{formatIndianCurrency(cat.value)}</span>
+                      <span className="text-[10px] text-[#64748B] w-10 text-right">{cat.percentage}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   )
