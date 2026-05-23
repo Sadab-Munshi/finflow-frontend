@@ -21,13 +21,12 @@ export default function DashboardSkeleton() {
         </div>
 
         {/* 3. Summary Cards */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-slate-200 mb-2" />
-              <div className="h-3 w-14 bg-slate-200 rounded mb-1" />
-              <div className="h-2.5 w-16 bg-slate-200 rounded mb-1" />
-              <div className="h-4 w-16 bg-slate-200 rounded" />
+            <div key={i} className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-2.5 sm:p-3 flex flex-col items-center">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-200 mb-2" />
+              <div className="h-2.5 w-12 bg-slate-200 rounded mb-1" />
+              <div className="h-3.5 w-14 bg-slate-200 rounded" />
             </div>
           ))}
         </div>
