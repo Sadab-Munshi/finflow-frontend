@@ -292,9 +292,9 @@ export default function DashboardPage() {
         </div>
 
         {/* 3. Summary Cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 items-stretch">
           {/* Income */}
-          <div className="bg-gradient-to-b from-[#f4fbf7] to-white border border-[#e2f5ec] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col items-center text-center">
+          <div className="bg-gradient-to-b from-[#f4fbf7] to-white border border-[#e2f5ec] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between h-full items-center text-center">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 bg-[#10B981]/10">
               <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#10B981]" />
             </div>
@@ -302,27 +302,33 @@ export default function DashboardPage() {
             <span className="text-xs sm:text-sm font-bold text-[#0F172A]">{formatIndianCurrency(displayIncome)}</span>
           </div>
           {/* Expenses */}
-          <div className="bg-gradient-to-b from-[#fff5f5] to-white border border-[#ffe1e1] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col items-center text-center">
+          <div className="bg-gradient-to-b from-[#fff5f5] to-white border border-[#ffe1e1] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between h-full items-center text-center">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 bg-[#EF4444]/10">
               <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#EF4444]" />
             </div>
             <span className="text-[11px] sm:text-xs text-[#475569] font-medium">Expenses</span>
             <span className="text-xs sm:text-sm font-bold text-[#0F172A]">{formatIndianCurrency(displayExpense)}</span>
           </div>
-          {/* Saved */}
-          <div className="bg-gradient-to-b from-[#FAF9FF] to-white border border-[#eae6ff] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col items-center text-center">
+          {/* Saving */}
+          <div className="bg-gradient-to-b from-[#FAF9FF] to-white border border-[#eae6ff] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between h-full items-center text-center">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 bg-[#7C3AED]/10">
               <PiggyBank className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7C3AED]" />
             </div>
-            <span className="text-[11px] sm:text-xs text-[#475569] font-medium">Saved</span>
-            <span className="text-xs sm:text-sm font-bold text-[#7C3AED]">{formatIndianCurrency(displayIncome - displayExpense)}</span>
-            <span className="mt-1 text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#7C3AED]">{displaySavingsRate}%</span>
+            <span className="text-[11px] sm:text-xs text-[#475569] font-medium">Saving</span>
+            <span className={cn(
+              "text-sm font-bold rounded-full px-2 py-0.5",
+              displaySavingsRate >= 0 ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-red-100 text-red-600"
+            )}>{displaySavingsRate}%</span>
           </div>
         </div>
 
         {/* 4. Insight Card */}
         {topCategory && (
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => router.push('/insights')}
+            className="w-full bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow text-left"
+          >
             <div className="w-10 h-10 rounded-full bg-[#0A7B7B]/10 flex items-center justify-center flex-shrink-0">
               <Lightbulb className="w-5 h-5 text-[#0A7B7B]" />
             </div>
@@ -344,7 +350,7 @@ export default function DashboardPage() {
               </svg>
             </div>
             <ChevronRight className="w-5 h-5 text-[#64748B] flex-shrink-0" />
-          </div>
+          </button>
         )}
 
         {/* 5. Recent Transactions */}

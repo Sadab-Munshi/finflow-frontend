@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, History, PiggyBank, BarChart2, FileText, Settings,
-  User, PenLine, LogOut, X, Menu, Plus, Mic, Camera, Sparkles
+  User, PenLine, LogOut, X, Menu, Plus, Mic, Camera, Sparkles, Type
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
@@ -44,8 +44,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const fabSpeedDialItems = [
     { icon: Mic, label: 'Voice', tab: 'voice', bg: '#F3E8FF', color: '#9333EA' },
     { icon: Camera, label: 'Scan', tab: 'scan', bg: '#DBEAFE', color: '#2563EB' },
-    { icon: PenLine, label: 'Manual', tab: 'manual', bg: '#DCFCE7', color: '#16A34A' },
-    { icon: Sparkles, label: 'AI Add', tab: 'text', bg: '#FEEDF0', color: '#F6546A' },
+    { icon: Type, label: 'Type', tab: 'manual', bg: '#DCFCE7', color: '#16A34A' },
+    { icon: Sparkles, label: 'Auto', tab: 'text', bg: '#FEEDF0', color: '#F6546A' },
   ]
 
   // Close profile dropdown on outside click
@@ -214,65 +214,62 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="md:hidden fixed inset-0 bg-black/20 z-30 no-print"
+            className="md:hidden fixed inset-0 bg-black/20 z-40 no-print"
             onClick={() => setFabOpen(false)}
           />
         )}
       </AnimatePresence>
 
+      {/* FAB — Speed Dial (fixed bottom-right) */}
+      <div className="md:hidden fixed bottom-6 right-5 z-50 no-print">
+        <AnimatePresence>
+          {fabOpen && (
+            <div className="absolute bottom-full mb-3 right-0 flex flex-col items-end gap-2">
+              {fabSpeedDialItems.map((item, index) => (
+                <motion.button
+                  key={item.tab}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ delay: index * 0.05, duration: 0.2 }}
+                  onClick={() => {
+                    setFabOpen(false)
+                    router.push(`/add?tab=${item.tab}`)
+                  }}
+                  className="flex flex-row-reverse items-center gap-2 bg-white rounded-full pl-3 pr-1.5 py-1.5 shadow-lg border border-gray-100"
+                >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: item.bg }}>
+                    <item.icon className="w-4 h-4" style={{ color: item.color }} />
+                  </div>
+                  <span className="text-xs font-medium text-[#0F172A] whitespace-nowrap">{item.label}</span>
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+        <button
+          onClick={() => setFabOpen(!fabOpen)}
+          className="w-14 h-14 rounded-full bg-[#0A7B7B] flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white transition-transform duration-200"
+          style={{ transform: fabOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
+
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-around z-40 no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        {/* Dashboard */}
         <Link href="/dashboard" className="flex flex-col items-center gap-1 py-2 px-3">
           <LayoutDashboard className={cn('w-5 h-5 transition-colors', pathname === '/dashboard' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/dashboard' ? 'text-teal-600' : 'text-gray-400')}>{t('dashboard')}</span>
         </Link>
-        {/* History */}
         <Link href="/history" className="flex flex-col items-center gap-1 py-2 px-3">
           <History className={cn('w-5 h-5 transition-colors', pathname === '/history' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/history' ? 'text-teal-600' : 'text-gray-400')}>{t('history')}</span>
         </Link>
-        {/* FAB — Speed Dial */}
-        <div className="relative -top-5 flex flex-col items-center">
-          <AnimatePresence>
-            {fabOpen && (
-              <div className="absolute bottom-full mb-3 flex flex-col items-center gap-2">
-                {fabSpeedDialItems.map((item, index) => (
-                  <motion.button
-                    key={item.tab}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ delay: index * 0.05, duration: 0.2 }}
-                    onClick={() => {
-                      setFabOpen(false)
-                      router.push(`/add?tab=${item.tab}`)
-                    }}
-                    className="flex items-center gap-2 bg-white rounded-full px-3 py-2 shadow-lg border border-gray-100"
-                  >
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: item.bg }}>
-                      <item.icon className="w-4 h-4" style={{ color: item.color }} />
-                    </div>
-                    <span className="text-xs font-medium text-[#0F172A] whitespace-nowrap">{item.label}</span>
-                  </motion.button>
-                ))}
-              </div>
-            )}
-          </AnimatePresence>
-          <button
-            onClick={() => setFabOpen(!fabOpen)}
-            className="w-14 h-14 rounded-full bg-[#0A7B7B] flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white transition-transform duration-200"
-            style={{ transform: fabOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
-          >
-            <Plus className="w-6 h-6" />
-          </button>
-        </div>
-        {/* Insights */}
         <Link href="/insights" className="flex flex-col items-center gap-1 py-2 px-3">
           <BarChart2 className={cn('w-5 h-5 transition-colors', pathname === '/insights' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/insights' ? 'text-teal-600' : 'text-gray-400')}>{t('insights')}</span>
         </Link>
-        {/* Profile */}
         <Link href="/profile" className="flex flex-col items-center gap-1 py-2 px-3">
           <User className={cn('w-5 h-5 transition-colors', pathname === '/profile' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/profile' ? 'text-teal-600' : 'text-gray-400')}>{t('profile')}</span>
