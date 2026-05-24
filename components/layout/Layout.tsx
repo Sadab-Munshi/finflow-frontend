@@ -126,7 +126,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </button>
 
       {/* Portrait Sidebar (Mobile Drawer) */}
-      <AnimatePresence>
+      <AnPresence>
         {sidebarOpen && (
           <div className="md:hidden fixed inset-0 z-50 no-print">
             <motion.div
@@ -198,7 +198,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnPresence>
 
       {/* FAB Speed Dial Backdrop */}
       <AnimatePresence>
@@ -214,7 +214,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* FAB Speed Dial — no drag */}
+      {/* FAB Speed Dial Container */}
       <div className="fixed bottom-[72px] right-4 md:bottom-8 md:right-8 z-50 no-print">
         <AnimatePresence>
           {fabOpen && (
@@ -231,9 +231,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     stiffness: 400,
                     damping: 25,
                   }}
-                  onClick={() => router.push(`/add?tab=${item.tab}`)}
-                  className="flex flex-row-reverse items-center gap-3 group text-left outline-none"
+                  onClick={() => {
+                    setFabOpen(false)
+                    router.push(`/add?tab=${item.tab}`)
+                  }}
+                  className="flex flex-row-reverse items-center gap-3 group"
                 >
+                  {/* Icon circle matching design system constants */}
                   <motion.div
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
@@ -242,6 +246,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   >
                     <item.icon className="w-5 h-5" style={{ color: item.color }} />
                   </motion.div>
+                  
+                  {/* Label pill matching design system constants */}
                   <motion.span
                     initial={{ opacity: 0, x: 8 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -257,18 +263,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           )}
         </AnimatePresence>
 
-        {/* Main FAB Button */}
+        {/* Main FAB Trigger Button */}
         <motion.button
           onClick={() => setFabOpen(prev => !prev)}
           whileTap={{ scale: 0.92 }}
           aria-label="Open creation selections panel"
           aria-expanded={fabOpen}
-          className="w-14 h-14 rounded-full bg-[#0A7B7B] flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white outline-none"
+          className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white"
+          style={{ backgroundColor: "#0A7B7B" }}
         >
           <motion.span
             animate={{ rotate: fabOpen ? 45 : 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="flex items-center justify-center pointer-events-none"
+            className="flex items-center justify-center"
           >
             <Plus className="w-6 h-6" />
           </motion.span>
@@ -414,4 +421,4 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   )
-              }
+}
