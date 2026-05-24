@@ -126,7 +126,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </button>
 
       {/* Portrait Sidebar (Mobile Drawer) */}
-      <AnPresence>
+      <AnimatePresence>
         {sidebarOpen && (
           <div className="md:hidden fixed inset-0 z-50 no-print">
             <motion.div
@@ -198,7 +198,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </motion.div>
           </div>
         )}
-      </AnPresence>
+      </AnimatePresence>
 
       {/* FAB Speed Dial Backdrop */}
       <AnimatePresence>
@@ -214,7 +214,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* FAB Speed Dial Container */}
+      {/* FAB Speed Dial — no drag */}
       <div className="fixed bottom-[72px] right-4 md:bottom-8 md:right-8 z-50 no-print">
         <AnimatePresence>
           {fabOpen && (
@@ -237,7 +237,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   }}
                   className="flex flex-row-reverse items-center gap-3 group"
                 >
-                  {/* Icon circle matching design system constants */}
                   <motion.div
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
@@ -246,8 +245,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   >
                     <item.icon className="w-5 h-5" style={{ color: item.color }} />
                   </motion.div>
-                  
-                  {/* Label pill matching design system constants */}
                   <motion.span
                     initial={{ opacity: 0, x: 8 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -421,4 +418,5 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   )
-}
+        }
+                      
