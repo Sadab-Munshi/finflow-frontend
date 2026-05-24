@@ -410,7 +410,7 @@ export default function ProfilePage() {
         {/* SECTION 1 — HERO HEADER */}
         <div
           className="relative overflow-hidden md:rounded-2xl md:mx-4"
-          style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', minHeight: 160 }}
+          style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', minHeight: 130 }}
         >
           {/* Geometric pattern overlay */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -428,8 +428,8 @@ export default function ProfilePage() {
             </svg>
           </div>
 
-          {/* Hero decor — only show on sm+ screens */}
-          <div className="absolute right-0 top-0 bottom-0 w-2/5 pointer-events-none select-none hidden sm:block">
+          {/* Hero decor */}
+          <div className="absolute right-0 top-0 bottom-0 w-1/3 sm:w-2/5 pointer-events-none select-none">
             <Image
               src="/assets/profile-hero-decor.webp"
               alt=""
@@ -448,19 +448,19 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative flex-shrink-0">
               <div
-                className="w-24 h-24 relative rounded-full overflow-hidden bg-teal-700"
+                className="w-16 h-16 sm:w-24 sm:h-24 relative rounded-full overflow-hidden bg-teal-700 flex-shrink-0"
                 style={{ boxShadow: '0 0 0 3px white, 0 0 20px rgba(255,255,255,0.3)' }}
               >
                 {avatarUrl ? (
                   <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes="96px" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white">
+                  <div className="w-full h-full flex items-center justify-center text-xl sm:text-3xl font-bold text-white">
                     {name.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
-              <label className="absolute bottom-0 right-0 bg-white text-teal-600 rounded-full p-1.5 cursor-pointer shadow-md hover:bg-teal-50 transition-colors">
-                <Camera size={14} />
+              <label className="absolute bottom-0 right-0 bg-white text-teal-600 rounded-full p-1 sm:p-1.5 cursor-pointer shadow-md hover:bg-teal-50 transition-colors">
+                <Camera size={12} className="sm:w-3.5 sm:h-3.5" />
                 <input
                   type="file"
                   accept="image/*"
@@ -472,18 +472,18 @@ export default function ProfilePage() {
 
             {/* Name + badge */}
             <div className="flex flex-col gap-1.5">
-              <h2 className="text-xl font-bold text-white leading-tight">{name}</h2>
+              <h2 className="text-base sm:text-xl font-bold text-white leading-tight">{name}</h2>
               {uploading && <p className="text-xs text-white/70 animate-pulse">Uploading...</p>}
               {memberSince && (
                 <div
-                  className="px-3 py-1 rounded-full flex items-center gap-1 text-xs font-semibold w-fit"
+                  className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex items-center gap-1 text-[10px] sm:text-xs font-semibold w-fit"
                   style={{
                     background: 'rgba(251,191,36,0.2)',
                     color: '#fcd34d',
                     border: '1px solid rgba(251,191,36,0.4)',
                   }}
                 >
-                  <Star size={10} fill="#fcd34d" strokeWidth={0} />
+                  <Star size={8} className="sm:w-2.5 sm:h-2.5" fill="#fcd34d" strokeWidth={0} />
                   Member since {memberSince}
                 </div>
               )}
@@ -616,37 +616,37 @@ export default function ProfilePage() {
 
               {/* Telegram */}
               <div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                      <Image
-                        src="/assets/telegram-icon.webp"
-                        alt="Telegram"
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-cover"
-                        draggable={false}
-                        onContextMenu={(e) => e.preventDefault()}
-                        style={{ pointerEvents: 'none', userSelect: 'none' }}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#0F172A] truncate">
-                        {telegramConnected ? 'Telegram Connected' : 'Connect Telegram'}
-                      </p>
-                      <p className="text-xs text-[#64748B] truncate">Add transactions via Telegram bot</p>
-                    </div>
+                <div className="flex items-center gap-3 flex-nowrap">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                    <Image
+                      src="/assets/telegram-icon.webp"
+                      alt="Telegram"
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                      draggable={false}
+                      onContextMenu={(e) => e.preventDefault()}
+                      style={{ pointerEvents: 'none', userSelect: 'none' }}
+                    />
                   </div>
-                  <Toggle
-                    checked={telegramConnected || telegramToggle}
-                    onChange={() => {
-                      if (telegramConnected) {
-                        setShowTelegramDisconnectDialog(true)
-                      } else {
-                        setTelegramToggle(prev => !prev)
-                      }
-                    }}
-                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#0F172A] truncate">
+                      {telegramConnected ? 'Telegram Connected' : 'Connect Telegram'}
+                    </p>
+                    <p className="text-xs text-[#64748B] truncate">Add transactions via Telegram bot</p>
+                  </div>
+                  <div className="flex-shrink-0 ml-auto">
+                    <Toggle
+                      checked={telegramConnected || telegramToggle}
+                      onChange={() => {
+                        if (telegramConnected) {
+                          setShowTelegramDisconnectDialog(true)
+                        } else {
+                          setTelegramToggle(prev => !prev)
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
                 {/* Inline expand when toggle ON but not yet connected */}
                 {!telegramConnected && telegramToggle && (
@@ -679,26 +679,24 @@ export default function ProfilePage() {
               {/* WhatsApp */}
               <div>
                 {whatsappPolling ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                        <Image
-                          src="/assets/whatsapp-icon.webp"
-                          alt="WhatsApp"
-                          width={40}
-                          height={40}
-                          className="w-full h-full object-cover"
-                          draggable={false}
-                          onContextMenu={(e) => e.preventDefault()}
-                          style={{ pointerEvents: 'none', userSelect: 'none' }}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#0F172A] truncate">Connecting...</p>
-                        <p className="text-xs text-[#64748B] truncate">Waiting for WhatsApp confirmation</p>
-                      </div>
+                  <div className="flex items-center gap-3 flex-nowrap">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                      <Image
+                        src="/assets/whatsapp-icon.webp"
+                        alt="WhatsApp"
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{ pointerEvents: 'none', userSelect: 'none' }}
+                      />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#0F172A] truncate">Connecting...</p>
+                      <p className="text-xs text-[#64748B] truncate">Waiting for WhatsApp confirmation</p>
+                    </div>
+                    <div className="flex-shrink-0 ml-auto flex items-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-teal-600" />
                       <button onClick={cancelPolling} className="text-xs text-gray-400 hover:text-gray-600">
                         Cancel
@@ -706,28 +704,26 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                        <Image
-                          src="/assets/whatsapp-icon.webp"
-                          alt="WhatsApp"
-                          width={40}
-                          height={40}
-                          className="w-full h-full object-cover"
-                          draggable={false}
-                          onContextMenu={(e) => e.preventDefault()}
-                          style={{ pointerEvents: 'none', userSelect: 'none' }}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#0F172A] truncate">
-                          {whatsappConnected ? 'WhatsApp Connected' : 'Connect WhatsApp'}
-                        </p>
-                        <p className="text-xs text-[#64748B] truncate">Add transactions via WhatsApp</p>
-                      </div>
+                  <div className="flex items-center gap-3 flex-nowrap">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                      <Image
+                        src="/assets/whatsapp-icon.webp"
+                        alt="WhatsApp"
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{ pointerEvents: 'none', userSelect: 'none' }}
+                      />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#0F172A] truncate">
+                        {whatsappConnected ? 'WhatsApp Connected' : 'Connect WhatsApp'}
+                      </p>
+                      <p className="text-xs text-[#64748B] truncate">Add transactions via WhatsApp</p>
+                    </div>
+                    <div className="flex-shrink-0 ml-auto flex items-center gap-2">
                       {!whatsappConnected && (
                         <button
                           onClick={connectWhatsApp}
