@@ -69,6 +69,9 @@ export default function InsightsPage() {
   if (loading) return <InsightsSkeleton />
   if (!mounted) return null
 
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const last30DaysTx = transactions.filter(tx => new Date(tx.date) >= thirtyDaysAgo)
+
   const handleGenerate = async () => {
     setDataLoading(true); setError(null)
     try {
@@ -148,10 +151,10 @@ export default function InsightsPage() {
             <Sparkles className="w-6 h-6 text-[#0A7B7B]" />
           </div>
           <p className="text-sm mt-1 text-[#6B7280]">AI-powered analysis of your last 30 days</p>
-          {transactions.length > 0 && (
+          {last30DaysTx.length > 0 && (
             <span className="inline-flex items-center gap-1.5 bg-[#F0FDF9] text-[#0A7B7B] text-xs font-medium px-3 py-1 rounded-full mt-2">
               <FileText className="w-3.5 h-3.5" />
-              {transactions.length} transactions analysed
+              {last30DaysTx.length} transactions analysed
             </span>
           )}
         </div>
@@ -159,78 +162,56 @@ export default function InsightsPage() {
         {/* Loading State - Full page skeleton */}
         {dataLoading ? (
           <div className="space-y-4">
-            {/* Teal progress bar */}
-            <div className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(0,184,148,0.15)' }}>
+            {/* Progress bar */}
+            <div className="w-full h-1 rounded-full overflow-hidden bg-[#0A7B7B]/15">
               <div
-                className="h-full rounded-full"
-                style={{
-                  background: 'linear-gradient(90deg, #00b894, #00d2a8)',
-                  animation: 'progress-bar 4s ease-in-out infinite',
-                }}
+                className="h-full rounded-full bg-gradient-to-r from-[#0A7B7B] to-[#10B981]"
+                style={{ animation: 'progress-bar 4s ease-in-out infinite' }}
               />
             </div>
 
-            {/* Typing text */}
-            <p className="text-center text-sm font-medium" style={{ color: '#6b7280' }}>
-              AI is reading your finances
-              <span className="inline-block w-6 text-left">
-                <span className="animate-pulse">...</span>
-              </span>
+            {/* Status text */}
+            <p className="text-center text-sm font-medium text-[#475569]">
+              AI is analysing your finances
+              <span className="animate-pulse"> ...</span>
             </p>
 
-            {/* Shimmer skeleton cards */}
-            <div className="grid gap-4 md:grid-cols-2">
-              {[0, 1, 2].map((i) => (
+            {/* Skeleton cards — match new card design */}
+            <div className="grid gap-3">
+              {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="rounded-xl border p-6"
-                  style={{
-                    borderLeft: '4px solid #e5e7eb',
-                    borderColor: '#f3f4f6',
-                    background: '#fff',
-                  }}
+                  className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"
+                  style={{ borderLeft: '3px solid #E2E8F0' }}
                 >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex-shrink-0"
-                      style={{
-                        background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
-                        backgroundSize: '200% 100%',
-                        animation: 'shimmer 1.5s ease-in-out infinite',
-                      }}
-                    />
-                    <div className="flex-1 space-y-3">
+                  {/* Top row */}
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 animate-pulse flex-shrink-0" />
                       <div
-                        className="h-4 rounded-md"
-                        style={{
-                          width: '60%',
-                          background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
-                          backgroundSize: '200% 100%',
-                          animation: 'shimmer 1.5s ease-in-out infinite',
-                          animationDelay: `${i * 0.15}s`,
-                        }}
-                      />
-                      <div
-                        className="h-3 rounded-md"
-                        style={{
-                          width: '90%',
-                          background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
-                          backgroundSize: '200% 100%',
-                          animation: 'shimmer 1.5s ease-in-out infinite',
-                          animationDelay: `${i * 0.15 + 0.1}s`,
-                        }}
-                      />
-                      <div
-                        className="h-3 rounded-md"
-                        style={{
-                          width: '75%',
-                          background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
-                          backgroundSize: '200% 100%',
-                          animation: 'shimmer 1.5s ease-in-out infinite',
-                          animationDelay: `${i * 0.15 + 0.2}s`,
-                        }}
+                        className="h-4 rounded-md bg-slate-100 animate-pulse"
+                        style={{ width: `${120 + i * 20}px`, animationDelay: `${i * 0.1}s` }}
                       />
                     </div>
+                    <div
+                      className="h-5 w-14 rounded-full bg-slate-100 animate-pulse"
+                      style={{ animationDelay: `${i * 0.1 + 0.05}s` }}
+                    />
+                  </div>
+                  {/* Description lines */}
+                  <div className="pl-10 space-y-2">
+                    <div
+                      className="h-3 rounded-md bg-slate-100 animate-pulse"
+                      style={{ width: '95%', animationDelay: `${i * 0.1 + 0.1}s` }}
+                    />
+                    <div
+                      className="h-3 rounded-md bg-slate-100 animate-pulse"
+                      style={{ width: '80%', animationDelay: `${i * 0.1 + 0.15}s` }}
+                    />
+                    <div
+                      className="h-3 rounded-md bg-slate-100 animate-pulse"
+                      style={{ width: '60%', animationDelay: `${i * 0.1 + 0.2}s` }}
+                    />
                   </div>
                 </div>
               ))}
@@ -238,16 +219,12 @@ export default function InsightsPage() {
           </div>
         ) : (
           <>
-            {/* Generate / Refresh button row */}
-            {insights.length > 0 ? (
+            {/* Refresh button row — only when insights exist */}
+            {insights.length > 0 && (
               <div className="flex items-center justify-between gap-3">
                 {savedTimestamp && (
                   <p className="text-xs text-[#9CA3AF]">Last generated: {savedTimestamp}</p>
                 )}
-                {generateButton}
-              </div>
-            ) : (
-              <div className="flex justify-center">
                 {generateButton}
               </div>
             )}
@@ -263,15 +240,16 @@ export default function InsightsPage() {
             {/* Empty state */}
             {insights.length === 0 ? (
               <div className="bg-white rounded-2xl border border-[#E2E8F0] p-10 text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="w-20 h-20 rounded-full bg-[#F0FDF9] flex items-center justify-center">
-                    <BarChart2 className="w-12 h-12 text-[#0A7B7B]" />
-                  </div>
+                <div className="w-20 h-20 rounded-full bg-[#F0FDF9] flex items-center justify-center mx-auto">
+                  <BarChart2 className="w-10 h-10 text-[#0A7B7B]" />
                 </div>
                 <h3 className="text-lg font-semibold text-[#0F172A] mt-4">No insights yet</h3>
                 <p className="text-sm text-[#475569] mt-1 max-w-xs mx-auto leading-relaxed">
                   Generate AI insights to understand your spending patterns
                 </p>
+                <div className="mt-6">
+                  {generateButton}
+                </div>
               </div>
             ) : (
               <>
@@ -319,7 +297,13 @@ export default function InsightsPage() {
               <div className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-3 flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-[#9CA3AF] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  AI-generated insights may not always be accurate. Always verify with a financial advisor before making major decisions.
+                  AI-generated insights may not always be accurate. Always verify with a financial advisor before making major decisions.{' '}
+                  <a
+                    href="/disclaimer"
+                    className="text-[#0A7B7B] font-medium underline-offset-2 hover:underline"
+                  >
+                    Learn More
+                  </a>
                 </p>
               </div>
               </>
