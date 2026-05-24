@@ -24,6 +24,15 @@ const sidebarNavItems = [
   { path: '/settings', icon: Settings, label: 'Settings' },
 ]
 
+// Exact demo colors. Order: Auto & Type at the bottom (closest to thumb), moving up to PDF
+const fabInputMethods = [
+  { icon: Sparkles, label: "Auto", color: "bg-purple-500", tab: "text" },
+  { icon: PenLine, label: "Type", color: "bg-blue-500", tab: "manual" },
+  { icon: Mic, label: "Voice", color: "bg-green-500", tab: "voice" },
+  { icon: Camera, label: "Scan", color: "bg-orange-500", tab: "scan" },
+  { icon: FileText, label: "PDF", color: "bg-red-500", tab: "pdf" },
+]
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -33,14 +42,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [fabOpen, setFabOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
-
-  // Updated FAB Items: Auto first, Type second. 
-  const fabSpeedDialItems = [
-    { icon: Sparkles, label: 'Auto',  tab: 'text',   color: 'bg-violet-500' },
-    { icon: PenLine,  label: 'Type',  tab: 'manual', color: 'bg-blue-500' },
-    { icon: Mic,      label: 'Voice', tab: 'voice',  color: 'bg-green-500' },
-    { icon: Camera,   label: 'Scan',  tab: 'scan',   color: 'bg-orange-500' },
-  ]
 
   // Close profile dropdown on outside click
   useEffect(() => {
@@ -67,7 +68,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     router.push('/login')
   }
 
-  // Accessibility key listener for custom profile dropdown
   const handleProfileKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
@@ -90,7 +90,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       style={{ width: size, height: size }}
     >
       {avatarUrl ? (
-        <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes={`${size}px`} />
+        <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes={`${size}px}`} />
       ) : (
         <span className="text-white font-bold" style={{ fontSize: size * 0.35 }}>
           {initial}
@@ -215,66 +215,58 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* FAB Speed Dial Container — New Snappy Glassmorphism UI */}
-      <div className="fixed bottom-[72px] right-4 md:bottom-8 md:right-8 z-50 no-print">
-        <AnimatePresence>
-          {fabOpen && (
-            <div className="absolute bottom-full mb-4 right-0 flex flex-col gap-3">
-              {fabSpeedDialItems.map((item, index) => {
-                const Icon = item.icon
-                return (
-                  <motion.button
-                    key={item.tab}
-                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                    transition={{
-                      delay: index * 0.05,
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 30,
-                    }}
-                    onClick={() => {
-                      setFabOpen(false)
-                      router.push(`/add?tab=${item.tab}`)
-                    }}
-                    className="flex items-center gap-3 pl-3 pr-5 py-2.5 rounded-2xl backdrop-blur-md bg-white/80 shadow-xl border border-white/20 hover:bg-white hover:scale-105 active:scale-95 transition-all duration-200 origin-bottom-right"
-                  >
-                    <div
-                      className={cn(
-                        "w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md",
-                        item.color
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <span className="font-semibold text-gray-800 text-sm whitespace-nowrap">
-                      {item.label}
-                    </span>
-                  </motion.button>
-                )
-              })}
-            </div>
+      {/* ======================================================= */}
+      {/* EXACT DEMO FAB - FAST ANIMATION & THUMB-FRIENDLY ORDER */}
+      {/* ======================================================= */}
+      <div className="fixed bottom-20 md:bottom-6 right-6 z-50 no-print">
+        {/* Input Method Options */}
+        <div
+          className={cn(
+            "absolute bottom-16 right-0 flex flex-col-reverse gap-3 transition-all duration-200",
+            fabOpen
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-4 pointer-events-none"
           )}
-        </AnimatePresence>
-
-        {/* Main FAB Trigger Button */}
-        <motion.button
-          onClick={() => setFabOpen((prev) => !prev)}
-          whileTap={{ scale: 0.92 }}
-          aria-label="Open creation selections panel"
-          aria-expanded={fabOpen}
-          className="w-14 h-14 rounded-2xl bg-[#0A7B7B] text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white flex items-center justify-center transition-all duration-300 hover:shadow-2xl hover:scale-105 active:scale-95"
         >
-          <motion.span
-            animate={{ rotate: fabOpen ? 45 : 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="flex items-center justify-center"
-          >
-            <Plus className="w-6 h-6" />
-          </motion.span>
-        </motion.button>
+          {fabInputMethods.map((method, index) => {
+            const Icon = method.icon
+            return (
+              <button
+                key={method.label}
+                onClick={() => {
+                  setFabOpen(false)
+                  // Tiny delay ensures the closing animation plays before Next.js interrupts it with a route change
+                  setTimeout(() => router.push(`/add?tab=${method.tab}`), 50)
+                }}
+                className="flex items-center gap-3 px-4 py-2 rounded-full bg-white shadow-lg border border-gray-200 hover:scale-105 transition-transform"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-white",
+                    method.color
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </div>
+                <span className="font-medium text-gray-900 pr-2">{method.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* FAB Button - Demo Code Blue */}
+        <button
+          onClick={() => setFabOpen(!fabOpen)}
+          className={cn(
+            "w-14 h-14 rounded-full bg-[#4361EE] text-white shadow-lg flex items-center justify-center transition-transform hover:scale-105",
+            fabOpen && "rotate-45"
+          )}
+        >
+          <Plus className="h-6 w-6" />
+        </button>
       </div>
+      {/* ======================================================= */}
 
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-around z-40 no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
