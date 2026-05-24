@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, KeyboardEvent } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, History, PiggyBank, BarChart2, FileText, Settings,
-  User, PenLine, LogOut, X, Menu, Plus, Mic, Camera, Keyboard
+  User, PenLine, LogOut, X, Menu, Plus, Mic, Camera, Sparkles
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
@@ -32,21 +32,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
 
-  const mobileBottomNavItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
-    { path: '/history', icon: History, label: t('history') },
-    { path: '/insights', icon: BarChart2, label: t('insights') },
-    { path: '/profile', icon: User, label: t('profile') },
-  ]
-
   const fabSpeedDialItems = [
-    { icon: PenLine, label: 'Manual', tab: 'manual', bg: '#2563EB', color: '#ffffff' },
-    { icon: Keyboard, label: 'Type', tab: 'text', bg: '#7C3AED', color: '#ffffff' },
-    { icon: Mic, label: 'Voice', tab: 'voice', bg: '#16A34A', color: '#ffffff' },
-    { icon: Camera, label: 'Scan', tab: 'scan', bg: '#EA580C', color: '#ffffff' },
+    { icon: PenLine,  label: 'Type',  tab: 'manual', bg: '#2563EB', color: '#ffffff' },
+    { icon: Sparkles, label: 'Auto',  tab: 'text',   bg: '#7C3AED', color: '#ffffff' },
+    { icon: Mic,      label: 'Voice', tab: 'voice',  bg: '#16A34A', color: '#ffffff' },
+    { icon: Camera,   label: 'Scan',  tab: 'scan',   bg: '#EA580C', color: '#ffffff' },
   ]
 
   // Close profile dropdown on outside click
@@ -60,9 +52,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Close sidebar on route change
+  // Close side panels/modals on route change
   useEffect(() => {
     setSidebarOpen(false)
+    setFabOpen(false)
+    setProfileDropdownOpen(false)
   }, [pathname])
 
   const handleSignOut = async () => {
@@ -72,8 +66,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     router.push('/login')
   }
 
+  // Accessibility key listener for custom profile dropdown
+  const handleProfileKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      setProfileDropdownOpen(prev => !prev)
+    } else if (e.key === 'Escape') {
+      setProfileDropdownOpen(false)
+    }
+  }
+
   const userName = user?.userName || ''
-  const email = user?.email || ''
   const avatarUrl = user?.avatarUrl || ''
   const initial = userName ? userName.charAt(0).toUpperCase() : ''
 
@@ -95,19 +98,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </div>
   )
 
-  const ProfileSkeleton = ({ showEmail = false }: { showEmail?: boolean }) => (
-    <div className="flex items-center gap-3 animate-pulse">
-      <div className="w-10 h-10 rounded-full bg-teal-600/50" />
+  const ProfileSkeleton = () => (
+    <div className="flex items-center gap-3 animate-pulse w-full">
+      <div className="w-10 h-10 rounded-full bg-teal-600/50 flex-shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="h-4 w-24 bg-teal-600/50 rounded" />
-        {showEmail && <div className="h-3 w-32 bg-teal-600/30 rounded mt-1.5" />}
       </div>
     </div>
   )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50/40 via-white to-amber-50/30">
-      {/* Fixed Notification Bell — always top right, both modes */}
+      {/* Fixed Notification Bell */}
       <div className="fixed top-4 right-4 z-[51] no-print">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-600/25">
           <NotificationBell />
@@ -117,6 +119,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Mobile Hamburger Button */}
       <button
         onClick={() => setSidebarOpen(true)}
+        aria-label="Open sidebar panel"
         className="md:hidden fixed top-4 left-4 z-40 w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center text-white shadow-lg shadow-teal-600/25 no-print"
       >
         <Menu className="w-5 h-5" />
@@ -126,7 +129,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <AnimatePresence>
         {sidebarOpen && (
           <div className="md:hidden fixed inset-0 z-50 no-print">
-            {/* Dark overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -135,7 +137,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => setSidebarOpen(false)}
             />
-            {/* Sidebar panel */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
@@ -143,7 +144,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className="fixed left-0 top-0 h-screen w-[72vw] max-w-[260px] bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
             >
-              {/* Logo Row */}
               <div className="px-4 pt-4 flex-shrink-0">
                 <div className="flex items-center justify-between rounded-xl px-3 py-2" style={{ backgroundColor: '#D9FAF7' }}>
                   <Image
@@ -152,7 +152,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     width={120}
                     height={40}
                     sizes="120px"
-                    quality={75}
                     style={{ objectFit: 'contain', pointerEvents: 'none' }}
                     draggable={false}
                     onContextMenu={(e) => e.preventDefault()}
@@ -160,22 +159,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   <button
                     onClick={() => setSidebarOpen(false)}
                     className="text-teal-700 hover:text-teal-900 transition-colors flex-shrink-0"
+                    aria-label="Close sidebar panel"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-
-              {/* Divider */}
               <div className="mx-4 mt-3 border-t border-teal-600/50" />
-
-              {/* Nav Items */}
               <nav className="flex-1 p-3 space-y-1 mt-1">
                 {sidebarNavItems.map(item => (
                   <Link
                     key={item.path}
                     href={item.path}
-                    onClick={() => setSidebarOpen(false)}
                     className={cn(
                       'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
                       pathname === item.path
@@ -188,8 +183,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </Link>
                 ))}
               </nav>
-
-              {/* User Info — pinned to bottom, display only */}
               <div className="mt-auto py-3 px-4 border-t border-white/20 flex-shrink-0">
                 {loading ? (
                   <ProfileSkeleton />
@@ -221,48 +214,61 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* FAB — Draggable Speed Dial */}
+      {/* FAB Speed Dial — no drag */}
       <div className="fixed bottom-[72px] right-4 md:bottom-8 md:right-8 z-50 no-print">
         <AnimatePresence>
           {fabOpen && (
-            <div className="absolute bottom-full mb-3 right-0 flex flex-col-reverse gap-3">
+            <div className="absolute bottom-full mb-4 right-0 flex flex-col-reverse gap-2.5">
               {fabSpeedDialItems.map((item, index) => (
                 <motion.button
                   key={item.tab}
-                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  transition={{ delay: index * 0.06, type: 'spring', stiffness: 300 }}
-                  onClick={() => {
-                    setFabOpen(false)
-                    router.push(`/add?tab=${item.tab}`)
+                  initial={{ opacity: 0, scale: 0.5, x: 20 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, x: 20 }}
+                  transition={{
+                    delay: index * 0.05,
+                    type: 'spring',
+                    stiffness: 400,
+                    damping: 25,
                   }}
-                  className="flex flex-row-reverse items-center gap-3"
+                  onClick={() => router.push(`/add?tab=${item.tab}`)}
+                  className="flex flex-row-reverse items-center gap-3 group text-left outline-none"
                 >
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: item.bg }}>
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/30"
+                    style={{ backgroundColor: item.bg }}
+                  >
                     <item.icon className="w-5 h-5" style={{ color: item.color }} />
-                  </div>
-                  <span className="bg-white rounded-full px-4 py-2 text-sm font-medium shadow-md text-[#0F172A] whitespace-nowrap">{item.label}</span>
+                  </motion.div>
+                  <motion.span
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 8 }}
+                    transition={{ delay: index * 0.05 + 0.05 }}
+                    className="bg-white rounded-full px-4 py-1.5 text-sm font-semibold shadow-md text-[#0F172A] whitespace-nowrap border border-gray-100"
+                  >
+                    {item.label}
+                  </motion.span>
                 </motion.button>
               ))}
             </div>
           )}
         </AnimatePresence>
+
+        {/* Main FAB Button */}
         <motion.button
-          drag
-          dragMomentum={false}
-          dragElastic={0}
-          dragConstraints={{ top: -600, bottom: 0, left: -300, right: 0 }}
-          onDragStart={() => setIsDragging(true)}
-          onDragEnd={() => setTimeout(() => setIsDragging(false), 100)}
-          onClick={() => { if (!isDragging) setFabOpen(prev => !prev) }}
-          className="w-14 h-14 rounded-full bg-[#0A7B7B] flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white cursor-grab active:cursor-grabbing"
-          whileTap={{ scale: 1.1 }}
+          onClick={() => setFabOpen(prev => !prev)}
+          whileTap={{ scale: 0.92 }}
+          aria-label="Open creation selections panel"
+          aria-expanded={fabOpen}
+          className="w-14 h-14 rounded-full bg-[#0A7B7B] flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white outline-none"
         >
           <motion.span
             animate={{ rotate: fabOpen ? 45 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center justify-center"
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="flex items-center justify-center pointer-events-none"
           >
             <Plus className="w-6 h-6" />
           </motion.span>
@@ -271,27 +277,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-around z-40 no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <Link href="/dashboard" className="flex flex-col items-center gap-1 py-2 px-3">
+        <Link href="/dashboard" className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
           <LayoutDashboard className={cn('w-5 h-5 transition-colors', pathname === '/dashboard' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/dashboard' ? 'text-teal-600' : 'text-gray-400')}>{t('dashboard')}</span>
         </Link>
-        <Link href="/history" className="flex flex-col items-center gap-1 py-2 px-3">
+        <Link href="/history" className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
           <History className={cn('w-5 h-5 transition-colors', pathname === '/history' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/history' ? 'text-teal-600' : 'text-gray-400')}>{t('history')}</span>
         </Link>
-        <Link href="/insights" className="flex flex-col items-center gap-1 py-2 px-3">
+        <Link href="/insights" className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
           <BarChart2 className={cn('w-5 h-5 transition-colors', pathname === '/insights' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/insights' ? 'text-teal-600' : 'text-gray-400')}>{t('insights')}</span>
         </Link>
-        <Link href="/profile" className="flex flex-col items-center gap-1 py-2 px-3">
+        <Link href="/profile" className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
           <User className={cn('w-5 h-5 transition-colors', pathname === '/profile' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/profile' ? 'text-teal-600' : 'text-gray-400')}>{t('profile')}</span>
         </Link>
       </nav>
 
-      {/* Landscape Sidebar (Desktop — fixed left panel) */}
+      {/* Landscape Sidebar (Desktop) */}
       <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-teal-700 to-teal-800 z-40 overflow-y-auto no-print shadow-xl">
-        {/* Logo Row */}
         <div className="px-4 pt-4 flex-shrink-0">
           <div className="flex items-center justify-between rounded-xl px-3 py-2" style={{ backgroundColor: '#D9FAF7' }}>
             <Image
@@ -300,19 +305,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               width={120}
               height={40}
               sizes="120px"
-              quality={75}
               style={{ objectFit: 'contain', pointerEvents: 'none' }}
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
             />
           </div>
         </div>
-
-        {/* Add Button */}
         <div className="px-3 pt-3 pb-3">
           <button
-            onClick={() => router.push('/add')}
-            className="flex items-center justify-center gap-2 w-full bg-white text-teal-700 rounded-xl py-2.5 font-semibold hover:bg-teal-50 transition-colors"
+            onClick={() => router.push('/add?tab=manual')}
+            className="flex items-center justify-center gap-2 w-full bg-white text-teal-700 rounded-xl py-2.5 font-semibold hover:bg-teal-50 transition-colors shadow-sm outline-none"
           >
             <Plus className="w-5 h-5" />
             <span>Add</span>
@@ -335,8 +337,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
-
-        {/* Profile Section with Dropdown */}
         <div className="relative p-4 border-t border-teal-600/50 flex-shrink-0" ref={profileDropdownRef}>
           <AnimatePresence>
             {profileDropdownOpen && (
@@ -345,7 +345,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.15 }}
-                className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
+                className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
               >
                 <Link
                   href="/profile"
@@ -365,7 +365,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors w-full border-t border-gray-100"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors w-full border-t border-gray-100 text-left outline-none"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm font-medium">Sign Out</span>
@@ -373,17 +373,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </motion.div>
             )}
           </AnimatePresence>
-
           <button
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-            className="flex items-center gap-3 w-full hover:bg-white/5 rounded-xl p-2 -m-2 transition-colors"
+            onKeyDown={handleProfileKeyDown}
+            aria-haspopup="true"
+            aria-expanded={profileDropdownOpen}
+            className="flex items-center gap-3 w-full hover:bg-white/5 rounded-xl p-2 transition-colors text-left outline-none"
           >
             {loading ? (
               <ProfileSkeleton />
             ) : (
               <>
                 <AvatarCircle size={40} />
-                <span className="text-white font-medium text-sm truncate flex-1 text-left">{userName}</span>
+                <span className="text-white font-medium text-sm truncate flex-1">{userName}</span>
               </>
             )}
           </button>
@@ -412,4 +414,4 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   )
-}
+              }
