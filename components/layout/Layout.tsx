@@ -34,11 +34,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
 
+  // Updated FAB Items: Auto first, Type second. 
   const fabSpeedDialItems = [
-    { icon: PenLine,  label: 'Type',  tab: 'manual', bg: '#2563EB', color: '#ffffff' },
-    { icon: Sparkles, label: 'Auto',  tab: 'text',   bg: '#7C3AED', color: '#ffffff' },
-    { icon: Mic,      label: 'Voice', tab: 'voice',  bg: '#16A34A', color: '#ffffff' },
-    { icon: Camera,   label: 'Scan',  tab: 'scan',   bg: '#EA580C', color: '#ffffff' },
+    { icon: Sparkles, label: 'Auto',  tab: 'text',   color: 'bg-violet-500' },
+    { icon: PenLine,  label: 'Type',  tab: 'manual', color: 'bg-blue-500' },
+    { icon: Mic,      label: 'Voice', tab: 'voice',  color: 'bg-green-500' },
+    { icon: Camera,   label: 'Scan',  tab: 'scan',   color: 'bg-orange-500' },
   ]
 
   // Close profile dropdown on outside click
@@ -214,60 +215,56 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* FAB Speed Dial Container — Calibrated for fast performance template updates */}
+      {/* FAB Speed Dial Container — New Snappy Glassmorphism UI */}
       <div className="fixed bottom-[72px] right-4 md:bottom-8 md:right-8 z-50 no-print">
         <AnimatePresence>
           {fabOpen && (
-            <div className="absolute bottom-full mb-4 right-0 flex flex-col-reverse gap-2.5">
-              {fabSpeedDialItems.map((item, index) => (
-                <motion.button
-                  key={item.tab}
-                  initial={{ opacity: 0, scale: 0.5, x: 20 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.5, x: 20 }}
-                  transition={{
-                    delay: index * 0.05,
-                    type: 'spring',
-                    stiffness: 400,
-                    damping: 25,
-                  }}
-                  onClick={() => {
-                    setFabOpen(false)
-                    router.push(`/add?tab=${item.tab}`)
-                  }}
-                  className="flex flex-row-reverse items-center gap-3 group"
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/30"
-                    style={{ backgroundColor: item.bg }}
+            <div className="absolute bottom-full mb-4 right-0 flex flex-col gap-3">
+              {fabSpeedDialItems.map((item, index) => {
+                const Icon = item.icon
+                return (
+                  <motion.button
+                    key={item.tab}
+                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20, scale: 0.8 }}
+                    transition={{
+                      delay: index * 0.05,
+                      type: 'spring',
+                      stiffness: 500,
+                      damping: 30,
+                    }}
+                    onClick={() => {
+                      setFabOpen(false)
+                      router.push(`/add?tab=${item.tab}`)
+                    }}
+                    className="flex items-center gap-3 pl-3 pr-5 py-2.5 rounded-2xl backdrop-blur-md bg-white/80 shadow-xl border border-white/20 hover:bg-white hover:scale-105 active:scale-95 transition-all duration-200 origin-bottom-right"
                   >
-                    <item.icon className="w-5 h-5" style={{ color: item.color }} />
-                  </motion.div>
-                  <motion.span
-                    initial={{ opacity: 0, x: 8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 8 }}
-                    transition={{ delay: index * 0.05 + 0.05 }}
-                    className="bg-white rounded-full px-4 py-1.5 text-sm font-semibold shadow-md text-[#0F172A] whitespace-nowrap border border-gray-100"
-                  >
-                    {item.label}
-                  </motion.span>
-                </motion.button>
-              ))}
+                    <div
+                      className={cn(
+                        "w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md",
+                        item.color
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className="font-semibold text-gray-800 text-sm whitespace-nowrap">
+                      {item.label}
+                    </span>
+                  </motion.button>
+                )
+              })}
             </div>
           )}
         </AnimatePresence>
 
-        {/* Main FAB Trigger Button matching inline style backgrounds */}
+        {/* Main FAB Trigger Button */}
         <motion.button
           onClick={() => setFabOpen((prev) => !prev)}
           whileTap={{ scale: 0.92 }}
           aria-label="Open creation selections panel"
           aria-expanded={fabOpen}
-          className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white"
-          style={{ backgroundColor: "#0A7B7B" }}
+          className="w-14 h-14 rounded-2xl bg-[#0A7B7B] text-white shadow-xl shadow-[#0A7B7B]/40 ring-4 ring-white flex items-center justify-center transition-all duration-300 hover:shadow-2xl hover:scale-105 active:scale-95"
         >
           <motion.span
             animate={{ rotate: fabOpen ? 45 : 0 }}
