@@ -78,8 +78,8 @@ export default function InsightsPage() {
     }
   }, [user])
 
-  if (loading) return <InsightsSkeleton hasInsights={false} />
-  if (insightsHydrating) return <InsightsSkeleton hasInsights={insights.length > 0} />
+  if (loading) return <InsightsSkeleton />
+  if (insightsHydrating) return <InsightsSkeleton />
   if (!mounted) return null
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
