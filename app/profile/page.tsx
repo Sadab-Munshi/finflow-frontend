@@ -428,14 +428,14 @@ export default function ProfilePage() {
             </svg>
           </div>
 
-          {/* Hero decor image */}
-          <div className="absolute right-0 top-0 bottom-0 w-1/2 pointer-events-none select-none">
+          {/* Hero decor — only show on sm+ screens */}
+          <div className="absolute right-0 top-0 bottom-0 w-2/5 pointer-events-none select-none hidden sm:block">
             <Image
               src="/assets/profile-hero-decor.webp"
               alt=""
               fill
-              className="object-contain object-right"
-              sizes="50vw"
+              className="object-contain object-right-top"
+              sizes="40vw"
               priority
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
@@ -501,13 +501,13 @@ export default function ProfilePage() {
             ].map((stat, i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl p-3 flex flex-row items-center gap-2.5 border border-[#E2E8F0] shadow-sm"
+                className="bg-white rounded-2xl p-3 flex flex-col items-center text-center border border-[#E2E8F0] shadow-sm sm:flex-row sm:items-center sm:gap-2.5 sm:text-left sm:p-3"
               >
-                <div className="w-10 h-10 rounded-full bg-[#F0FDF9] flex items-center justify-center flex-shrink-0">
-                  <stat.icon className="w-5 h-5 text-[#0A7B7B]" />
+                <div className="w-9 h-9 rounded-full bg-[#F0FDF9] flex items-center justify-center flex-shrink-0 mb-1 sm:mb-0">
+                  <stat.icon className="w-4 h-4 text-[#0A7B7B]" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-base font-bold text-[#0F172A] leading-tight truncate">{stat.value}</p>
+                  <p className="text-sm font-bold text-[#0F172A] leading-tight">{stat.value}</p>
                   <p className="text-xs text-[#64748B]">{stat.label}</p>
                 </div>
               </div>
@@ -576,7 +576,7 @@ export default function ProfilePage() {
               <div className="border-t border-[#F1F5F9]" />
 
               {/* Language row */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
                 <div className="w-9 h-9 rounded-full bg-[#F0FDF9] flex items-center justify-center flex-shrink-0">
                   <Globe size={16} className="text-[#0A7B7B]" />
                 </div>
@@ -618,23 +618,23 @@ export default function ProfilePage() {
               <div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                       <Image
                         src="/assets/telegram-icon.webp"
                         alt="Telegram"
-                        width={44}
-                        height={44}
+                        width={40}
+                        height={40}
                         className="w-full h-full object-cover"
                         draggable={false}
                         onContextMenu={(e) => e.preventDefault()}
                         style={{ pointerEvents: 'none', userSelect: 'none' }}
                       />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#0F172A] truncate">
                         {telegramConnected ? 'Telegram Connected' : 'Connect Telegram'}
                       </p>
-                      <p className="text-xs text-gray-400">Add transactions via Telegram bot</p>
+                      <p className="text-xs text-[#64748B] truncate">Add transactions via Telegram bot</p>
                     </div>
                   </div>
                   <Toggle
@@ -681,21 +681,21 @@ export default function ProfilePage() {
                 {whatsappPolling ? (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                         <Image
                           src="/assets/whatsapp-icon.webp"
                           alt="WhatsApp"
-                          width={44}
-                          height={44}
+                          width={40}
+                          height={40}
                           className="w-full h-full object-cover"
                           draggable={false}
                           onContextMenu={(e) => e.preventDefault()}
                           style={{ pointerEvents: 'none', userSelect: 'none' }}
                         />
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">Connecting...</p>
-                        <p className="text-xs text-gray-400">Waiting for WhatsApp confirmation</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#0F172A] truncate">Connecting...</p>
+                        <p className="text-xs text-[#64748B] truncate">Waiting for WhatsApp confirmation</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -708,23 +708,23 @@ export default function ProfilePage() {
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
                         <Image
                           src="/assets/whatsapp-icon.webp"
                           alt="WhatsApp"
-                          width={44}
-                          height={44}
+                          width={40}
+                          height={40}
                           className="w-full h-full object-cover"
                           draggable={false}
                           onContextMenu={(e) => e.preventDefault()}
                           style={{ pointerEvents: 'none', userSelect: 'none' }}
                         />
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#0F172A] truncate">
                           {whatsappConnected ? 'WhatsApp Connected' : 'Connect WhatsApp'}
                         </p>
-                        <p className="text-xs text-gray-400">Add transactions via WhatsApp</p>
+                        <p className="text-xs text-[#64748B] truncate">Add transactions via WhatsApp</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -757,7 +757,7 @@ export default function ProfilePage() {
               className="rounded-2xl border border-[#C6F0E8] overflow-hidden relative"
               style={{ background: 'linear-gradient(135deg, #F0FDF9 0%, #E8FAF4 100%)' }}
             >
-              <div className="p-4 pr-36">
+              <div className="p-4 pr-32 sm:pr-36">
                 <p className="text-sm font-bold text-[#0F172A] mb-2">AI Usage This Month</p>
                 {aiUsage ? (
                   <div className="space-y-1.5">
@@ -779,12 +779,12 @@ export default function ProfilePage() {
               </div>
 
               {/* Robot illustration */}
-              <div className="absolute right-0 bottom-0 w-32 h-full pointer-events-none select-none">
+              <div className="absolute right-0 bottom-0 w-28 h-28 sm:w-32 sm:h-32 pointer-events-none select-none">
                 <Image
                   src="/assets/ai-robot.webp"
                   alt=""
                   fill
-                  className="object-contain object-bottom"
+                  className="object-contain object-bottom-right"
                   sizes="128px"
                   draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
