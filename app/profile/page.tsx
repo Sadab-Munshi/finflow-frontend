@@ -410,7 +410,7 @@ export default function ProfilePage() {
         {/* SECTION 1 — HERO HEADER */}
         <div
           className="relative overflow-hidden md:rounded-2xl md:mx-4"
-          style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', minHeight: 130 }}
+          style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', minHeight: 130, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
         >
           {/* Geometric pattern overlay */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -434,7 +434,7 @@ export default function ProfilePage() {
               src="/assets/profile-hero-decor.webp"
               alt=""
               fill
-              className="object-contain object-right-top"
+              className="object-contain object-right-bottom sm:object-right-top"
               sizes="40vw"
               priority
               draggable={false}
@@ -492,7 +492,7 @@ export default function ProfilePage() {
         </div>
 
         {/* SECTION 2 — STATS ROW */}
-        <div className="px-4 -mt-4 relative z-20">
+        <div className="px-4 mt-3 relative z-20">
           <div className="grid grid-cols-3 gap-2">
             {[
               { icon: ClipboardList, value: String(totalEntries), label: 'Entries' },
@@ -764,10 +764,7 @@ export default function ProfilePage() {
                         style={{ width: `${Math.min(aiPct, 100)}%`, background: aiBarColor }}
                       />
                     </div>
-                    <div className="flex justify-between">
-                      <p className="text-xs text-[#64748B]">Resets on 1st of next month</p>
-                      <p className="text-xs text-[#64748B]">{totalAiUsed}/{totalAiLimit}</p>
-                    </div>
+                    <p className="text-xs text-[#64748B]">Resets on 1st of next month</p>
                   </div>
                 ) : (
                   <p className="text-sm text-[#64748B]">Loading usage...</p>
