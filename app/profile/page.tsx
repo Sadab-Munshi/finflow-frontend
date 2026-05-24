@@ -6,6 +6,7 @@ import {
   Camera, Pencil, Check, Bell, Lock, Database, HelpCircle,
   ChevronRight, LogOut, Send, MessageCircle, ExternalLink, Loader2, Star,
   ClipboardList, Flame, TrendingDown, MessageSquarePlus, CheckCircle, XCircle, AlertTriangle,
+  Mail, Globe, User,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -409,7 +410,7 @@ export default function ProfilePage() {
         {/* SECTION 1 — HERO HEADER */}
         <div
           className="relative overflow-hidden md:rounded-2xl md:mx-4"
-          style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', minHeight: 160 }}
         >
           {/* Geometric pattern overlay */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -427,23 +428,39 @@ export default function ProfilePage() {
             </svg>
           </div>
 
-          <div className="relative z-10 flex flex-col items-center pt-10 pb-8 px-4">
-            {/* Avatar with glowing white ring */}
-            <div className="relative">
+          {/* Hero decor image */}
+          <div className="absolute right-0 top-0 bottom-0 w-1/2 pointer-events-none select-none">
+            <Image
+              src="/assets/profile-hero-decor.webp"
+              alt=""
+              fill
+              className="object-contain object-right"
+              sizes="50vw"
+              priority
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ pointerEvents: 'none', userSelect: 'none' }}
+            />
+          </div>
+
+          {/* Content — horizontal row */}
+          <div className="relative z-10 flex flex-row items-center gap-4 px-5 py-8">
+            {/* Avatar */}
+            <div className="relative flex-shrink-0">
               <div
-                className="w-28 h-28 relative rounded-full overflow-hidden bg-teal-700"
-                style={{ boxShadow: '0 0 0 4px white, 0 0 24px rgba(255,255,255,0.35)' }}
+                className="w-24 h-24 relative rounded-full overflow-hidden bg-teal-700"
+                style={{ boxShadow: '0 0 0 3px white, 0 0 20px rgba(255,255,255,0.3)' }}
               >
                 {avatarUrl ? (
-                  <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes="112px" />
+                  <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes="96px" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white">
+                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white">
                     {name.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               <label className="absolute bottom-0 right-0 bg-white text-teal-600 rounded-full p-1.5 cursor-pointer shadow-md hover:bg-teal-50 transition-colors">
-                <Camera size={16} />
+                <Camera size={14} />
                 <input
                   type="file"
                   accept="image/*"
@@ -452,48 +469,49 @@ export default function ProfilePage() {
                 />
               </label>
             </div>
-            {uploading && <p className="text-xs text-white/70 mt-2 animate-pulse">Uploading...</p>}
 
-            {/* Display name — static */}
-            <div className="mt-4">
-              <h2 className="text-2xl font-semibold text-white text-center">{name}</h2>
+            {/* Name + badge */}
+            <div className="flex flex-col gap-1.5">
+              <h2 className="text-xl font-bold text-white leading-tight">{name}</h2>
+              {uploading && <p className="text-xs text-white/70 animate-pulse">Uploading...</p>}
+              {memberSince && (
+                <div
+                  className="px-3 py-1 rounded-full flex items-center gap-1 text-xs font-semibold w-fit"
+                  style={{
+                    background: 'rgba(251,191,36,0.2)',
+                    color: '#fcd34d',
+                    border: '1px solid rgba(251,191,36,0.4)',
+                  }}
+                >
+                  <Star size={10} fill="#fcd34d" strokeWidth={0} />
+                  Member since {memberSince}
+                </div>
+              )}
             </div>
-
-            {/* Gold "Member since" badge */}
-            {memberSince && (
-              <div
-                className="mt-2 px-3 py-1 rounded-full flex items-center gap-1 text-xs font-semibold"
-                style={{
-                  background: 'rgba(251,191,36,0.2)',
-                  color: '#fcd34d',
-                  border: '1px solid rgba(251,191,36,0.4)',
-                }}
-              >
-                <Star size={10} fill="#fcd34d" strokeWidth={0} />
-                Member since {memberSince}
-              </div>
-            )}
           </div>
         </div>
 
         {/* SECTION 2 — STATS ROW */}
         <div className="px-4 -mt-4 relative z-20">
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-[#ECFDF5] rounded-2xl p-4 flex flex-col items-center text-center">
-              <ClipboardList className="w-5 h-5 text-teal-600 mb-1" />
-              <span className="text-lg font-bold text-gray-800">{String(totalEntries)}</span>
-              <span className="text-xs text-gray-400 mt-0.5">Entries</span>
-            </div>
-            <div className="bg-[#ECFDF5] rounded-2xl p-4 flex flex-col items-center text-center">
-              <Flame className="w-5 h-5 text-teal-600 mb-1" />
-              <span className="text-lg font-bold text-gray-800">{`${dayStreak}d`}</span>
-              <span className="text-xs text-gray-400 mt-0.5">Streak</span>
-            </div>
-            <div className="bg-[#ECFDF5] rounded-2xl p-4 flex flex-col items-center text-center">
-              <TrendingDown className="w-5 h-5 text-teal-600 mb-1" />
-              <span className="text-lg font-bold text-gray-800">{formatSpending(thisMonthSpending)}</span>
-              <span className="text-xs text-gray-400 mt-0.5">Spent</span>
-            </div>
+            {[
+              { icon: ClipboardList, value: String(totalEntries), label: 'Entries' },
+              { icon: Flame, value: `${dayStreak}d`, label: 'Streak' },
+              { icon: TrendingDown, value: formatSpending(thisMonthSpending), label: 'Spent' },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl p-3 flex flex-row items-center gap-2.5 border border-[#E2E8F0] shadow-sm"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#F0FDF9] flex items-center justify-center flex-shrink-0">
+                  <stat.icon className="w-5 h-5 text-[#0A7B7B]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-base font-bold text-[#0F172A] leading-tight truncate">{stat.value}</p>
+                  <p className="text-xs text-[#64748B]">{stat.label}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -502,11 +520,14 @@ export default function ProfilePage() {
           {/* SECTION 3 — ACCOUNT INFO */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</p>
-            <div className="bg-white rounded-2xl shadow-sm md:shadow-md p-4 space-y-3">
-              {/* Name */}
-              <div className="flex items-center justify-between">
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-3">
+              {/* Name row */}
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[#F0FDF9] flex items-center justify-center flex-shrink-0">
+                  <User size={16} className="text-[#0A7B7B]" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-500 mb-0.5">Name</p>
+                  <p className="text-xs text-[#64748B] mb-0.5">Name</p>
                   {editingName ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -514,18 +535,18 @@ export default function ProfilePage() {
                         onChange={(e) => e.target.value.length <= 20 && setName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && saveName()}
                         maxLength={20}
-                        className="text-base font-medium border-b border-gray-300 outline-none flex-1 min-w-0"
+                        className="text-sm font-medium border-b border-gray-300 outline-none flex-1 min-w-0"
                         autoFocus
                       />
                       <button
                         onClick={saveName}
-                        className="px-3 py-1 text-xs font-semibold text-white bg-teal-600 rounded-lg shrink-0"
+                        className="px-3 py-1 text-xs font-semibold text-white bg-[#0A7B7B] rounded-lg shrink-0"
                       >
                         Save
                       </button>
                     </div>
                   ) : (
-                    <p className="text-sm font-medium text-gray-800">{name}</p>
+                    <p className="text-sm font-semibold text-[#0F172A]">{name}</p>
                   )}
                 </div>
                 {!editingName && (
@@ -538,22 +559,30 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              <div className="border-t border-gray-100" />
+              <div className="border-t border-[#F1F5F9]" />
 
-              {/* Email — read-only */}
-              <div>
-                <p className="text-xs text-gray-400 mb-0.5">Email</p>
-                <p className="text-sm font-medium text-gray-800">{email}</p>
-                <p className="text-xs text-gray-400 mt-0.5">(cannot be changed)</p>
+              {/* Email row */}
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[#F0FDF9] flex items-center justify-center flex-shrink-0">
+                  <Mail size={16} className="text-[#0A7B7B]" />
+                </div>
+                <div>
+                  <p className="text-xs text-[#64748B] mb-0.5">Email</p>
+                  <p className="text-sm font-semibold text-[#0F172A]">{email}</p>
+                  <p className="text-xs text-[#94A3B8]">(cannot be changed)</p>
+                </div>
               </div>
 
-              <div className="border-t border-gray-100" />
+              <div className="border-t border-[#F1F5F9]" />
 
-              {/* Language */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Language</p>
-                  <p className="text-sm font-medium text-gray-800">{languageLabels[language as Language]}</p>
+              {/* Language row */}
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[#F0FDF9] flex items-center justify-center flex-shrink-0">
+                  <Globe size={16} className="text-[#0A7B7B]" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-[#64748B] mb-0.5">Language</p>
+                  <p className="text-sm font-semibold text-[#0F172A]">{languageLabels[language as Language]}</p>
                 </div>
                 {/* Desktop pills */}
                 <div className="hidden sm:flex gap-1">
@@ -562,19 +591,17 @@ export default function ProfilePage() {
                       key={lang}
                       onClick={() => handleLanguageChange(lang)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        language === lang
-                          ? 'bg-teal-600 text-white'
-                          : 'border border-gray-200 text-gray-500 hover:border-teal-300'
+                        language === lang ? 'bg-[#0A7B7B] text-white' : 'border border-gray-200 text-gray-500 hover:border-teal-300'
                       }`}
                     >
                       {languageLabels[lang]}
                     </button>
                   ))}
                 </div>
-                {/* Mobile bottom-sheet trigger */}
+                {/* Mobile trigger */}
                 <button
                   onClick={() => setShowLanguageSheet(true)}
-                  className="sm:hidden flex items-center gap-1 text-teal-600 text-sm font-medium"
+                  className="sm:hidden flex items-center gap-1 text-[#0A7B7B] text-sm font-medium"
                 >
                   Change <ChevronRight size={14} />
                 </button>
@@ -585,14 +612,23 @@ export default function ProfilePage() {
           {/* SECTION 4 — INTEGRATIONS */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Integrations</p>
-            <div className="bg-white rounded-2xl shadow-sm md:shadow-md p-4 space-y-4">
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-4">
 
               {/* Telegram */}
               <div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                      <Send size={16} className="text-blue-500" />
+                    <div className="w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+                      <Image
+                        src="/assets/telegram-icon.webp"
+                        alt="Telegram"
+                        width={44}
+                        height={44}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{ pointerEvents: 'none', userSelect: 'none' }}
+                      />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-800">
@@ -645,8 +681,17 @@ export default function ProfilePage() {
                 {whatsappPolling ? (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-                        <MessageCircle size={16} className="text-green-500" />
+                      <div className="w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+                        <Image
+                          src="/assets/whatsapp-icon.webp"
+                          alt="WhatsApp"
+                          width={44}
+                          height={44}
+                          className="w-full h-full object-cover"
+                          draggable={false}
+                          onContextMenu={(e) => e.preventDefault()}
+                          style={{ pointerEvents: 'none', userSelect: 'none' }}
+                        />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-800">Connecting...</p>
@@ -663,8 +708,17 @@ export default function ProfilePage() {
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-                        <MessageCircle size={16} className="text-green-500" />
+                      <div className="w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 bg-white">
+                        <Image
+                          src="/assets/whatsapp-icon.webp"
+                          alt="WhatsApp"
+                          width={44}
+                          height={44}
+                          className="w-full h-full object-cover"
+                          draggable={false}
+                          onContextMenu={(e) => e.preventDefault()}
+                          style={{ pointerEvents: 'none', userSelect: 'none' }}
+                        />
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-800">
@@ -699,32 +753,51 @@ export default function ProfilePage() {
           {/* SECTION 5 — AI USAGE */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Usage</p>
-            <div className="bg-white rounded-2xl shadow-sm md:shadow-md p-4">
-              <p className="text-sm font-semibold text-gray-800 mb-3">AI Usage This Month</p>
-              {aiUsage ? (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">{aiPct}% used</span>
-                    <span className="text-xs text-gray-400">{totalAiUsed}/{totalAiLimit}</span>
+            <div
+              className="rounded-2xl border border-[#C6F0E8] overflow-hidden relative"
+              style={{ background: 'linear-gradient(135deg, #F0FDF9 0%, #E8FAF4 100%)' }}
+            >
+              <div className="p-4 pr-36">
+                <p className="text-sm font-bold text-[#0F172A] mb-2">AI Usage This Month</p>
+                {aiUsage ? (
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-bold" style={{ color: aiBarColor }}>{aiPct}% used</p>
+                    <div className="bg-white/60 rounded-full h-3 overflow-hidden">
+                      <div
+                        className="h-3 rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(aiPct, 100)}%`, background: aiBarColor }}
+                      />
+                    </div>
+                    <div className="flex justify-between">
+                      <p className="text-xs text-[#64748B]">Resets on 1st of next month</p>
+                      <p className="text-xs text-[#64748B]">{totalAiUsed}/{totalAiLimit}</p>
+                    </div>
                   </div>
-                  <div className="bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="h-2.5 rounded-full transition-all duration-700"
-                      style={{ width: `${Math.min(aiPct, 100)}%`, background: aiBarColor }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400">Resets on 1st of next month</p>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400">Loading usage...</p>
-              )}
+                ) : (
+                  <p className="text-sm text-[#64748B]">Loading usage...</p>
+                )}
+              </div>
+
+              {/* Robot illustration */}
+              <div className="absolute right-0 bottom-0 w-32 h-full pointer-events-none select-none">
+                <Image
+                  src="/assets/ai-robot.webp"
+                  alt=""
+                  fill
+                  className="object-contain object-bottom"
+                  sizes="128px"
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{ pointerEvents: 'none', userSelect: 'none' }}
+                />
+              </div>
             </div>
           </div>
 
           {/* SECTION 6 — SETTINGS LIST */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Preferences</p>
-            <div className="bg-white rounded-2xl shadow-sm md:shadow-md overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
               {[
                 { icon: Bell, label: 'Notifications', path: '/settings' },
                 { icon: Lock, label: 'Privacy & Security', path: '/privacy-security' },
@@ -735,8 +808,8 @@ export default function ProfilePage() {
                   onClick={() => router.push(item.path)}
                   className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-                    <item.icon size={15} className="text-teal-600" />
+                  <div className="w-8 h-8 rounded-xl bg-[#F0FDF9] flex items-center justify-center shrink-0">
+                    <item.icon size={15} className="text-[#0A7B7B]" />
                   </div>
                   <span className="flex-1 text-sm font-medium text-gray-800 text-left">{item.label}</span>
                   <ChevronRight size={16} className="text-gray-300" />
@@ -748,8 +821,8 @@ export default function ProfilePage() {
                 rel="noopener noreferrer"
                 className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100"
               >
-                <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-                  <HelpCircle size={15} className="text-teal-600" />
+                <div className="w-8 h-8 rounded-xl bg-[#F0FDF9] flex items-center justify-center shrink-0">
+                  <HelpCircle size={15} className="text-[#0A7B7B]" />
                 </div>
                 <span className="flex-1 text-sm font-medium text-gray-800 text-left">Help &amp; Support</span>
                 <ChevronRight size={16} className="text-gray-300" />
@@ -758,8 +831,8 @@ export default function ProfilePage() {
                 onClick={() => setShowFeedbackSheet(true)}
                 className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
               >
-                <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-                  <MessageSquarePlus size={15} className="text-teal-600" />
+                <div className="w-8 h-8 rounded-xl bg-[#F0FDF9] flex items-center justify-center shrink-0">
+                  <MessageSquarePlus size={15} className="text-[#0A7B7B]" />
                 </div>
                 <span className="flex-1 text-sm font-medium text-gray-800 text-left">Feedback</span>
                 <ChevronRight size={16} className="text-gray-300" />
@@ -797,7 +870,7 @@ export default function ProfilePage() {
           {/* SECTION 8 — SIGN OUT */}
           <button
             onClick={() => setShowSignOutDialog(true)}
-            className="w-full flex items-center justify-center gap-2 text-red-500 border border-red-100 rounded-2xl py-3.5 text-sm font-semibold bg-white shadow-sm hover:bg-red-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 text-white bg-red-500 rounded-2xl py-3.5 text-sm font-semibold shadow-sm hover:bg-red-600 transition-colors"
           >
             <LogOut size={16} />
             Sign Out
