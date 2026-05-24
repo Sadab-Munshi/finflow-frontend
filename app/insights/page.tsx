@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Loader2, AlertCircle, BarChart2, Lightbulb, AlertTriangle, Trophy, TrendingUp, AlertOctagon } from 'lucide-react'
+import { Sparkles, Loader2, AlertCircle, BarChart2, Lightbulb, AlertTriangle, Trophy, TrendingUp, AlertOctagon, FileText, RefreshCw } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { useUser } from '@/context/UserContext'
@@ -29,7 +29,8 @@ const insightStyles: Record<string, { bgColor: string; borderColor: string; icon
 
 export default function InsightsPage() {
   const { t } = useLanguage()
-  const { userId } = useUser()
+  const { user } = useUser()
+  const userId = user?.userId
   const [mounted, setMounted] = useState(false)
   const [insights, setInsights] = useState<Insight[]>([])
   const [savedTimestamp, setSavedTimestamp] = useState<string | null>(null)
@@ -50,9 +51,9 @@ export default function InsightsPage() {
 
   // Load saved insights from localStorage once userId is available
   useEffect(() => {
-    if (!userId) return
+    const key = userId ? 'finflow_insights_' + userId : 'finflow_insights_guest'
     try {
-      const saved = localStorage.getItem('finflow_insights_' + userId)
+      const saved = localStorage.getItem(key)
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed.insights && Array.isArray(parsed.insights)) {
@@ -63,7 +64,7 @@ export default function InsightsPage() {
     } catch (e) {
       console.warn('Failed to load saved insights from localStorage', e)
     }
-  }, [userId])
+  }, [user])
 
   if (loading) return <InsightsSkeleton />
   if (!mounted) return null
@@ -77,12 +78,8 @@ export default function InsightsPage() {
       const timestamp = new Date().toLocaleString('en-IN')
       setInsights(result)
       setSavedTimestamp(timestamp)
-      if (userId) {
-        localStorage.setItem(
-          'finflow_insights_' + userId,
-          JSON.stringify({ insights: result, timestamp })
-        )
-      }
+      const key = userId ? 'finflow_insights_' + userId : 'finflow_insights_guest'
+      localStorage.setItem(key, JSON.stringify({ insights: result, timestamp }))
     } catch (err: any) { 
       setError(err?.message || t('errorOccurred')) 
     } finally { setDataLoading(false) }
@@ -93,22 +90,20 @@ export default function InsightsPage() {
       onClick={handleGenerate}
       disabled={dataLoading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-xl text-white',
-        'w-full transition-all duration-200',
-        dataLoading ? 'opacity-70 cursor-not-allowed' : 'active:scale-[0.98]'
+        'inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200',
+        dataLoading
+          ? 'bg-[#6B7280] text-white cursor-not-allowed px-5 py-2.5'
+          : insights.length > 0
+            ? 'bg-[#F0FDF9] text-[#0A7B7B] border border-[#0A7B7B]/20 px-5 py-2.5 active:scale-[0.98]'
+            : 'bg-[#0A7B7B] text-white px-5 py-2.5 active:scale-[0.98]'
       )}
-      style={{
-        background: dataLoading ? '#6b7280' : '#00b894',
-        height: 48,
-        fontSize: 15,
-        fontWeight: 600,
-        boxShadow: dataLoading ? 'none' : '0 4px 12px rgba(0,184,148,0.25)',
-      }}
     >
       {dataLoading ? (
-        <><Loader2 className="w-5 h-5 animate-spin" />{t('analyzingFinances')}</>
+        <><Loader2 className="w-4 h-4 animate-spin" />Analysing...</>
+      ) : insights.length > 0 ? (
+        <><RefreshCw className="w-4 h-4" />Refresh</>
       ) : (
-        <><Sparkles className="w-5 h-5" />{t('generateInsights')}</>
+        <><Sparkles className="w-4 h-4" />Generate Insights</>
       )}
     </button>
   )
@@ -145,14 +140,20 @@ export default function InsightsPage() {
         }
       `}</style>
 
-      <div className="space-y-3 px-4">
+      <div className="space-y-4 pb-6">
         {/* Page Header */}
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold" style={{ color: '#0d1117' }}>{t('insights')}</h1>
-            <Sparkles className="w-6 h-6" style={{ color: '#00b894' }} />
+            <h1 className="text-2xl font-bold text-[#0F172A]">Insights</h1>
+            <Sparkles className="w-6 h-6 text-[#0A7B7B]" />
           </div>
-          <p className="text-sm mt-1" style={{ color: '#6b7280' }}>AI-powered financial analysis</p>
+          <p className="text-sm mt-1 text-[#6B7280]">AI-powered analysis of your last 30 days</p>
+          {transactions.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 bg-[#F0FDF9] text-[#0A7B7B] text-xs font-medium px-3 py-1 rounded-full mt-2">
+              <FileText className="w-3.5 h-3.5" />
+              {transactions.length} transactions analysed
+            </span>
+          )}
         </div>
 
         {/* Loading State - Full page skeleton */}
@@ -237,18 +238,18 @@ export default function InsightsPage() {
           </div>
         ) : (
           <>
-            {/* Generate button (shown when not loading) */}
-            {!dataLoading && (
-              <div>
+            {/* Generate / Refresh button row */}
+            {insights.length > 0 ? (
+              <div className="flex items-center justify-between gap-3">
+                {savedTimestamp && (
+                  <p className="text-xs text-[#9CA3AF]">Last generated: {savedTimestamp}</p>
+                )}
                 {generateButton}
               </div>
-            )}
-
-            {/* Timestamp */}
-            {savedTimestamp && !dataLoading && (
-              <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
-                Last generated: {savedTimestamp}
-              </p>
+            ) : (
+              <div className="flex justify-center">
+                {generateButton}
+              </div>
             )}
 
             {/* Error message */}
@@ -261,86 +262,63 @@ export default function InsightsPage() {
 
             {/* Empty state */}
             {insights.length === 0 ? (
-              <div
-                className="rounded-xl border p-10 text-center"
-                style={{ borderColor: '#f3f4f6', background: '#fff' }}
-              >
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-10 text-center">
                 <div className="flex justify-center mb-4">
-                  <BarChart2
-                    style={{ width: 48, height: 48, color: '#00b894' }}
-                  />
+                  <div className="w-20 h-20 rounded-full bg-[#F0FDF9] flex items-center justify-center">
+                    <BarChart2 className="w-12 h-12 text-[#0A7B7B]" />
+                  </div>
                 </div>
-                <h3 className="text-lg font-bold mb-2" style={{ color: '#0d1117' }}>
-                  Your financial story awaits
-                </h3>
-                <p className="text-sm max-w-md mx-auto" style={{ color: '#6b7280', lineHeight: 1.6 }}>
-                  Tap Generate Insights to get AI-powered analysis of your spending
+                <h3 className="text-lg font-semibold text-[#0F172A] mt-4">No insights yet</h3>
+                <p className="text-sm text-[#475569] mt-1 max-w-xs mx-auto leading-relaxed">
+                  Generate AI insights to understand your spending patterns
                 </p>
               </div>
             ) : (
               <>
               {/* Insight cards */}
-              <div className="grid md:grid-cols-2" style={{ gap: 12 }}>
+              <div className="grid gap-3 md:grid-cols-2">
                 {insights.map((insight, i) => {
                   const style = insightStyles[insight.type] || insightStyles.tip
                   return (
                     <div
                       key={i}
-                      className="rounded-xl"
+                      className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"
                       style={{
-                        background: style.bgColor,
-                        border: 'none',
                         borderLeft: `3px solid ${style.borderColor}`,
-                        borderRadius: 12,
-                        padding: 16,
-                        opacity: 0,
                         animation: `slideUp 0.4s ease forwards`,
                         animationDelay: `${i * 150}ms`,
-                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = 'none'
+                        opacity: 0,
                       }}
                     >
-                      <div className="flex items-start gap-3">
-                        <div style={{ color: style.iconColor, flexShrink: 0, marginTop: 1 }}>
-                          {style.icon}
+                      {/* Top row */}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: style.borderColor + '15', color: style.iconColor }}
+                          >
+                            {style.icon}
+                          </div>
+                          <p className="font-semibold text-[#0F172A] text-sm leading-snug">{insight.title}</p>
                         </div>
-                        <div>
-                          <p className="font-bold" style={{ fontSize: 15, color: '#0d1117', marginBottom: 4 }}>
-                            {insight.title}
-                          </p>
-                          <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.55 }}>
-                            {insight.description}
-                          </p>
-                        </div>
+                        <span
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 capitalize"
+                          style={{ backgroundColor: style.borderColor + '15', color: style.iconColor }}
+                        >
+                          {insight.type}
+                        </span>
                       </div>
+                      {/* Description */}
+                      <p className="text-xs text-[#475569] leading-relaxed pl-10">{insight.description}</p>
                     </div>
                   )
                 })}
               </div>
 
               {/* AI disclaimer */}
-              <div
-                style={{
-                  marginTop: 16,
-                  marginBottom: 8,
-                  background: '#f9fafb',
-                  borderRadius: 10,
-                  padding: '12px 14px',
-                  border: '1px solid #e5e7eb',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 8,
-                }}
-              >
-                <AlertTriangle style={{ width: 16, height: 16, color: '#9ca3af', flexShrink: 0, marginTop: 1 }} />
-                <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.5, margin: 0 }}>
+              <div className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-3 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-[#9CA3AF] flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-[#9CA3AF] leading-relaxed">
                   AI-generated insights may not always be accurate. Always verify with a financial advisor before making major decisions.
                 </p>
               </div>
