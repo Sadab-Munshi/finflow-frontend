@@ -214,7 +214,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* FAB Speed Dial — no drag */}
+      {/* FAB Speed Dial Container — Calibrated for fast performance template updates */}
       <div className="fixed bottom-[72px] right-4 md:bottom-8 md:right-8 z-50 no-print">
         <AnimatePresence>
           {fabOpen && (
@@ -260,9 +260,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           )}
         </AnimatePresence>
 
-        {/* Main FAB Trigger Button */}
+        {/* Main FAB Trigger Button matching inline style backgrounds */}
         <motion.button
-          onClick={() => setFabOpen(prev => !prev)}
+          onClick={() => setFabOpen((prev) => !prev)}
           whileTap={{ scale: 0.92 }}
           aria-label="Open creation selections panel"
           aria-expanded={fabOpen}
@@ -418,5 +418,4 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   )
-        }
-                      
+}
