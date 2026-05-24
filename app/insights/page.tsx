@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Loader2, AlertCircle, BarChart2, Lightbulb, AlertTriangle, Trophy, TrendingUp, AlertOctagon, FileText, RefreshCw } from 'lucide-react'
+import { Sparkles, Loader2, AlertCircle, BarChart2, Lightbulb, AlertTriangle, Trophy, TrendingUp, AlertOctagon, FileText, RefreshCw, Search, PenLine } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { useUser } from '@/context/UserContext'
@@ -38,6 +38,16 @@ export default function InsightsPage() {
   const [loading, setLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [insightsHydrating, setInsightsHydrating] = useState(true)
+  const [analysisStage, setAnalysisStage] = useState(0)
+
+  const analysisStages = [
+    { message: 'Reading your transactions...', icon: 'FileText' },
+    { message: 'Identifying spending patterns...', icon: 'Search' },
+    { message: 'Comparing categories...', icon: 'BarChart2' },
+    { message: 'Writing your insights...', icon: 'PenLine' },
+    { message: 'Almost done...', icon: 'Sparkles' },
+  ]
 
   useEffect(() => {
     const load = async () => {
@@ -62,30 +72,56 @@ export default function InsightsPage() {
         }
       }
     } catch (e) {
-      console.warn('Failed to load saved insights from localStorage', e)
+      console.warn('Failed to load saved insights', e)
+    } finally {
+      setInsightsHydrating(false)
     }
   }, [user])
 
-  if (loading) return <InsightsSkeleton />
+  if (loading) return <InsightsSkeleton hasInsights={false} />
+  if (insightsHydrating) return <InsightsSkeleton hasInsights={insights.length > 0} />
   if (!mounted) return null
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   const last30DaysTx = transactions.filter(tx => new Date(tx.date) >= thirtyDaysAgo)
 
   const handleGenerate = async () => {
-    setDataLoading(true); setError(null)
+    setDataLoading(true)
+    setError(null)
+    setAnalysisStage(0)
+
+    // Stage progression timer
+    const stageTimers = [
+      setTimeout(() => setAnalysisStage(1), 2500),
+      setTimeout(() => setAnalysisStage(2), 5000),
+      setTimeout(() => setAnalysisStage(3), 7000),
+      setTimeout(() => setAnalysisStage(4), 9000),
+    ]
+
     try {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      const recentTx = transactions.filter(tx => new Date(tx.date) >= thirtyDaysAgo).map(tx => ({ amount: tx.amount, type: tx.type, category: tx.category, note: tx.note, date: tx.date }))
-      const result = await aiInsights(recentTx)
+      const recentTx = transactions
+        .filter(tx => new Date(tx.date) >= thirtyDaysAgo)
+        .map(tx => ({ amount: tx.amount, type: tx.type, category: tx.category, note: tx.note, date: tx.date }))
+
+      // Enforce minimum 10 second experience
+      const [result] = await Promise.all([
+        aiInsights(recentTx),
+        new Promise(resolve => setTimeout(resolve, 10000))
+      ])
+
       const timestamp = new Date().toLocaleString('en-IN')
       setInsights(result)
       setSavedTimestamp(timestamp)
       const key = userId ? 'finflow_insights_' + userId : 'finflow_insights_guest'
       localStorage.setItem(key, JSON.stringify({ insights: result, timestamp }))
-    } catch (err: any) { 
-      setError(err?.message || t('errorOccurred')) 
-    } finally { setDataLoading(false) }
+    } catch (err: any) {
+      setError(err?.message || t('errorOccurred'))
+    } finally {
+      stageTimers.forEach(clearTimeout)
+      setDataLoading(false)
+      setAnalysisStage(0)
+    }
   }
 
   const generateButton = (
@@ -159,24 +195,59 @@ export default function InsightsPage() {
           )}
         </div>
 
-        {/* Loading State - Full page skeleton */}
+        {/* Loading State - Staged AI analysis */}
         {dataLoading ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Progress bar */}
-            <div className="w-full h-1 rounded-full overflow-hidden bg-[#0A7B7B]/15">
+            <div className="w-full h-1.5 rounded-full overflow-hidden bg-[#0A7B7B]/15">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#0A7B7B] to-[#10B981]"
-                style={{ animation: 'progress-bar 4s ease-in-out infinite' }}
+                className="h-full rounded-full bg-gradient-to-r from-[#0A7B7B] to-[#10B981] transition-all duration-1000"
+                style={{
+                  width: `${[10, 30, 55, 75, 92][analysisStage]}%`,
+                }}
               />
             </div>
 
-            {/* Status text */}
-            <p className="text-center text-sm font-medium text-[#475569]">
-              AI is analysing your finances
-              <span className="animate-pulse"> ...</span>
-            </p>
+            {/* Stage message with icon */}
+            <div className="flex flex-col items-center gap-3 py-2">
+              {/* Pulsing icon circle */}
+              <div
+                className="w-14 h-14 rounded-full bg-[#F0FDF9] flex items-center justify-center"
+                style={{ animation: 'pulse-icon 1.5s ease-in-out infinite' }}
+              >
+                {analysisStage === 0 && <FileText className="w-6 h-6 text-[#0A7B7B]" />}
+                {analysisStage === 1 && <Search className="w-6 h-6 text-[#0A7B7B]" />}
+                {analysisStage === 2 && <BarChart2 className="w-6 h-6 text-[#0A7B7B]" />}
+                {analysisStage === 3 && <PenLine className="w-6 h-6 text-[#0A7B7B]" />}
+                {analysisStage === 4 && <Sparkles className="w-6 h-6 text-[#0A7B7B]" />}
+              </div>
 
-            {/* Skeleton cards — match new card design */}
+              {/* Stage message — fades between stages */}
+              <p
+                key={analysisStage}
+                className="text-sm font-medium text-[#0F172A] text-center"
+                style={{ animation: 'slideUp 0.4s ease forwards' }}
+              >
+                {analysisStages[analysisStage].message}
+              </p>
+
+              {/* Stage dots indicator */}
+              <div className="flex items-center gap-1.5">
+                {analysisStages.map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-full transition-all duration-500"
+                    style={{
+                      width: i === analysisStage ? 20 : 6,
+                      height: 6,
+                      backgroundColor: i <= analysisStage ? '#0A7B7B' : '#E2E8F0',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Skeleton cards */}
             <div className="grid gap-3">
               {[0, 1, 2, 3].map((i) => (
                 <div
@@ -184,34 +255,17 @@ export default function InsightsPage() {
                   className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"
                   style={{ borderLeft: '3px solid #E2E8F0' }}
                 >
-                  {/* Top row */}
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-slate-100 animate-pulse flex-shrink-0" />
-                      <div
-                        className="h-4 rounded-md bg-slate-100 animate-pulse"
-                        style={{ width: `${120 + i * 20}px`, animationDelay: `${i * 0.1}s` }}
-                      />
+                      <div className="h-4 rounded-md bg-slate-100 animate-pulse" style={{ width: `${110 + i * 25}px` }} />
                     </div>
-                    <div
-                      className="h-5 w-14 rounded-full bg-slate-100 animate-pulse"
-                      style={{ animationDelay: `${i * 0.1 + 0.05}s` }}
-                    />
+                    <div className="h-5 w-16 rounded-full bg-slate-100 animate-pulse" />
                   </div>
-                  {/* Description lines */}
                   <div className="pl-10 space-y-2">
-                    <div
-                      className="h-3 rounded-md bg-slate-100 animate-pulse"
-                      style={{ width: '95%', animationDelay: `${i * 0.1 + 0.1}s` }}
-                    />
-                    <div
-                      className="h-3 rounded-md bg-slate-100 animate-pulse"
-                      style={{ width: '80%', animationDelay: `${i * 0.1 + 0.15}s` }}
-                    />
-                    <div
-                      className="h-3 rounded-md bg-slate-100 animate-pulse"
-                      style={{ width: '60%', animationDelay: `${i * 0.1 + 0.2}s` }}
-                    />
+                    <div className="h-3 rounded-md bg-slate-100 animate-pulse" style={{ width: '92%' }} />
+                    <div className="h-3 rounded-md bg-slate-100 animate-pulse" style={{ width: '78%' }} />
+                    <div className="h-3 rounded-md bg-slate-100 animate-pulse" style={{ width: '55%' }} />
                   </div>
                 </div>
               ))}
