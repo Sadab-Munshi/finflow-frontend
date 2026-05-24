@@ -30,7 +30,7 @@ const fabInputMethods = [
   { icon: PenLine, label: "Type", color: "bg-blue-500", tab: "manual" },
   { icon: Mic, label: "Voice", color: "bg-green-500", tab: "voice" },
   { icon: Camera, label: "Scan", color: "bg-orange-500", tab: "scan" },
-  { icon: FileText, label: "PDF", color: "bg-red-500", tab: "pdf" },
+  { icon: FileText, label: "PDF", color: "bg-red-500", tab: "scan" },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -255,14 +255,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </div>
 
-        {/* FAB Button - Demo Code Blue */}
-        <button
-          onClick={() => setFabOpen(!fabOpen)}
-          className={cn(
-            "w-14 h-14 rounded-full bg-[#4361EE] text-white shadow-lg flex items-center justify-center transition-transform hover:scale-105",
-            fabOpen && "rotate-45"
-          )}
-        >
+        {/* FAB Button - Matching App Theme */}
+<button
+  onClick={() => setFabOpen(!fabOpen)}
+  className={cn(
+    "w-14 h-14 rounded-full bg-teal-600 text-white shadow-lg shadow-teal-600/30 flex items-center justify-center transition-transform hover:scale-105 hover:bg-teal-700",
+    fabOpen && "rotate-45"
+  )}
+>
           <Plus className="h-6 w-6" />
         </button>
       </div>
