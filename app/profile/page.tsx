@@ -405,12 +405,33 @@ export default function ProfilePage() {
 
   return (
     <Layout>
-      <div className="w-full max-w-2xl mx-auto pb-10">
+      <div className="w-full max-w-3xl mx-auto pb-10">
+
+        <style>{`
+          @keyframes shine {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+          }
+          .shine-text {
+            background: linear-gradient(
+              90deg,
+              #fcd34d 0%,
+              #fef9c3 40%,
+              #fcd34d 60%,
+              #f59e0b 100%
+            );
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shine 2.5s linear infinite;
+          }
+        `}</style>
 
         {/* SECTION 1 — HERO HEADER */}
         <div
-          className="relative overflow-hidden md:rounded-2xl md:mx-4"
-          style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', minHeight: 130, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+          className="relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #0d9488 0%, #059669 100%)', minHeight: 130 }}
         >
           {/* Geometric pattern overlay */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -476,15 +497,16 @@ export default function ProfilePage() {
               {uploading && <p className="text-xs text-white/70 animate-pulse">Uploading...</p>}
               {memberSince && (
                 <div
-                  className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex items-center gap-1 text-[10px] sm:text-xs font-semibold w-fit"
+                  className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex items-center gap-1 w-fit"
                   style={{
-                    background: 'rgba(251,191,36,0.2)',
-                    color: '#fcd34d',
+                    background: 'rgba(251,191,36,0.15)',
                     border: '1px solid rgba(251,191,36,0.4)',
                   }}
                 >
-                  <Star size={8} className="sm:w-2.5 sm:h-2.5" fill="#fcd34d" strokeWidth={0} />
-                  Member since {memberSince}
+                  <Star size={8} fill="#fcd34d" strokeWidth={0} className="flex-shrink-0" />
+                  <span className="shine-text text-[10px] sm:text-xs font-semibold">
+                    Member since {memberSince}
+                  </span>
                 </div>
               )}
             </div>
@@ -492,7 +514,7 @@ export default function ProfilePage() {
         </div>
 
         {/* SECTION 2 — STATS ROW */}
-        <div className="px-4 mt-3 relative z-20">
+        <div className="sm:px-0 px-3 mt-3 relative z-20">
           <div className="grid grid-cols-3 gap-2">
             {[
               { icon: ClipboardList, value: String(totalEntries), label: 'Entries' },
@@ -515,7 +537,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="px-4 mt-4 space-y-3">
+        <div className="sm:px-0 px-3 mt-4 space-y-3">
 
           {/* SECTION 3 — ACCOUNT INFO */}
           <div>
