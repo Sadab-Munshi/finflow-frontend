@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, TrendingDown, PiggyBank, Eye, EyeOff, Lightbulb, ChevronRight } from 'lucide-react'
 import {
@@ -76,7 +76,6 @@ export default function DashboardPage() {
   const [isDesktop, setIsDesktop] = useState(false)
   const [dashboardView, setDashboardView] = useState<'month' | 'all'>('month')
   const [hideBalance, setHideBalance] = useState(false)
-  const [activeFilter, setActiveFilter] = useState<'7D' | '14D' | '1M' | '3M' | '1Y'>('7D')
 
   useEffect(() => {
     const load = async () => {
@@ -162,17 +161,12 @@ export default function DashboardPage() {
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
-  // Dynamic Historical Data Generator
-  const getHistoricalData = (daysCount: number) => {
+  const getLast7Days = () => {
     const days = []
-    for (let i = daysCount - 1; i >= 0; i--) {
+    for (let i = 6; i >= 0; i--) {
       const dateYMD = getISTDateOffset(i)
-      const dateObj = new Date(dateYMD + 'T00:00:00')
-      
-      // Clean X-Axis scaling: formats to "Jan 12" for longer ranges, "Mon" for shorter ranges
-      const dayName = daysCount > 14
-        ? dateObj.toLocaleDateString('en', { month: 'short', day: 'numeric' })
-        : dateObj.toLocaleDateString('en', { weekday: 'short' })
+      const dayName = new Date(dateYMD + 'T00:00:00')
+        .toLocaleDateString('en', { weekday: 'short' })
 
       const dayIncome = transactions
         .filter(t => t.type === 'income' && normalizeDateToYMD(t.date) === dateYMD)
@@ -187,20 +181,9 @@ export default function DashboardPage() {
     return days
   }
 
-  // Reactive Chart Data Computation
-  const chartData = useMemo(() => {
-    const filterDaysMap = {
-      '7D': 7,
-      '14D': 14,
-      '1M': 30,
-      '3M': 90,
-      '1Y': 365,
-    }
-    return getHistoricalData(filterDaysMap[activeFilter])
-  }, [activeFilter, transactions])
-
-  const chartIncomeTotal = useMemo(() => chartData.reduce((s, d) => s + d.income, 0), [chartData])
-  const chartExpenseTotal = useMemo(() => chartData.reduce((s, d) => s + d.expense, 0), [chartData])
+  const weeklyData = getLast7Days()
+  const weeklyIncomeTotal = weeklyData.reduce((s, d) => s + d.income, 0)
+  const weeklyExpenseTotal = weeklyData.reduce((s, d) => s + d.expense, 0)
 
   const buildPieData = (expenseTxs: Transaction[], totalExpense: number) => {
     const totals: Record<string, number> = {}
@@ -258,8 +241,8 @@ export default function DashboardPage() {
 
   // Insight card data
   const topCategory = pieData.length > 0 ? pieData[0] : null
-  const sparklinePoints = chartData.slice(-7).map((d, i) => {
-    const maxE = Math.max(...chartData.slice(-7).map(w => w.expense), 1)
+  const sparklinePoints = weeklyData.map((d, i) => {
+    const maxE = Math.max(...weeklyData.map(w => w.expense), 1)
     const x = (i / 6) * 80
     const y = 38 - (d.expense / maxE) * 34
     return `${x},${y}`
@@ -443,21 +426,21 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-[#0F172A]">Weekly Activity</h2>
-              <p className="text-xs text-[#64748B] mt-0.5">Income and expenses over the selected range</p>
+              <p className="text-xs text-[#64748B] mt-0.5">Income and expenses over the last 7 days</p>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#00B894] shadow-[0_0_8px_rgba(0,184,148,0.5)]" />
                 <div>
                   <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">Income</span>
-                  <span className="text-[#0F172A] font-bold text-sm">{formatIndianCurrency(chartIncomeTotal)}</span>
+                  <span className="text-[#0F172A] font-bold text-sm">{formatIndianCurrency(weeklyIncomeTotal)}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A5F] shadow-[0_0_8px_rgba(255,90,95,0.5)]" />
                 <div>
                   <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">Expense</span>
-                  <span className="text-[#0F172A] font-bold text-sm">{formatIndianCurrency(chartExpenseTotal)}</span>
+                  <span className="text-[#0F172A] font-bold text-sm">{formatIndianCurrency(weeklyExpenseTotal)}</span>
                 </div>
               </div>
             </div>
@@ -465,7 +448,7 @@ export default function DashboardPage() {
 
           <div className="h-[220px] sm:h-[260px] md:h-[340px] mt-6 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
+              <AreaChart data={weeklyData || []} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#00B894" stopOpacity={0.2}/>
@@ -523,26 +506,6 @@ export default function DashboardPage() {
                 />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
-
-          <div className="flex items-center gap-2 mt-6 pt-4 border-t border-[#F1F5F9] overflow-x-auto scrollbar-hide">
-            {(['7D', '14D', '1M', '3M', '1Y'] as const).map((filter) => {
-              const isActive = activeFilter === filter
-              return (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={cn(
-                    "px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap",
-                    isActive
-                      ? "bg-[#00B894] text-white shadow-[0_4px_12px_rgba(0,184,148,0.25)]"
-                      : "bg-[#F8FAFC] text-[#64748B] hover:bg-[#F1F5F9]"
-                  )}
-                >
-                  {filter}
-                </button>
-              )
-            })}
           </div>
         </div>
 
