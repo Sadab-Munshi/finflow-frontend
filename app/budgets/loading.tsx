@@ -1,5 +1,6 @@
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import Layout from '@/components/layout/Layout'
+import BudgetsSkeleton from '@/components/skeletons/BudgetsSkeleton'
 
 export default function BudgetsLoading() {
-  return <LoadingScreen />
+  return <Layout><BudgetsSkeleton /></Layout>
 }
