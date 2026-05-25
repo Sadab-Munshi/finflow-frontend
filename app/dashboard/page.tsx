@@ -1,9 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, TrendingDown, PiggyBank, Eye, EyeOff, Lightbulb, ChevronRight } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions } from '@/lib/db'
@@ -31,6 +42,30 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'Other': <CircleDot className="w-4 h-4" />,
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-[#EEF2F7] min-w-[140px]">
+        <p className="text-xs font-bold text-[#64748B] mb-2">{label}</p>
+        <div className="space-y-1.5">
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-4">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-[#475569]">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.stroke || entry.color }} />
+                {entry.name}
+              </span>
+              <span className="text-xs font-bold text-[#0F172A]">
+                {formatIndianCurrency(Number(entry.value))}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  return null
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const { t } = useLanguage()
@@ -41,6 +76,7 @@ export default function DashboardPage() {
   const [isDesktop, setIsDesktop] = useState(false)
   const [dashboardView, setDashboardView] = useState<'month' | 'all'>('month')
   const [hideBalance, setHideBalance] = useState(false)
+  const [activeFilter, setActiveFilter] = useState<'7D' | '14D' | '1M' | '3M' | '1Y'>('7D')
 
   useEffect(() => {
     const load = async () => {
@@ -126,12 +162,17 @@ export default function DashboardPage() {
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
-  const getLast7Days = () => {
+  // Dynamic Historical Data Generator
+  const getHistoricalData = (daysCount: number) => {
     const days = []
-    for (let i = 6; i >= 0; i--) {
+    for (let i = daysCount - 1; i >= 0; i--) {
       const dateYMD = getISTDateOffset(i)
-      const dayName = new Date(dateYMD + 'T00:00:00')
-        .toLocaleDateString('en', { weekday: 'short' })
+      const dateObj = new Date(dateYMD + 'T00:00:00')
+      
+      // Clean X-Axis scaling: formats to "Jan 12" for longer ranges, "Mon" for shorter ranges
+      const dayName = daysCount > 14
+        ? dateObj.toLocaleDateString('en', { month: 'short', day: 'numeric' })
+        : dateObj.toLocaleDateString('en', { weekday: 'short' })
 
       const dayIncome = transactions
         .filter(t => t.type === 'income' && normalizeDateToYMD(t.date) === dateYMD)
@@ -146,7 +187,20 @@ export default function DashboardPage() {
     return days
   }
 
-  const weeklyData = getLast7Days()
+  // Reactive Chart Data Computation
+  const chartData = useMemo(() => {
+    const filterDaysMap = {
+      '7D': 7,
+      '14D': 14,
+      '1M': 30,
+      '3M': 90,
+      '1Y': 365,
+    }
+    return getHistoricalData(filterDaysMap[activeFilter])
+  }, [activeFilter, transactions])
+
+  const chartIncomeTotal = useMemo(() => chartData.reduce((s, d) => s + d.income, 0), [chartData])
+  const chartExpenseTotal = useMemo(() => chartData.reduce((s, d) => s + d.expense, 0), [chartData])
 
   const buildPieData = (expenseTxs: Transaction[], totalExpense: number) => {
     const totals: Record<string, number> = {}
@@ -202,37 +256,14 @@ export default function DashboardPage() {
     return formatIST(tx.created_at)
   }
 
-  // Weekly chart totals & outlier detection
-  const weeklyIncomeTotal = weeklyData.reduce((s, d) => s + d.income, 0)
-  const weeklyExpenseTotal = weeklyData.reduce((s, d) => s + d.expense, 0)
-  const expenseValues = weeklyData.map(d => d.expense).filter(v => v > 0)
-  const expenseAvg = expenseValues.length > 0 ? expenseValues.reduce((a, b) => a + b, 0) / expenseValues.length : 0
-  const expenseMax = Math.max(...weeklyData.map(d => d.expense), 0)
-  const expenseCap = Math.ceil(expenseMax * 1.2)
-
   // Insight card data
   const topCategory = pieData.length > 0 ? pieData[0] : null
-  const sparklinePoints = weeklyData.map((d, i) => {
-    const maxE = Math.max(...weeklyData.map(w => w.expense), 1)
+  const sparklinePoints = chartData.slice(-7).map((d, i) => {
+    const maxE = Math.max(...chartData.slice(-7).map(w => w.expense), 1)
     const x = (i / 6) * 80
     const y = 38 - (d.expense / maxE) * 34
     return `${x},${y}`
   }).join(' ')
-
-  // Custom outlier label for bar chart
-  const OutlierLabel = (props: Record<string, unknown>) => {
-    const { x, y, width, value, index } = props as { x: number; y: number; width: number; value: number; index: number }
-    const isExpense = weeklyData[index]?.expense === value
-    if (!isExpense || value <= 0 || expenseAvg <= 0 || value <= 2.5 * expenseAvg) return null
-    return (
-      <g>
-        <rect x={x + width / 2 - 32} y={y - 22} width={64} height={18} rx={9} fill="#EF4444" />
-        <text x={x + width / 2} y={y - 10} textAnchor="middle" fill="white" fontSize={10} fontWeight="600">
-          High expense
-        </text>
-      </g>
-    )
-  }
 
   const formatAmount = (val: number) => hideBalance ? '\u2022\u2022\u2022\u2022\u2022\u2022' : formatIndianCurrency(val)
 
@@ -408,39 +439,110 @@ export default function DashboardPage() {
         </div>
 
         {/* 6. Weekly Activity Chart */}
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-[#0F172A]">Weekly Activity</h2>
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#0A7B7B]" />
-                <span className="text-[#475569]">{formatIndianCurrency(weeklyIncomeTotal)}</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
-                <span className="text-[#475569]">{formatIndianCurrency(weeklyExpenseTotal)}</span>
-              </span>
+        <div className="bg-white rounded-[28px] shadow-[0_10px_40px_rgba(15,23,42,0.06)] border border-[#EEF2F7] p-4 sm:p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-[#0F172A]">Weekly Activity</h2>
+              <p className="text-xs text-[#64748B] mt-0.5">Income and expenses over the selected range</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00B894] shadow-[0_0_8px_rgba(0,184,148,0.5)]" />
+                <div>
+                  <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">Income</span>
+                  <span className="text-[#0F172A] font-bold text-sm">{formatIndianCurrency(chartIncomeTotal)}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A5F] shadow-[0_0_8px_rgba(255,90,95,0.5)]" />
+                <div>
+                  <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">Expense</span>
+                  <span className="text-[#0F172A] font-bold text-sm">{formatIndianCurrency(chartExpenseTotal)}</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="h-48 md:h-64">
+
+          <div className="h-[220px] sm:h-[260px] md:h-[340px] mt-6 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyData || []} margin={{ top: 20, right: 5, left: 5, bottom: 5 }} barGap={2}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#64748B' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#64748B' }} axisLine={false} tickLine={false} domain={[0, expenseCap]} />
-                <Tooltip
-                  formatter={(value, name) => [formatIndianCurrency(Number(value)), name]}
-                  contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
+              <AreaChart data={chartData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00B894" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#00B894" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#FF5A5F" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#FF5A5F" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7" vertical={false} />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 11, fill: '#64748B', fontWeight: 500 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dy={8}
                 />
-                <Legend
-                  wrapperStyle={{ fontSize: '12px' }}
-                  verticalAlign="bottom"
-                  align="center"
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#64748B', fontWeight: 500 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(value) => {
+                    if (value >= 1000) return `${(value / 1000).toFixed(0)}k`
+                    return value
+                  }}
+                  dx={-8}
                 />
-                <Bar dataKey="income" name="Income" fill="#0A7B7B" barSize={22} radius={[4, 4, 0, 0]} minPointSize={3} />
-                <Bar dataKey="expense" name="Expense" fill="#EF4444" barSize={22} radius={[4, 4, 0, 0]} minPointSize={3} label={<OutlierLabel />} />
-              </BarChart>
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  name="Income"
+                  stroke="#00B894"
+                  strokeWidth={3}
+                  fill="url(#incomeGradient)"
+                  dot={false}
+                  activeDot={{ r: 6, stroke: '#00B894', strokeWidth: 4, fill: '#FFFFFF' }}
+                  isAnimationActive={true}
+                  animationDuration={1200}
+                  animationEasing="ease-out"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  name="Expense"
+                  stroke="#FF5A5F"
+                  strokeWidth={3}
+                  fill="url(#expenseGradient)"
+                  dot={false}
+                  activeDot={{ r: 6, stroke: '#FF5A5F', strokeWidth: 4, fill: '#FFFFFF' }}
+                  isAnimationActive={true}
+                  animationDuration={1200}
+                  animationEasing="ease-out"
+                />
+              </AreaChart>
             </ResponsiveContainer>
+          </div>
+
+          <div className="flex items-center gap-2 mt-6 pt-4 border-t border-[#F1F5F9] overflow-x-auto scrollbar-hide">
+            {(['7D', '14D', '1M', '3M', '1Y'] as const).map((filter) => {
+              const isActive = activeFilter === filter
+              return (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={cn(
+                    "px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap",
+                    isActive
+                      ? "bg-[#00B894] text-white shadow-[0_4px_12px_rgba(0,184,148,0.25)]"
+                      : "bg-[#F8FAFC] text-[#64748B] hover:bg-[#F1F5F9]"
+                  )}
+                >
+                  {filter}
+                </button>
+              )
+            })}
           </div>
         </div>
 
