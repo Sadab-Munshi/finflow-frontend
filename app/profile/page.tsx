@@ -405,7 +405,7 @@ export default function ProfilePage() {
 
   return (
     <Layout>
-      <div className="w-full max-w-3xl mx-auto pb-10">
+      <div className="w-full pb-10">
 
         <style>{`
           @keyframes shine {
