@@ -424,7 +424,7 @@ export default function ProfilePage() {
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: shine 2.5s linear infinite;
+            animation: shine 4s linear infinite;
           }
         `}</style>
 
@@ -747,12 +747,14 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex-shrink-0 ml-auto flex items-center gap-2">
                       {!whatsappConnected && (
-                        <button
-                          onClick={connectWhatsApp}
-                          className="text-xs font-semibold text-teal-600 flex items-center gap-0.5"
-                        >
-                          Open <ExternalLink size={11} />
-                        </button>
+                        <span className="hidden">
+                          <button
+                            onClick={connectWhatsApp}
+                            className="text-xs font-semibold text-teal-600 flex items-center gap-0.5"
+                          >
+                            Open <ExternalLink size={11} />
+                          </button>
+                        </span>
                       )}
                       <Toggle
                         checked={whatsappConnected}
