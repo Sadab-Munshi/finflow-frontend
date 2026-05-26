@@ -263,8 +263,16 @@ export default function NotificationsPage() {
                 placeholder="Search notifications..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-100 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 border-none outline-none focus:ring-2 focus:ring-[#0A7B7B]/20 focus:bg-white transition-all"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-100 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 border-none outline-none focus:ring-2 focus:ring-[#0A7B7B]/20 focus:bg-white transition-all"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-300 hover:bg-slate-400 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-3 h-3 text-white" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -345,6 +353,15 @@ export default function NotificationsPage() {
                         <Square className="w-4 h-4 text-[#0A7B7B]" />
                         Select all
                       </button>
+                      {selectMode && (
+                        <button
+                          onClick={() => { clearSelection(); setMenuOpen(false) }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-[#F1F5F9]"
+                        >
+                          <X className="w-4 h-4 text-red-500" />
+                          Cancel selection
+                        </button>
+                      )}
                     </motion.div>
                   </>
                 )}
@@ -370,9 +387,17 @@ export default function NotificationsPage() {
                   {allSelected ? <CheckSquare className="w-4 h-4 text-[#0A7B7B]" /> : <Square className="w-4 h-4" />}
                   {allSelected ? 'Deselect all' : 'Select all'}
                 </button>
-                <span className="text-xs font-medium text-slate-400">
-                  {selected.size} selected
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-slate-400">
+                    {selected.size} selected
+                  </span>
+                  <button
+                    onClick={() => clearSelection()}
+                    className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -413,7 +438,7 @@ export default function NotificationsPage() {
           </div>
         ) : (
           /* ── Grouped notifications ───────────────────────────── */
-          <div className="divide-y divide-[#F1F5F9]">
+          <div>
             {groupOrder.map(group => (
               <section key={group}>
                 {/* Group header */}
@@ -438,12 +463,12 @@ export default function NotificationsPage() {
                           exit={{ opacity: 0, height: 0 }}
                           transition={{ duration: 0.15 }}
                           onClick={() => handleNotificationClick(notification)}
-                          className={`group flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors border-l-[3px] ${
+                          className={`group flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors border-b border-[#F1F5F9] ${
                             isSelected
-                              ? 'bg-[#F0FDF9]/50 border-l-[#0A7B7B]'
+                              ? 'bg-[#F0FDF9]/50'
                               : !notification.read
-                                ? 'bg-[#F0FDF9]/40 border-l-[#0A7B7B] hover:bg-[#F0FDF9]/60'
-                                : 'border-l-transparent hover:bg-slate-50/50'
+                                ? 'bg-[#F0FDF9]/40 hover:bg-[#F0FDF9]/60'
+                                : 'hover:bg-slate-50/50'
                           }`}
                         >
                           {/* Select checkbox */}
