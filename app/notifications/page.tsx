@@ -240,13 +240,31 @@ export default function NotificationsPage() {
 
   if (loading) return <Layout><NotificationsSkeleton /></Layout>
 
+  /* PNG → Emoji → Lucide fallback chain for notification icons */
+  function renderNotificationIcon(icon: string | undefined, type: string) {
+    if (icon?.endsWith('.png')) {
+      return (
+        <img
+          src={`/icons-png/${icon}`}
+          alt=""
+          className="w-5 h-5 object-contain"
+          loading="lazy"
+        />
+      )
+    }
+    if (icon) {
+      return <span className="text-base leading-none">{icon}</span>
+    }
+    return getNotificationIcon(type)
+  }
+
   /* ── Render ─────────────────────────────────────────────────────── */
   return (
     <Layout>
-      <div className="w-full bg-white min-h-screen sm:min-h-0">
+      <div className="max-w-4xl mx-auto w-full bg-white min-h-screen sm:min-h-0 px-0 sm:px-4 lg:px-6">
                 {/* ── Header ────────────────────────────────────────────── */}
         <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-slate-100">
-          <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center justify-between px-4 py-2.5 sm:py-3">
             <div className="w-9" />
 
             <h1 className="text-lg font-semibold text-slate-900">Notifications</h1>
@@ -255,7 +273,7 @@ export default function NotificationsPage() {
           </div>
 
           {/* ── Search bar ──────────────────────────────────────── */}
-          <div className="px-4 pb-3">
+          <div className="px-4 pb-2 sm:pb-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -277,7 +295,7 @@ export default function NotificationsPage() {
           </div>
 
           {/* ─ Filter tabs & Mark all read ─────────────────────── */}
-          <div className="flex items-center justify-between px-4 pb-3">
+          <div className="flex items-center justify-between px-4 pb-2 sm:pb-3">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => { setFilter('all'); setSelected(new Set()) }}
@@ -487,9 +505,7 @@ export default function NotificationsPage() {
 
                           {/* Icon */}
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-                            <span className="text-base">
-                              {notification.icon || getNotificationIcon(notification.type)}
-                            </span>
+                            {renderNotificationIcon(notification.icon, notification.type)}
                           </div>
 
                           {/* Content */}
