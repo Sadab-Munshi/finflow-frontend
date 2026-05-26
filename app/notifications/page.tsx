@@ -194,7 +194,11 @@ export default function NotificationsPage() {
     const ids = Array.from(selected)
     const supabase = createClient()
     await supabase.from('notifications').update({ read: true }).in('id', ids)
-    setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n))    setSelected(new Set())
+    
+    // ✅ FIXED: Split into two separate lines
+    setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n))
+    setSelected(new Set())
+    
     setSelectMode(false)
     toast.success(`${ids.length} notification${ids.length > 1 ? 's' : ''} marked as read`)
   }
