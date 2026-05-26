@@ -1,6 +1,6 @@
 export default function BudgetsSkeleton() {
   return (
-    <div className="max-w-2xl mx-auto pb-8 animate-pulse">
+    <div className="w-full pb-8 animate-pulse">
 
       {/* ── Page Header ───────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4">
