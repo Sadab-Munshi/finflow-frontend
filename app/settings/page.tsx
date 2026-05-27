@@ -14,7 +14,6 @@ import {
   DialogContent,
 } from '@/components/ui/dialog'
 import { createClient } from '@/lib/supabase/client'
-import LoadingScreen from '@/components/ui/LoadingScreen'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -25,8 +24,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 export default function SettingsPage() {
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
-  const [loading, setLoading] = useState(true)
 
   // Email notifications
   const [emailMonthlyReport, setEmailMonthlyReport] = useState(true)
@@ -99,8 +96,6 @@ export default function SettingsPage() {
           setInAppDailySummary(data.inapp_daily_summary === true)
         }
       }
-      setLoading(false)
-      setMounted(true)
     }
     load()
 
@@ -111,9 +106,6 @@ export default function SettingsPage() {
     window.addEventListener('beforeinstallprompt', handler as EventListener)
     return () => window.removeEventListener('beforeinstallprompt', handler as EventListener)
   }, [])
-
-  if (loading) return <LoadingScreen />
-  if (!mounted) return null
 
   const saveNotificationSetting = async (key: string, value: boolean) => {
     const supabase = createClient()
@@ -153,7 +145,7 @@ export default function SettingsPage() {
 
   return (
     <Layout>
-      <div className="w-full max-w-2xl mx-auto px-4 pb-24">
+      <div className="w-full max-w-none md:max-w-2xl lg:max-w-3xl mx-auto px-4 pb-24">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#0F172A]">Settings</h1>
