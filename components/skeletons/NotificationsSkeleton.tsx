@@ -1,6 +1,6 @@
 export default function NotificationsSkeleton() {
   return (
-    <div className="max-w-2xl mx-auto pb-8 animate-pulse">
+    <div className="w-full bg-white min-h-screen">
 
       {/* ── Page header ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4">

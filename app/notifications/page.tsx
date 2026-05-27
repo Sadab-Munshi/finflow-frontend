@@ -261,7 +261,7 @@ export default function NotificationsPage() {
   /* ── Render ─────────────────────────────────────────────────────── */
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto w-full bg-white min-h-screen sm:min-h-0 px-0 sm:px-4 lg:px-6">
+      <div className="w-full bg-white min-h-screen sm:min-h-0 px-0 sm:px-4 lg:px-6">
                 {/* ── Header ────────────────────────────────────────────── */}
         <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-slate-100">
           <div className="flex items-center justify-between px-4 py-2.5 sm:py-3">
