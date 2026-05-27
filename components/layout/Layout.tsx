@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, History, PiggyBank, BarChart2, FileText, Settings,
-  User, PenLine, LogOut, X, Menu, Plus, Mic, Camera, Sparkles
+  User, PenLine, LogOut, PanelLeftClose, Menu, Plus, Mic, Camera, Sparkles
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
@@ -162,7 +162,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     className="text-teal-700 hover:text-teal-900 transition-colors flex-shrink-0"
                     aria-label="Close sidebar panel"
                   >
-                    <X className="w-5 h-5" />
+                    <PanelLeftClose className="w-5 h-5" />
                   </button>
                 </div>
               </div>
