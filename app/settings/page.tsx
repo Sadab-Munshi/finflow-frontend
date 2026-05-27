@@ -145,35 +145,38 @@ export default function SettingsPage() {
 
   return (
     <Layout>
-      <div className="w-full max-w-none md:max-w-2xl lg:max-w-3xl mx-auto px-4 pb-24">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[#0F172A]">Settings</h1>
-          <p className="text-sm text-[#64748B] mt-1">Manage your preferences</p>
+      <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-6 px-4 sm:px-6 lg:px-8 pb-24">
+        {/* Header + PWA Banner — full width */}
+        <div className="xl:col-span-2">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-[#0F172A]">Settings</h1>
+            <p className="text-sm text-[#64748B] mt-1">Manage your preferences</p>
+          </div>
+
+          {/* ── SECTION 1: PWA INSTALL BANNER ── */}
+          {installPrompt && (
+            <div className="bg-gradient-to-r from-[#0A7B7B] to-[#10B981] rounded-2xl p-4 shadow-md flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <Image src="/icons/icon-72x72.png" alt="FinFlow" width={28} height={28} className="rounded-md" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">Install FinFlow App</p>
+                  <p className="text-xs text-white/80">Add to home screen for quick access</p>
+                </div>
+              </div>
+              <button
+                onClick={handleInstallApp}
+                className="bg-white text-[#0A7B7B] font-semibold rounded-xl px-4 py-1.5 text-sm shrink-0"
+              >
+                Install
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* ── SECTION 1: PWA INSTALL BANNER ── */}
-        {installPrompt && (
-          <div className="bg-gradient-to-r from-[#0A7B7B] to-[#10B981] rounded-2xl p-4 shadow-md flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                <Image src="/icons/icon-72x72.png" alt="FinFlow" width={28} height={28} className="rounded-md" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white">Install FinFlow App</p>
-                <p className="text-xs text-white/80">Add to home screen for quick access</p>
-              </div>
-            </div>
-            <button
-              onClick={handleInstallApp}
-              className="bg-white text-[#0A7B7B] font-semibold rounded-xl px-4 py-1.5 text-sm shrink-0"
-            >
-              Install
-            </button>
-          </div>
-        )}
-
         {/* ── SECTION 2: EMAIL NOTIFICATIONS ── */}
+        <div>
         <div className="flex items-center gap-2 mt-6 mb-3">
           <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">EMAIL NOTIFICATIONS</span>
           <div className="flex-1 border-b border-[#E2E8F0]" />
@@ -222,8 +225,10 @@ export default function SettingsPage() {
             />
           </div>
         </div>
+        </div>
 
         {/* ── SECTION 3: PUSH NOTIFICATIONS ── */}
+        <div>
         <div className="flex items-center gap-2 mt-6 mb-3">
           <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">PUSH NOTIFICATIONS</span>
           <div className="flex-1 border-b border-[#E2E8F0]" />
@@ -316,8 +321,10 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+        </div>
 
         {/* ── SECTION 4: IN-APP NOTIFICATIONS ── */}
+        <div>
         <div className="flex items-center gap-2 mt-6 mb-3">
           <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">IN-APP NOTIFICATIONS</span>
           <div className="flex-1 border-b border-[#E2E8F0]" />
@@ -402,8 +409,10 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+        </div>
 
-        {/* ── SECTION 5: DANGER ZONE ── */}
+        {/* ── SECTION 5: DANGER ZONE + DELETE DIALOG — full width ── */}
+        <div className="xl:col-span-2">
         <div className="flex items-center gap-2 mt-6 mb-3">
           <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
           <span className="text-sm font-bold uppercase tracking-widest text-[#EF4444]">DANGER ZONE</span>
@@ -556,6 +565,7 @@ export default function SettingsPage() {
             </AnimatePresence>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     </Layout>
   )
