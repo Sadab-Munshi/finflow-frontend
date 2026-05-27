@@ -1,5 +1,5 @@
-import LoadingScreen from '@/components/ui/LoadingScreen'
+import SettingsSkeleton from '@/components/skeletons/SettingsSkeleton'
 
 export default function SettingsLoading() {
-  return <LoadingScreen />
+  return <SettingsSkeleton />
 }
