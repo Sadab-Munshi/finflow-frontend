@@ -235,7 +235,10 @@ export default function AdminNotificationsClient() {
             <div className="bg-gray-900 rounded-2xl p-5">
               <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Preview</h2>
               <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <p className="text-sm font-semibold text-white">🔔 {title || 'Notification Title'}</p>
+                <div className="flex items-center gap-1.5">
+                  <img src="/icons-png/bell.png" alt="" className="w-4 h-4 object-contain" />
+                  <p className="text-sm font-semibold text-white">{title || 'Notification Title'}</p>
+                </div>
                 <p className="text-xs text-gray-400 mt-1">{message || 'Notification message...'}</p>
                 {link && <p className="text-xs text-teal-400 mt-2">→ {link}</p>}
               </div>

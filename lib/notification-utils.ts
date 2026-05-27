@@ -1,10 +1,10 @@
 export function getNotificationIcon(type: string): string {
   switch (type) {
-    case 'budget_alert': return '💰'
-    case 'transaction': return '✅'
-    case 'report': return '📊'
-    case 'system': return '🔔'
-    default: return '🔔'
+    case 'budget_alert': return 'budget-alert.png'
+    case 'transaction': return 'transaction.png'
+    case 'report': return 'report.png'
+    case 'system': return 'bell.png'
+    default: return 'bell.png'
   }
 }
 
