@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { X, CheckCheck } from 'lucide-react'
+import { X, CheckCheck, Bell } from 'lucide-react'
 import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
 import type { Notification } from '@/lib/types'
 
@@ -57,9 +57,17 @@ export default function NotificationCenter({
               }`}
             >
               <div className="flex gap-3">
-                <span className="text-lg flex-shrink-0 mt-0.5">
-                  {notification.icon || getNotificationIcon(notification.type)}
-                </span>
+                {(notification.icon || getNotificationIcon(notification.type))?.endsWith('.png') ? (
+                  <img
+                    src={`/icons-png/${notification.icon || getNotificationIcon(notification.type)}`}
+                    alt=""
+                    className="w-6 h-6 object-contain flex-shrink-0"
+                  />
+                ) : (notification.icon || getNotificationIcon(notification.type)) ? (
+                  <span className="text-base leading-none">{notification.icon || getNotificationIcon(notification.type)}</span>
+                ) : (
+                  <Bell className="w-5 h-5 text-slate-400" />
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-800' : 'font-medium text-gray-600'}`}>
