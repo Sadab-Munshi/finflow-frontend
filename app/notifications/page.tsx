@@ -247,7 +247,7 @@ export default function NotificationsPage() {
         <img
           src={`/icons-png/${icon}`}
           alt=""
-          className="w-5 h-5 object-contain"
+          className="w-[26px] h-[26px] object-contain"
           loading="lazy"
         />
       )
@@ -504,7 +504,7 @@ export default function NotificationsPage() {
                           )}
 
                           {/* Icon */}
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
                             {renderNotificationIcon(notification.icon, notification.type)}
                           </div>
 

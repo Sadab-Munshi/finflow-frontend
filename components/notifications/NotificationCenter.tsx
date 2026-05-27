@@ -61,7 +61,7 @@ export default function NotificationCenter({
                   <img
                     src={`/icons-png/${notification.icon || getNotificationIcon(notification.type)}`}
                     alt=""
-                    className="w-6 h-6 object-contain flex-shrink-0"
+                    className="w-[28px] h-[28px] object-contain flex-shrink-0"
                   />
                 ) : (notification.icon || getNotificationIcon(notification.type)) ? (
                   <span className="text-base leading-none">{notification.icon || getNotificationIcon(notification.type)}</span>
