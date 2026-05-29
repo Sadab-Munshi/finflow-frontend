@@ -66,8 +66,8 @@ export default function AdminPanelClient() {
     setFeedbackLoading(false)
   }, [])
 
-  const handleBan = async (userId: string, action: string) => {
-    await adminBan({ userId, action: action as 'ban' | 'unban', reason: banReason })
+  const handleBan = async (userId: string, action: string, ipAddress?: string) => {
+    await adminBan({ userId, action: action as 'ban' | 'unban' | 'ip_ban', reason: banReason, ipAddress })
     setBanReason('')
     setSelectedUser(null)
     loadUsers()
@@ -256,7 +256,21 @@ export default function AdminPanelClient() {
                             user.is_banned ? (
                               <button onClick={() => { if (confirm('Unban this user?')) handleBan(user.id, 'unban') }} className="text-xs bg-green-700 px-2.5 py-1 rounded-lg">Unban</button>
                             ) : (
-                              <button onClick={() => setSelectedUser(user.id)} className="text-xs bg-red-700 px-2.5 py-1 rounded-lg">Ban</button>
+                              <>
+                                <button onClick={() => setSelectedUser(user.id)} className="text-xs bg-red-700 px-2.5 py-1 rounded-lg">Ban</button>
+                                {user.ip_address && (
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Ban all accounts from IP ${user.ip_address}?`)) {
+                                        handleBan(user.id, 'ip_ban', user.ip_address)
+                                      }
+                                    }}
+                                    className="text-xs bg-orange-700 hover:bg-orange-600 px-3 py-1 rounded-lg"
+                                  >
+                                    IP Ban
+                                  </button>
+                                )}
+                              </>
                             )
                           )}
                         </div>
