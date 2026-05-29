@@ -270,6 +270,7 @@ export async function adminSendNotification(data: {
   link?: string
   sendPush?: boolean
   sendInApp?: boolean
+  sendEmail?: boolean
   targetType: 'all' | 'specific'
   userIds?: string[]
 }) {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { adminClearTestNotifications, adminGetUsers, adminGetFeedback, adminBan } from '@/lib/api-client'
+import { adminGetUsers, adminGetFeedback, adminBan } from '@/lib/api-client'
 
 type FeedbackType = 'all' | 'general' | 'bug' | 'feature' | 'other'
 
@@ -32,25 +32,10 @@ export default function AdminPanelClient() {
   const [usersLoading, setUsersLoading] = useState(false)
   const [banReason, setBanReason] = useState('')
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
-  const [clearingNotifs, setClearingNotifs] = useState(false)
-  const [clearResult, setClearResult] = useState('')
 
   const [feedback, setFeedback] = useState<FeedbackItem[]>([])
   const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [feedbackFilter, setFeedbackFilter] = useState<FeedbackType>('all')
-
-  const handleClearTestNotifications = async () => {
-    if (!confirm('Delete all notifications with title "Test" or "Ok"?')) return
-    setClearingNotifs(true)
-    setClearResult('')
-    const data = await adminClearTestNotifications()
-    setClearingNotifs(false)
-    if (data.ok || data.success) {
-      setClearResult(`Deleted ${data.deleted} test notification(s)`)
-    } else {
-      setClearResult(`Error: ${data.error}`)
-    }
-  }
 
   const loadUsers = useCallback(async () => {
     setUsersLoading(true)
@@ -135,23 +120,7 @@ export default function AdminPanelClient() {
             <h1 className="text-xl font-bold tracking-tight">FinFlow Admin</h1>
             <p className="text-xs text-gray-500 mt-0.5">Internal dashboard — restricted access</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">{users.length} users</span>
-            <button
-              onClick={activeTab === 'users' ? loadUsers : loadFeedback}
-              className="text-xs bg-gray-800 hover:bg-gray-700 transition-colors px-3 py-1.5 rounded-lg"
-            >
-              Refresh
-            </button>
-            <button
-              onClick={handleClearTestNotifications}
-              disabled={clearingNotifs}
-              className="text-xs bg-yellow-800 hover:bg-yellow-700 transition-colors px-3 py-1.5 rounded-lg disabled:opacity-50"
-            >
-              {clearingNotifs ? 'Clearing...' : 'Clear Test Notifs'}
-            </button>
-            {clearResult && <span className="text-xs text-gray-300">{clearResult}</span>}
-          </div>
+          <span className="text-sm text-gray-400">{users.length} users</span>
         </div>
 
         {/* Stats */}
