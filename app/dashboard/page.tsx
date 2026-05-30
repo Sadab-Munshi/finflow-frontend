@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, TrendingDown, PiggyBank, Eye, EyeOff, Lightbulb, ChevronRight } from 'lucide-react'
 import {
@@ -24,6 +24,7 @@ import { getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD, getISTDateOffset } from '@/lib/utils'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import { Transaction } from '@/lib/types'
+import toast from 'react-hot-toast'
 
 // ── Category icons ────────────────────────────────────────────────────────────
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -91,6 +92,7 @@ export default function DashboardPage() {
   const [isDesktop, setIsDesktop]       = useState(false)
   const [dashboardView, setDashboardView] = useState<'month' | 'all'>('month')
   const [hideBalance, setHideBalance]   = useState(false)
+  const hasShownOfflineToast = useRef(false)
 
   // ── Data fetching ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -99,6 +101,14 @@ export default function DashboardPage() {
       setTransactions(data)
       setLoading(false)
       setMounted(true)
+      if (!navigator.onLine && data.length > 0 && !hasShownOfflineToast.current) {
+        hasShownOfflineToast.current = true
+        toast('Showing cached data. Connect to sync latest.', {
+          icon: '📡',
+          style: { background: '#eff6ff', color: '#1e40af' },
+          duration: 4000,
+        })
+      }
     }
     load()
 
