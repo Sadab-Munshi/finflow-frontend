@@ -58,7 +58,6 @@ function HistoryContent() {
   const [selectionMode, setSelectionMode] = useState(false)
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-  const hasShownOfflineToast = useRef(false)
 
   useEffect(() => {
     const load = async () => {
@@ -66,14 +65,6 @@ function HistoryContent() {
       setTransactions(data)
       setLoading(false)
       setMounted(true)
-      if (!navigator.onLine && data.length > 0 && !hasShownOfflineToast.current) {
-        hasShownOfflineToast.current = true
-        toast('Showing cached data. Connect to sync latest.', {
-          icon: '📡',
-          style: { background: '#eff6ff', color: '#1e40af' },
-          duration: 4000,
-        })
-      }
     }
     load()
   }, [])

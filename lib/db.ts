@@ -1,35 +1,17 @@
 import { createClient } from '@/lib/supabase/client'
 import { Transaction, Budget, Settings } from '@/lib/types'
 import { getCategoryById, categories } from '@/lib/categories'
-import {
-  cacheTransactions, getCachedTransactions,
-  cacheBudgets, getCachedBudgets,
-  cacheSettings, getCachedSettings,
-} from '@/lib/offlineQueue'
 
 const supabase = createClient()
 
 // TRANSACTIONS
 export async function getTransactions(): Promise<Transaction[]> {
-  try {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    const result = data || []
-    // Mirror to IndexedDB for offline access
-    cacheTransactions(result).catch(() => {})
-    return result
-  } catch {
-    // Fallback to IndexedDB cache
-    try {
-      const cached = await getCachedTransactions()
-      return cached || []
-    } catch {
-      return []
-    }
-  }
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) { console.error(error); return [] }
+  return data || []
 }
 
 export async function addTransaction(transaction: Omit<Transaction, 'id' | 'created_at'>): Promise<Transaction | null> {
@@ -42,11 +24,11 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'crea
     }
     userId = user.id
   }
-
+  
   // Get current time in IST (Asia/Kolkata)
   const istNow = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
   const istDate = new Date(istNow)
-
+  
   const payload = {
     user_id: userId,
     amount: Number(transaction.amount),
@@ -56,15 +38,15 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'crea
     date: transaction.date,
     created_at: istDate.toISOString(),
   }
-
+  
   console.log('Inserting transaction:', payload)
-
+  
   const { data, error } = await supabase
     .from('transactions')
     .insert(payload)
     .select()
     .single()
-
+    
   if (error) {
     console.error('Supabase insert error:', JSON.stringify(error))
     return null
@@ -108,25 +90,12 @@ export async function getTransactionById(id: string): Promise<Transaction | null
 
 // BUDGETS
 export async function getBudgets(): Promise<Budget[]> {
-  try {
-    const { data, error } = await supabase
-      .from('budgets')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    const result = data || []
-    // Mirror to IndexedDB for offline access
-    cacheBudgets(result).catch(() => {})
-    return result
-  } catch {
-    // Fallback to IndexedDB cache
-    try {
-      const cached = await getCachedBudgets()
-      return cached || []
-    } catch {
-      return []
-    }
-  }
+  const { data, error } = await supabase
+    .from('budgets')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) { console.error(error); return [] }
+  return data || []
 }
 
 export async function saveBudget(budget: Omit<Budget, 'id' | 'created_at'>): Promise<Budget | null> {
@@ -178,31 +147,22 @@ export async function getBudgetById(id: string): Promise<Budget | null> {
 
 // SETTINGS
 export async function getSettings(): Promise<Settings | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return { language: 'en', currency: 'INR', name: '' }
-      }
-      throw error
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+  if (error) {
+    // If no settings found, return default
+    if (error.code === 'PGRST116') {
+      return { language: 'en', currency: 'INR', name: '' }
     }
-    // Mirror to IndexedDB for offline access
-    cacheSettings(data).catch(() => {})
-    return data
-  } catch {
-    // Fallback to IndexedDB cache
-    try {
-      const cached = await getCachedSettings()
-      if (cached) return cached
-    } catch {}
-    return { language: 'en', currency: 'INR', name: '' }
+    console.error(error)
+    return null
   }
+  return data
 }
 
 export async function upsertSettings(settings: { language?: string; currency?: string; name?: string }): Promise<boolean> {

@@ -1,8 +1,4 @@
-const CACHE_NAME = 'finflow-v2';
-const DATA_CACHE = 'finflow-data-v1';
-const PAGE_CACHE = 'finflow-pages-v1';
-
-const PRESERVED_CACHES = [CACHE_NAME, DATA_CACHE, PAGE_CACHE];
+const CACHE_NAME = 'finflow-v1';
 
 const PRECACHE_ASSETS = [
   '/assets/loading.gif',
@@ -17,44 +13,21 @@ const PRECACHE_ASSETS = [
   '/finflow-logo.png',
 ];
 
-const APP_SHELL_PAGES = [
-  '/dashboard',
-  '/history',
-  '/budgets',
-  '/insights',
-  '/reports',
-  '/settings',
-  '/profile',
-  '/notifications',
-  '/add',
-];
-
-// Install: precache static assets + app shell pages
+// Install: precache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS)),
-      caches.open(PAGE_CACHE).then((cache) =>
-        Promise.all(
-          APP_SHELL_PAGES.map((page) =>
-            fetch(page).then((res) => {
-              if (res.ok) cache.put(page, res.clone());
-            }).catch(() => {/* offline during install — skip */})
-          )
-        )
-      ),
-    ])
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
   );
   self.skipWaiting();
 });
 
-// Activate: clean old caches, preserve known caches
+// Activate: clean old caches and claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => !PRESERVED_CACHES.includes(key))
+          .filter((key) => key !== CACHE_NAME)
           .map((key) => caches.delete(key))
       )
     )
@@ -72,18 +45,6 @@ self.addEventListener('fetch', (event) => {
 
   // Skip chrome-extension and other non-http schemes
   if (!url.protocol.startsWith('http')) return;
-
-  // Supabase REST data: stale-while-revalidate
-  if (isSupabaseDataRequest(url)) {
-    event.respondWith(staleWhileRevalidate(request, DATA_CACHE));
-    return;
-  }
-
-  // App shell HTML pages: network-first with page cache fallback
-  if (isAppShellPage(url)) {
-    event.respondWith(networkFirstWithPageCache(request));
-    return;
-  }
 
   // API routes: network-first (fresh data priority)
   if (url.pathname.startsWith('/api/')) {
@@ -207,22 +168,8 @@ async function networkFirst(request) {
   }
 }
 
-async function networkFirstWithPageCache(request) {
-  const cache = await caches.open(PAGE_CACHE);
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch {
-    const cached = await cache.match(request);
-    return cached || new Response('Offline', { status: 503 });
-  }
-}
-
-async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName || CACHE_NAME);
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
   const fetchPromise = fetch(request).then((response) => {
     if (response.ok) {
@@ -240,16 +187,4 @@ function isStaticAsset(pathname) {
     pathname.startsWith('/icons/') ||
     pathname.startsWith('/images/') ||
     pathname.startsWith('/assets/');
-}
-
-function isSupabaseDataRequest(url) {
-  if (!url.hostname.endsWith('.supabase.co')) return false;
-  if (!url.pathname.includes('/rest/v1/')) return false;
-  const tables = ['transactions', 'budgets', 'settings'];
-  return tables.some((table) => url.pathname.includes(`/rest/v1/${table}`));
-}
-
-function isAppShellPage(url) {
-  if (url.origin !== self.location.origin) return false;
-  return APP_SHELL_PAGES.some((page) => url.pathname === page || url.pathname.startsWith(page + '/'));
 }
