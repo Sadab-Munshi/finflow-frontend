@@ -8,7 +8,7 @@ export function WebsiteJsonLd() {
           '@context': 'https://schema.org',
           '@type': 'WebApplication',
           name: 'FinFlow',
-          url: 'https://app.sadabmunshi.online',
+          url: 'https://www.app.sadabmunshi.me',
           description:
             'Track every rupee effortlessly. Add expenses by voice, photo, or text in Hindi, English, or Bengali.',
           applicationCategory: 'FinanceApplication',
@@ -45,8 +45,8 @@ export function OrganizationJsonLd() {
           '@context': 'https://schema.org',
           '@type': 'Organization',
           name: 'FinFlow',
-          url: 'https://app.sadabmunshi.online',
-          logo: 'https://app.sadabmunshi.online/logo.png',
+          url: 'https://www.app.sadabmunshi.me',
+          logo: 'https://www.app.sadabmunshi.me/logo.png',
           sameAs: [],   // add your Twitter/LinkedIn URLs here later
         }),
       }}
