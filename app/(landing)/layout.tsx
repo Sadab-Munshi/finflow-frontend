@@ -163,7 +163,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 <li><a href="/support" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Support</a></li>
                 <li><a href="/user-guide" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">User Guide</a></li>
                 <li><a href="https://status.app.sadabmunshi.online" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">System Status</a></li>
-                <li><a href="https://sadabmunshi.online/blog/" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Blog</a></li>
+                <li><a href="https://sadabmunshi.me/blog/" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Blog</a></li>
               </ul>
             </div>
             <div>
@@ -176,7 +176,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             </div>
           </div>
           <div className="border-t border-gray-800 pt-6 text-sm text-gray-400">
-            © 2026 FinFlow. All rights reserved.
+            © 2026 Sadab Munshi. All rights reserved.
           </div>
         </div>
       </footer>
