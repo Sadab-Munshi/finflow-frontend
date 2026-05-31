@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   description:
     'Track every rupee effortlessly. Add expenses by voice, photo, or text in Hindi, English, or Bengali. Free personal finance tracker for India.',
 
-  metadataBase: new URL('https://app.sadabmunshi.online'),
+  metadataBase: new URL('https://www.app.sadabmunshi.me'),
   alternates: {
     canonical: '/',
   },
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: 'FinFlow',
     description:
       'Track every rupee effortlessly. Voice, photo, or text — in your language.',
-    url: 'https://app.sadabmunshi.online',
+    url: 'https://www.app.sadabmunshi.me',
     images: [
       {
         url: '/og-image.png',
@@ -85,7 +85,7 @@ export const metadata: Metadata = {
     'monthly budget India',
     'Bengali expense tracker',
   ],
-  authors: [{ name: 'Sadab Munshi', url: 'https://app.sadabmunshi.online' }],
+  authors: [{ name: 'Sadab Munshi', url: 'https://www.app.sadabmunshi.me' }],
   creator: 'Sadab Munshi',
   publisher: 'FinFlow',
 
