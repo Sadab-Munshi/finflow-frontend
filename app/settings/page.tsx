@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Layout from '@/components/layout/Layout'
+import { useLanguage } from '@/context/LanguageContext'
 import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
@@ -24,6 +25,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { t } = useLanguage()
 
   // Email notifications
   const [emailMonthlyReport, setEmailMonthlyReport] = useState(true)
@@ -135,11 +137,11 @@ export default function SettingsPage() {
     try {
       await deleteAllData()
       handleClose()
-      toast.success('All data deleted successfully')
+      toast.success(t('allDataDeletedSuccess'))
       router.push('/dashboard')
     } catch {
       setIsDeleting(false)
-      toast.error('Something went wrong. Please try again.')
+      toast.error(t('tryAgain'))
     }
   }
 
@@ -149,8 +151,8 @@ export default function SettingsPage() {
         {/* Header + PWA Banner — full width */}
         <div className="xl:col-span-2">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#0F172A]">Settings</h1>
-            <p className="text-sm text-[#64748B] mt-1">Manage your preferences</p>
+            <h1 className="text-2xl font-bold text-[#0F172A]">{t('settings')}</h1>
+            <p className="text-sm text-[#64748B] mt-1">{t('managePreferences')}</p>
           </div>
 
           {/* ── SECTION 1: PWA INSTALL BANNER ── */}
@@ -161,15 +163,15 @@ export default function SettingsPage() {
                   <Image src="/icons/icon-72x72.png" alt="FinFlow" width={28} height={28} className="rounded-md" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">Install FinFlow App</p>
-                  <p className="text-xs text-white/80">Add to home screen for quick access</p>
+                  <p className="text-sm font-semibold text-white">{t('installFinFlowApp')}</p>
+                  <p className="text-xs text-white/80">{t('homeScreenQuickAccess')}</p>
                 </div>
               </div>
               <button
                 onClick={handleInstallApp}
                 className="bg-white text-[#0A7B7B] font-semibold rounded-xl px-4 py-1.5 text-sm shrink-0"
               >
-                Install
+                {t('installBtn')}
               </button>
             </div>
           )}
@@ -178,14 +180,14 @@ export default function SettingsPage() {
         {/* ── SECTION 2: EMAIL NOTIFICATIONS ── */}
         <div>
         <div className="flex items-center gap-2 mt-6 mb-3">
-          <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">EMAIL NOTIFICATIONS</span>
+          <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">{t('emailNotifications')}</span>
           <div className="flex-1 border-b border-[#E2E8F0]" />
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4">
           <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
             <div className="flex-1 pr-4">
-              <p className="text-sm font-medium text-[#0F172A]">Monthly Report</p>
-              <p className="text-xs text-[#94A3B8] mt-0.5">Receive monthly summary by email</p>
+              <p className="text-sm font-medium text-[#0F172A]">{t('monthlyReport')}</p>
+              <p className="text-xs text-[#94A3B8] mt-0.5">{t('monthlyReportDesc')}</p>
             </div>
             <Switch
               checked={emailMonthlyReport}
@@ -198,8 +200,8 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
             <div className="flex-1 pr-4">
-              <p className="text-sm font-medium text-[#0F172A]">Budget Alerts</p>
-              <p className="text-xs text-[#94A3B8] mt-0.5">Get notified when budget limit is near</p>
+              <p className="text-sm font-medium text-[#0F172A]">{t('budgetAlerts')}</p>
+              <p className="text-xs text-[#94A3B8] mt-0.5">{t('budgetAlertsDesc')}</p>
             </div>
             <Switch
               checked={emailBudgetAlerts}
@@ -212,8 +214,8 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-start justify-between py-3">
             <div className="flex-1 pr-4">
-              <p className="text-sm font-medium text-[#0F172A]">Tips &amp; Guidance</p>
-              <p className="text-xs text-[#94A3B8] mt-0.5">Receive helpful tips and guidance by email</p>
+              <p className="text-sm font-medium text-[#0F172A]">{t('tipsGuidance')}</p>
+              <p className="text-xs text-[#94A3B8] mt-0.5">{t('tipsGuidanceDesc')}</p>
             </div>
             <Switch
               checked={emailTipsGuidance}
@@ -230,14 +232,14 @@ export default function SettingsPage() {
         {/* ── SECTION 3: PUSH NOTIFICATIONS ── */}
         <div>
         <div className="flex items-center gap-2 mt-6 mb-3">
-          <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">PUSH NOTIFICATIONS</span>
+          <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">{t('pushNotifications')}</span>
           <div className="flex-1 border-b border-[#E2E8F0]" />
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4">
           <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
             <div className="flex-1 pr-4">
-              <p className="text-sm font-semibold text-[#0F172A]">Browser Push Notifications</p>
-              <p className="text-xs text-[#94A3B8] mt-0.5">Receive alerts even when app is closed</p>
+              <p className="text-sm font-semibold text-[#0F172A]">{t('browserPushNotifications')}</p>
+              <p className="text-xs text-[#94A3B8] mt-0.5">{t('browserPushDesc')}</p>
             </div>
             <Switch
               checked={pushEnabled}
@@ -249,7 +251,7 @@ export default function SettingsPage() {
                     const { subscribeToPush } = await import('@/lib/push')
                     await subscribeToPush()
                   } catch {
-                    toast.error('Failed to enable push notifications')
+                    toast.error(t('failedEnablePush'))
                   }
                 }
               }}
@@ -269,7 +271,7 @@ export default function SettingsPage() {
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 mx-1">
                   <p className="text-xs text-amber-700 flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                    Enable push notifications to configure alerts below
+                    {t('enablePushToConfigure')}
                   </p>
                 </div>
               </motion.div>
@@ -279,8 +281,8 @@ export default function SettingsPage() {
           <div className={`ml-3 pl-3 border-l-2 border-[#0A7B7B] space-y-0 transition-opacity duration-200 ${!pushEnabled ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
               <div className="flex-1 pr-4">
-                <p className="text-sm font-medium text-[#0F172A]">Budget Alerts</p>
-                <p className="text-xs text-[#94A3B8] mt-0.5">Notify when spending reaches 80% of budget</p>
+                <p className="text-sm font-medium text-[#0F172A]">{t('budgetAlerts')}</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">{t('pushBudgetAlertsDesc')}</p>
               </div>
               <Switch
                 checked={pushBudgetAlerts}
@@ -293,8 +295,8 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
               <div className="flex-1 pr-4">
-                <p className="text-sm font-medium text-[#0F172A]">Large Transactions</p>
-                <p className="text-xs text-[#94A3B8] mt-0.5">Alert for transactions above ₹10,000</p>
+                <p className="text-sm font-medium text-[#0F172A]">{t('largeTransactions')}</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">{t('largeTransactionsDesc')}</p>
               </div>
               <Switch
                 checked={pushLargeTransactions}
@@ -307,8 +309,8 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-start justify-between py-3">
               <div className="flex-1 pr-4">
-                <p className="text-sm font-medium text-[#0F172A]">Daily Summary</p>
-                <p className="text-xs text-[#94A3B8] mt-0.5">Daily spending digest</p>
+                <p className="text-sm font-medium text-[#0F172A]">{t('dailySummary')}</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">{t('dailySummaryDesc')}</p>
               </div>
               <Switch
                 checked={pushDailySummary}
@@ -326,14 +328,14 @@ export default function SettingsPage() {
         {/* ── SECTION 4: IN-APP NOTIFICATIONS ── */}
         <div>
         <div className="flex items-center gap-2 mt-6 mb-3">
-          <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">IN-APP NOTIFICATIONS</span>
+          <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">{t('inAppNotificationsLabel')}</span>
           <div className="flex-1 border-b border-[#E2E8F0]" />
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4">
           <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
             <div className="flex-1 pr-4">
-              <p className="text-sm font-semibold text-[#0F172A]">In-App Notifications</p>
-              <p className="text-xs text-[#94A3B8] mt-0.5">Show notification bell icon alerts</p>
+              <p className="text-sm font-semibold text-[#0F172A]">{t('inAppNotifications')}</p>
+              <p className="text-xs text-[#94A3B8] mt-0.5">{t('inAppDesc')}</p>
             </div>
             <Switch
               checked={inAppEnabled}
@@ -357,7 +359,7 @@ export default function SettingsPage() {
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 mx-1">
                   <p className="text-xs text-amber-700 flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                    Enable in-app notifications to configure alerts below
+                    {t('enableInAppToConfigure')}
                   </p>
                 </div>
               </motion.div>
@@ -367,8 +369,8 @@ export default function SettingsPage() {
           <div className={`ml-3 pl-3 border-l-2 border-[#0A7B7B] space-y-0 transition-opacity duration-200 ${!inAppEnabled ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
               <div className="flex-1 pr-4">
-                <p className="text-sm font-medium text-[#0F172A]">Budget Alerts</p>
-                <p className="text-xs text-[#94A3B8] mt-0.5">In-app alert when budget limit is near</p>
+                <p className="text-sm font-medium text-[#0F172A]">{t('budgetAlerts')}</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">{t('inAppBudgetAlertsDesc')}</p>
               </div>
               <Switch
                 checked={inAppBudgetAlerts}
@@ -381,8 +383,8 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
               <div className="flex-1 pr-4">
-                <p className="text-sm font-medium text-[#0F172A]">Large Transactions</p>
-                <p className="text-xs text-[#94A3B8] mt-0.5">In-app alert for transactions above ₹10,000</p>
+                <p className="text-sm font-medium text-[#0F172A]">{t('largeTransactions')}</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">{t('inAppLargeTxDesc')}</p>
               </div>
               <Switch
                 checked={inAppLargeTransactions}
@@ -395,8 +397,8 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-start justify-between py-3">
               <div className="flex-1 pr-4">
-                <p className="text-sm font-medium text-[#0F172A]">Daily Summary</p>
-                <p className="text-xs text-[#94A3B8] mt-0.5">Daily spending digest in-app</p>
+                <p className="text-sm font-medium text-[#0F172A]">{t('dailySummary')}</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">{t('inAppDailySummaryDesc')}</p>
               </div>
               <Switch
                 checked={inAppDailySummary}
@@ -415,18 +417,18 @@ export default function SettingsPage() {
         <div className="xl:col-span-2">
         <div className="flex items-center gap-2 mt-6 mb-3">
           <AlertTriangle className="w-4 h-4 text-[#EF4444]" />
-          <span className="text-sm font-bold uppercase tracking-widest text-[#EF4444]">DANGER ZONE</span>
+          <span className="text-sm font-bold uppercase tracking-widest text-[#EF4444]">{t('dangerZoneLabel')}</span>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-3">
           <p className="text-sm text-[#EF4444] font-medium mb-3">
-            Permanently deletes all transactions, budgets, categories, and settings. Cannot be undone.
+            {t('dangerZoneDesc')}
           </p>
           <button
             onClick={() => setDeleteOpen(true)}
             className="w-full bg-[#EF4444] hover:bg-red-600 text-white rounded-xl py-3 font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            Delete All Data
+            {t('deleteAllDataBtn')}
           </button>
         </div>
 
@@ -439,16 +441,16 @@ export default function SettingsPage() {
                 <motion.div key="step1" initial={{ opacity: 0, x: 0 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.18 }}>
                   <div className="flex flex-col items-center text-center">
                     <AlertTriangle className="w-12 h-12 text-[#EF4444] mx-auto mb-3" />
-                    <h2 className="text-xl font-bold text-center text-[#0F172A]">Delete All Data?</h2>
+                    <h2 className="text-xl font-bold text-center text-[#0F172A]">{t('deleteAllDataTitle')}</h2>
                     <p className="text-sm text-[#64748B] text-center mt-1 mb-4">
-                      The following will be permanently deleted:
+                      {t('followingWillBeDeleted')}
                     </p>
                     <ul className="space-y-2 w-full text-left">
                       {[
-                        'All transactions & entries',
-                        'Budget settings & limits',
-                        'Categories & custom tags',
-                        'All preferences & settings',
+                        t('allTransactionsEntries'),
+                        t('budgetSettingsLimits'),
+                        t('categoriesCustomTags'),
+                        t('allPreferencesSettings'),
                       ].map(item => (
                         <li key={item} className="bg-red-50 rounded-lg px-3 py-2 text-sm text-[#EF4444] flex items-center gap-2">
                           <X className="w-4 h-4 shrink-0" />
@@ -457,20 +459,20 @@ export default function SettingsPage() {
                       ))}
                     </ul>
                     <p className="text-xs text-[#EF4444] font-medium text-center mt-4">
-                      This action is permanent and cannot be undone.
+                      {t('actionPermanent')}
                     </p>
                     <div className="flex gap-2 w-full mt-5">
                       <button
                         onClick={handleClose}
                         className="flex-1 border border-[#E2E8F0] text-[#475569] rounded-xl py-2.5 font-medium text-sm hover:bg-gray-50 transition-colors"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                       <button
                         onClick={() => setDeleteStep(2)}
                         className="flex-1 bg-[#EF4444] text-white rounded-xl py-2.5 font-medium text-sm hover:bg-red-600 transition-colors"
                       >
-                        I understand, continue →
+                        {t('iUnderstandContinue')}
                       </button>
                     </div>
                   </div>
@@ -486,22 +488,21 @@ export default function SettingsPage() {
                       className="flex items-center gap-1 text-sm text-[#64748B] hover:text-[#0F172A] mb-2"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Back
+                      {t('back')}
                     </button>
-                    <h2 className="text-lg font-bold text-center mt-2">Confirm Deletion</h2>
+                    <h2 className="text-lg font-bold text-center mt-2">{t('confirmDeletion')}</h2>
                     <p className="text-sm text-[#64748B] text-center mt-1">
-                      Type{' '}
+                      {t('typeDeleteToConfirm').replace('{delete}', '')}
                       <span className="font-mono font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
                         DELETE
-                      </span>{' '}
-                      to confirm
+                      </span>
                     </p>
                     <input
                       type="text"
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
-                      placeholder="Type DELETE to confirm"
+                      placeholder={t('typeDeletePlaceholder')}
                       value={typedValue}
                       onChange={e => setTypedValue(e.target.value)}
                       className={`w-full border-2 rounded-xl px-4 py-3 text-center font-mono font-bold tracking-widest text-lg mt-4 outline-none transition-all ${
@@ -522,7 +523,7 @@ export default function SettingsPage() {
                       ) : (
                         <p className="text-xs text-red-400 flex items-center gap-1 mt-1">
                           <XCircle className="w-3.5 h-3.5" />
-                          Must type DELETE exactly
+                          {t('mustTypeDeleteExactly')}
                         </p>
                       )
                     )}
@@ -533,7 +534,7 @@ export default function SettingsPage() {
                           className="w-full bg-[#EF4444] hover:bg-red-600 text-white rounded-xl py-3 font-semibold text-sm flex items-center justify-center gap-2 transition-all mt-4"
                         >
                           <Trash2 className="w-4 h-4" />
-                          Delete All Data
+                          {t('deleteAllDataBtn')}
                         </button>
                       </motion.div>
                     ) : (
@@ -549,12 +550,12 @@ export default function SettingsPage() {
                         {isDeleting ? (
                           <>
                             <Loader2 className="animate-spin w-4 h-4" />
-                            Deleting...
+                            {t('deletingEllipsis')}
                           </>
                         ) : (
                           <>
                             <Trash2 className="w-4 h-4" />
-                            Delete All Data
+                            {t('deleteAllDataBtn')}
                           </>
                         )}
                       </button>

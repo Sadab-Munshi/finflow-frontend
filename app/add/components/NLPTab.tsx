@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Loader2, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useLanguage } from '@/context/LanguageContext'
 import { getCategoriesByType } from '@/lib/categories'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
 import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
@@ -13,6 +14,7 @@ import { aiParseText } from '@/lib/api-client'
 
 export default function NLPTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
+  const { t } = useLanguage()
   const [textInput, setTextInput] = useState('')
   const [loading, setLoading] = useState(false)
   // Support both single and multiple parsed transactions
@@ -50,7 +52,7 @@ export default function NLPTab() {
       txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
       setParsedList(txs)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to parse. Please try again.')
+      toast.error(err instanceof Error ? err.message : t('failedToParse'))
     } finally {
       setLoading(false)
     }
@@ -94,11 +96,11 @@ export default function NLPTab() {
     setCategoryError('')
     const parsedAmt = parseFloat(amount)
     if (!amount || isNaN(parsedAmt) || parsedAmt <= 0) {
-      setAmountError('Please enter an amount')
+      setAmountError(t('pleaseEnterAmount'))
       valid = false
     }
     if (!category) {
-      setCategoryError('Please select a category')
+      setCategoryError(t('pleaseSelectCategory'))
       valid = false
     }
     if (!valid) return
@@ -171,7 +173,7 @@ export default function NLPTab() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: FONT }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 15, color: '#374151', fontWeight: 600 }}>
-            {parsedList.length} transactions found
+            {parsedList.length} {t('transactionsFound')}
           </p>
           <button
             onClick={discardAll}
@@ -180,7 +182,7 @@ export default function NLPTab() {
               color: '#9ca3af', fontSize: 13, fontFamily: FONT,
             }}
           >
-            Discard all
+            {t('discardAll')}
           </button>
         </div>
         {parsedList.map((p, i) => (
@@ -205,7 +207,7 @@ export default function NLPTab() {
             fontFamily: FONT,
           }}
         >
-          {isSubmitting ? 'Saving...' : `Save All (${parsedList.length})`}
+          {isSubmitting ? t('savingEllipsis') : t('saveAllX').replace('{count}', String(parsedList.length))}
         </button>
       </div>
     )
@@ -217,7 +219,7 @@ export default function NLPTab() {
       <div style={{ position: 'relative' }}>
         <textarea
           rows={4}
-          placeholder='e.g. "Spent 2000 on food and 290 on transport"'
+          placeholder={t('nlpPlaceholder')}
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
           style={{
@@ -249,8 +251,8 @@ export default function NLPTab() {
         }}
       >
         {loading
-          ? <><Loader2 size={18} className="animate-spin" /> Parsing...</>
-          : <><Sparkles size={18} /> Parse with AI</>
+          ? <><Loader2 size={18} className="animate-spin" /> {t('parsingEllipsis')}</>
+          : <><Sparkles size={18} /> {t('parseWithAI')}</>
         }
       </button>
     </div>

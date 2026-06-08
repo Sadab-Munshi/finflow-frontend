@@ -208,12 +208,12 @@ export default function TransactionDetailPage() {
 
                 {/* Note */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1.5">Note (optional)</label>
+                  <label className="block text-sm font-medium text-gray-500 mb-1.5">{t('noteOptional')}</label>
                   <input
                     type="text"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="Add a note..."
+                    placeholder={t('addANote')}
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-teal-500 transition-colors"
                   />
                 </div>
@@ -276,13 +276,13 @@ export default function TransactionDetailPage() {
                     <p className="text-sm font-semibold text-gray-800">{formatDateDisplay(transaction.date)}</p>
                   </div>
                   <div className="p-3">
-                    <p className="text-xs text-gray-400 mb-0.5">Time</p>
+                    <p className="text-xs text-gray-400 mb-0.5">{t('timeLabel')}</p>
                     <p className="text-sm font-semibold text-gray-800">{formatTimeDisplay(transaction.created_at)}</p>
                   </div>
                 </div>
                 {transaction.note ? (
                   <div className="p-3 bg-gray-50 rounded-xl">
-                    <p className="text-xs text-gray-400 mb-0.5">Note</p>
+                    <p className="text-xs text-gray-400 mb-0.5">{t('noteLabel')}</p>
                     <p className="text-sm text-gray-700">{transaction.note}</p>
                   </div>
                 ) : null}

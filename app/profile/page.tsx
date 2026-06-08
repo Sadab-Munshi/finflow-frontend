@@ -61,7 +61,7 @@ const languageLabels: Record<Language, string> = { en: 'English', hi: 'हिं
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
   const [mounted, setMounted] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -300,7 +300,7 @@ export default function ProfilePage() {
       window.open(`https://wa.me/919382988956?text=connect_${code}`, '_blank')
       startPolling()
     } catch {
-      toast.error('Something went wrong. Please try again.')
+      toast.error(t('failedConnect'))
       setWhatsappPolling(false)
     }
   }
@@ -322,11 +322,11 @@ export default function ProfilePage() {
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
         setWhatsappConnected(true)
         setWhatsappPolling(false)
-        toast.success('WhatsApp connected successfully!')
+        toast.success(t('whatsappConnectedSuccess'))
       } else if (attempts >= maxAttempts) {
         if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
         setWhatsappPolling(false)
-        toast.error('Connection timed out. Please try again.')
+        toast.error(t('connectionTimedOut'))
       }
     }, 5000)
   }
@@ -360,9 +360,9 @@ export default function ProfilePage() {
       }
       setWhatsappConnected(false)
       setShowWhatsappDisconnectDialog(false)
-      toast.success('WhatsApp disconnected')
+      toast.success(t('whatsappDisconnected'))
     } catch {
-      toast.error('Failed to disconnect. Please try again.')
+      toast.error(t('failedDisconnect'))
     }
   }
 
@@ -494,7 +494,7 @@ export default function ProfilePage() {
             {/* Name + badge */}
             <div className="flex flex-col gap-1.5">
               <h2 className="text-base sm:text-xl font-bold text-white leading-tight">{name}</h2>
-              {uploading && <p className="text-xs text-white/70 animate-pulse">Uploading...</p>}
+              {uploading && <p className="text-xs text-white/70 animate-pulse">{t('uploadingEllipsis')}</p>}
               {memberSince && (
                 <div
                   className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex items-center gap-1 w-fit"
@@ -505,7 +505,7 @@ export default function ProfilePage() {
                 >
                   <Star size={8} fill="#fcd34d" strokeWidth={0} className="flex-shrink-0" />
                   <span className="shine-text text-[10px] sm:text-xs font-semibold">
-                    Member since {memberSince}
+                    {t('memberSince').replace('{date}', memberSince)}
                   </span>
                 </div>
               )}
@@ -517,9 +517,9 @@ export default function ProfilePage() {
         <div className="sm:px-0 px-3 mt-3 relative z-20">
           <div className="grid grid-cols-3 gap-2">
             {[
-              { icon: ClipboardList, value: String(totalEntries), label: 'Entries' },
-              { icon: Flame, value: `${dayStreak}d`, label: 'Streak' },
-              { icon: TrendingDown, value: formatSpending(thisMonthSpending), label: 'Spent' },
+              { icon: ClipboardList, value: String(totalEntries), label: t('entries') },
+              { icon: Flame, value: `${dayStreak}d`, label: t('streak') },
+              { icon: TrendingDown, value: formatSpending(thisMonthSpending), label: t('spentLabel') },
             ].map((stat, i) => (
               <div
                 key={i}
@@ -541,7 +541,7 @@ export default function ProfilePage() {
 
           {/* SECTION 3 — ACCOUNT INFO */}
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('account')}</p>
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-3">
               {/* Name row */}
               <div className="flex items-center gap-3">
@@ -549,7 +549,7 @@ export default function ProfilePage() {
                   <User size={16} className="text-[#0A7B7B]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[#64748B] mb-0.5">Name</p>
+                  <p className="text-xs text-[#64748B] mb-0.5">{t('name')}</p>
                   {editingName ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -564,7 +564,7 @@ export default function ProfilePage() {
                         onClick={saveName}
                         className="px-3 py-1 text-xs font-semibold text-white bg-[#0A7B7B] rounded-lg shrink-0"
                       >
-                        Save
+                        {t('save')}
                       </button>
                     </div>
                   ) : (
@@ -589,9 +589,9 @@ export default function ProfilePage() {
                   <Mail size={16} className="text-[#0A7B7B]" />
                 </div>
                 <div>
-                  <p className="text-xs text-[#64748B] mb-0.5">Email</p>
+                  <p className="text-xs text-[#64748B] mb-0.5">{t('email')}</p>
                   <p className="text-sm font-semibold text-[#0F172A]">{email}</p>
-                  <p className="text-xs text-[#94A3B8]">(cannot be changed)</p>
+                  <p className="text-xs text-[#94A3B8]">{t('cannotBeChanged')}</p>
                 </div>
               </div>
 
@@ -603,7 +603,7 @@ export default function ProfilePage() {
                   <Globe size={16} className="text-[#0A7B7B]" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-[#64748B] mb-0.5">Language</p>
+                  <p className="text-xs text-[#64748B] mb-0.5">{t('language')}</p>
                   <p className="text-sm font-semibold text-[#0F172A]">{languageLabels[language as Language]}</p>
                 </div>
                 {/* Desktop pills */}
@@ -625,7 +625,7 @@ export default function ProfilePage() {
                   onClick={() => setShowLanguageSheet(true)}
                   className="sm:hidden flex items-center gap-1 text-[#0A7B7B] text-sm font-medium"
                 >
-                  Change <ChevronRight size={14} />
+                  {t('changeBtn')} <ChevronRight size={14} />
                 </button>
               </div>
             </div>
@@ -633,7 +633,7 @@ export default function ProfilePage() {
 
           {/* SECTION 4 — INTEGRATIONS */}
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Integrations</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('integrations')}</p>
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-4">
 
               {/* Telegram */}
@@ -653,9 +653,9 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#0F172A] truncate">
-                      {telegramConnected ? 'Telegram Connected' : 'Connect Telegram'}
+                      {telegramConnected ? t('telegramConnected') : t('connectTelegram')}
                     </p>
-                    <p className="text-xs text-[#64748B] truncate">Add transactions via Telegram bot</p>
+                    <p className="text-xs text-[#64748B] truncate">{t('addTxViaTelegram')}</p>
                   </div>
                   <div className="flex-shrink-0 ml-auto">
                     <Toggle
@@ -674,13 +674,13 @@ export default function ProfilePage() {
                 {!telegramConnected && telegramToggle && (
                   <div className="mt-3 space-y-2 pl-12">
                     <ol className="text-xs text-gray-500 space-y-1 list-decimal list-inside">
-                      <li>Open Telegram and search @FinFlowBot</li>
-                      <li>Send /start to get your Chat ID</li>
-                      <li>Enter your Chat ID below</li>
+                      <li>{t('openTelegramSearchBot')}</li>
+                      <li>{t('sendStartGetChatId')}</li>
+                      <li>{t('enterChatIdBelow')}</li>
                     </ol>
                     <input
                       type="text"
-                      placeholder="Enter your Telegram Chat ID"
+                      placeholder={t('enterTelegramChatId')}
                       value={telegramChatId}
                       onChange={e => setTelegramChatId(e.target.value)}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -690,7 +690,7 @@ export default function ProfilePage() {
                       className="w-full py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
                       style={{ background: '#0d9488' }}
                     >
-                      Connect
+                      {t('connectBtn')}
                     </button>
                   </div>
                 )}
@@ -715,13 +715,13 @@ export default function ProfilePage() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#0F172A] truncate">Connecting...</p>
-                      <p className="text-xs text-[#64748B] truncate">Waiting for WhatsApp confirmation</p>
+                      <p className="text-sm font-medium text-[#0F172A] truncate">{t('connectingEllipsis')}</p>
+                      <p className="text-xs text-[#64748B] truncate">{t('waitingWhatsAppConfirm')}</p>
                     </div>
                     <div className="flex-shrink-0 ml-auto flex items-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-teal-600" />
                       <button onClick={cancelPolling} className="text-xs text-gray-400 hover:text-gray-600">
-                        Cancel
+                        {t('cancel')}
                       </button>
                     </div>
                   </div>
@@ -741,9 +741,9 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#0F172A] truncate">
-                        {whatsappConnected ? 'WhatsApp Connected' : 'Connect WhatsApp'}
+                        {whatsappConnected ? t('whatsappConnected') : t('connectWhatsApp')}
                       </p>
-                      <p className="text-xs text-[#64748B] truncate">Add transactions via WhatsApp</p>
+                      <p className="text-xs text-[#64748B] truncate">{t('addTxViaWhatsApp')}</p>
                     </div>
                     <div className="flex-shrink-0 ml-auto flex items-center gap-2">
                       {!whatsappConnected && (
@@ -772,26 +772,26 @@ export default function ProfilePage() {
 
           {/* SECTION 5 — AI USAGE */}
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Usage</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('usage')}</p>
             <div
               className="rounded-2xl border border-[#C6F0E8] overflow-hidden relative"
               style={{ background: 'linear-gradient(135deg, #F0FDF9 0%, #E8FAF4 100%)' }}
             >
               <div className="p-4 pr-32 sm:pr-36">
-                <p className="text-sm font-bold text-[#0F172A] mb-2">AI Usage This Month</p>
+                <p className="text-sm font-bold text-[#0F172A] mb-2">{t('aiUsageThisMonth')}</p>
                 {aiUsage ? (
                   <div className="space-y-1.5">
-                    <p className="text-sm font-bold" style={{ color: aiBarColor }}>{aiPct}% used</p>
+                    <p className="text-sm font-bold" style={{ color: aiBarColor }}>{t('xUsedPct').replace('{pct}', String(aiPct))}</p>
                     <div className="bg-white/60 rounded-full h-3 overflow-hidden">
                       <div
                         className="h-3 rounded-full transition-all duration-700"
                         style={{ width: `${Math.min(aiPct, 100)}%`, background: aiBarColor }}
                       />
                     </div>
-                    <p className="text-xs text-[#64748B]">Resets on 1st of next month</p>
+                    <p className="text-xs text-[#64748B]">{t('resetsOn1st')}</p>
                   </div>
                 ) : (
-                  <p className="text-sm text-[#64748B]">Loading usage...</p>
+                  <p className="text-sm text-[#64748B]">{t('loadingUsage')}</p>
                 )}
               </div>
 
@@ -813,12 +813,12 @@ export default function ProfilePage() {
 
           {/* SECTION 6 — SETTINGS LIST */}
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Preferences</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('preferences')}</p>
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
               {[
-                { icon: Bell, label: 'Notifications', path: '/settings' },
-                { icon: Lock, label: 'Privacy & Security', path: '/privacy-security' },
-                { icon: Database, label: 'Data Backup & Restore', path: '/backup-restore' },
+                { icon: Bell, label: t('notificationsNav'), path: '/settings' },
+                { icon: Lock, label: t('privacySecurityNav'), path: '/privacy-security' },
+                { icon: Database, label: t('dataBackupRestore'), path: '/backup-restore' },
               ].map((item, i) => (
                 <button
                   key={item.label}
@@ -841,7 +841,7 @@ export default function ProfilePage() {
                 <div className="w-8 h-8 rounded-xl bg-[#F0FDF9] flex items-center justify-center shrink-0">
                   <HelpCircle size={15} className="text-[#0A7B7B]" />
                 </div>
-                <span className="flex-1 text-sm font-medium text-gray-800 text-left">Help &amp; Support</span>
+                <span className="flex-1 text-sm font-medium text-gray-800 text-left">{t('helpSupport')}</span>
                 <ChevronRight size={16} className="text-gray-300" />
               </Link>
               <button
@@ -851,7 +851,7 @@ export default function ProfilePage() {
                 <div className="w-8 h-8 rounded-xl bg-[#F0FDF9] flex items-center justify-center shrink-0">
                   <MessageSquarePlus size={15} className="text-[#0A7B7B]" />
                 </div>
-                <span className="flex-1 text-sm font-medium text-gray-800 text-left">Feedback</span>
+                <span className="flex-1 text-sm font-medium text-gray-800 text-left">{t('feedbackNav')}</span>
                 <ChevronRight size={16} className="text-gray-300" />
               </button>
             </div>
@@ -859,16 +859,16 @@ export default function ProfilePage() {
 
           {/* SECTION 7 — ABOUT */}
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">About</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('about')}</p>
             <div className="bg-white rounded-2xl shadow-sm md:shadow-md overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
-                <span className="text-sm text-gray-600">Version</span>
+                <span className="text-sm text-gray-600">{t('versionLabel')}</span>
                 <span className="text-sm text-gray-400">1.0</span>
               </div>
               {[
-                { label: 'Privacy Policy', href: '/privacy' },
-                { label: 'Terms of Service', href: '/terms' },
-                { label: 'Disclaimer', href: '/disclaimer' },
+                { label: t('privacyPolicyNav'), href: '/privacy' },
+                { label: t('termsOfServiceNav'), href: '/terms' },
+                { label: t('disclaimer'), href: '/disclaimer' },
               ].map((item, i, arr) => (
                 <Link
                   key={item.label}
@@ -890,7 +890,7 @@ export default function ProfilePage() {
             className="w-full flex items-center justify-center gap-2 text-white bg-red-500 rounded-2xl py-3.5 text-sm font-semibold shadow-sm hover:bg-red-600 transition-colors"
           >
             <LogOut size={16} />
-            Sign Out
+            {t('signOut')}
           </button>
 
         </div>
@@ -907,7 +907,7 @@ export default function ProfilePage() {
               onClick={e => e.stopPropagation()}
             >
               <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-              <p className="text-base font-semibold text-gray-800 mb-4">Select Language</p>
+              <p className="text-base font-semibold text-gray-800 mb-4">{t('selectLanguage')}</p>
               {(['en', 'hi', 'bn'] as Language[]).map(lang => (
                 <button
                   key={lang}
@@ -939,8 +939,8 @@ export default function ProfilePage() {
               {feedbackStatus === 'success' ? (
                 <div className="flex flex-col items-center py-6 gap-3">
                   <CheckCircle className="w-10 h-10 text-green-500" />
-                  <p className="text-base font-semibold text-gray-800">Thank you!</p>
-                  <p className="text-sm text-gray-500 text-center">Your feedback has been submitted.</p>
+                  <p className="text-base font-semibold text-gray-800">{t('thankYou')}</p>
+                  <p className="text-sm text-gray-500 text-center">{t('feedbackSubmitted')}</p>
                   <button
                     onClick={() => {
                       setShowFeedbackSheet(false)
@@ -950,14 +950,14 @@ export default function ProfilePage() {
                     }}
                     className="mt-2 w-full rounded-xl py-3 font-semibold text-sm bg-teal-500 hover:bg-teal-600 text-white cursor-pointer transition-colors"
                   >
-                    Close
+                    {t('closeBtn')}
                   </button>
                 </div>
               ) : (
                 <>
-                  <p className="text-base font-semibold text-gray-800 mb-2">Feedback</p>
+                  <p className="text-base font-semibold text-gray-800 mb-2">{t('feedbackTitle')}</p>
                   <p className="text-sm text-gray-500 mb-3">
-                    Share your thoughts, report a bug, or suggest a feature.
+                    {t('feedbackDesc')}
                   </p>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {FEEDBACK_CATEGORIES.map(opt => (
@@ -986,7 +986,7 @@ export default function ProfilePage() {
                         setFeedbackMessage(e.target.value)
                         setFeedbackStatus('idle')
                       }}
-                      placeholder="Write your feedback here..."
+                      placeholder={t('writeFeedbackPlaceholder')}
                       className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 resize-none outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all"
                     />
                     <p
@@ -999,13 +999,13 @@ export default function ProfilePage() {
                   {feedbackStatus === 'ratelimit' && (
                     <p className="flex items-center gap-1.5 text-sm text-amber-600 mb-3">
                       <AlertTriangle className="w-4 h-4 shrink-0" />
-                      You&apos;ve reached the feedback limit (3 per 24 hours). Please try again later.
+                      {t('feedbackRateLimit')}
                     </p>
                   )}
                   {feedbackStatus === 'error' && (
                     <p className="flex items-center gap-1.5 text-sm text-red-500 mb-3">
                       <XCircle className="w-4 h-4 shrink-0" />
-                      Something went wrong. Please try again.
+                      {t('feedbackError')}
                     </p>
                   )}
                   <button
@@ -1020,10 +1020,10 @@ export default function ProfilePage() {
                     {feedbackSubmitting ? (
                       <>
                         <Loader2 className="animate-spin w-4 h-4" />
-                        Submitting...
+                        {t('submittingEllipsis')}
                       </>
                     ) : (
-                      'Submit Feedback'
+                      t('submitFeedback')
                     )}
                   </button>
                 </>
@@ -1039,22 +1039,22 @@ export default function ProfilePage() {
               <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3">
                 <LogOut size={20} className="text-red-500" />
               </div>
-              <h3 className="text-base font-semibold text-gray-900 text-center mb-1">Sign Out?</h3>
+              <h3 className="text-base font-semibold text-gray-900 text-center mb-1">{t('signOutTitle')}</h3>
               <p className="text-sm text-gray-500 text-center mb-5">
-                You&apos;ll need to sign in again to access your account.
+                {t('signOutDesc')}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowSignOutDialog(false)}
                   className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleSignOut}
                   className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors"
                 >
-                  Sign Out
+                  {t('signOut')}
                 </button>
               </div>
             </div>
@@ -1065,22 +1065,22 @@ export default function ProfilePage() {
         {showTelegramDisconnectDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
             <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-              <h3 className="text-base font-semibold text-gray-900 mb-1">Disconnect Telegram?</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-1">{t('disconnectTelegramTitle')}</h3>
               <p className="text-sm text-gray-500 mb-4">
-                You won&apos;t receive transactions on Telegram.
+                {t('disconnectTelegramDesc')}
               </p>
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={() => setShowTelegramDisconnectDialog(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={disconnectTelegram}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl"
                 >
-                  Disconnect
+                  {t('disconnectBtn')}
                 </button>
               </div>
             </div>
@@ -1091,22 +1091,22 @@ export default function ProfilePage() {
         {showWhatsappDisconnectDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
             <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-              <h3 className="text-base font-semibold text-gray-900 mb-1">Disconnect WhatsApp?</h3>
+              <h3 className="text-base font-semibold text-gray-900 mb-1">{t('disconnectWhatsAppTitle')}</h3>
               <p className="text-sm text-gray-500 mb-4">
-                You won&apos;t receive transactions on WhatsApp.
+                {t('disconnectWhatsAppDesc')}
               </p>
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={() => setShowWhatsappDisconnectDialog(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={disconnectWhatsapp}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl"
                 >
-                  Disconnect
+                  {t('disconnectBtn')}
                 </button>
               </div>
             </div>

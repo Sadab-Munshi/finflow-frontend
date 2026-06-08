@@ -15,25 +15,26 @@ import { useUser } from '@/context/UserContext'
 import { createClient } from '@/lib/supabase/client'
 import NotificationBell from '@/components/notifications/NotificationBell'
 
-const sidebarNavItems = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/history', icon: History, label: 'History' },
-  { path: '/budgets', icon: PiggyBank, label: 'Budgets' },
-  { path: '/insights', icon: BarChart2, label: 'Insights' },
-  { path: '/reports', icon: FileText, label: 'Reports' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
-]
-
 // Exact demo colors. Order: Auto & Type at the bottom (closest to thumb), moving up to PDF
-const fabInputMethods = [
-  { icon: Sparkles, label: "Auto", color: "bg-purple-500", tab: "text" },
-  { icon: PenLine, label: "Type", color: "bg-blue-500", tab: "manual" },
-  { icon: Mic, label: "Voice", color: "bg-green-500", tab: "voice" },
-  { icon: Camera, label: "Scan", color: "bg-orange-500", tab: "scan" },
-  { icon: FileText, label: "PDF", color: "bg-red-500", tab: "scan" },
-]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const sidebarNavItems = [
+    { path: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
+    { path: '/history', icon: History, label: t('history') },
+    { path: '/budgets', icon: PiggyBank, label: t('budgets') },
+    { path: '/insights', icon: BarChart2, label: t('insights') },
+    { path: '/reports', icon: FileText, label: t('reports') },
+    { path: '/settings', icon: Settings, label: t('settings') },
+  ]
+
+  const fabInputMethods = [
+    { icon: Sparkles, label: t('auto'), color: "bg-purple-500", tab: "text" },
+    { icon: PenLine, label: t('type'), color: "bg-blue-500", tab: "manual" },
+    { icon: Mic, label: t('voice'), color: "bg-green-500", tab: "voice" },
+    { icon: Camera, label: t('scan'), color: "bg-orange-500", tab: "scan" },
+    { icon: FileText, label: t('pdf'), color: "bg-red-500", tab: "scan" },
+  ]
+
   const pathname = usePathname()
   const router = useRouter()
   const { t } = useLanguage()
@@ -310,7 +311,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             className="flex items-center justify-center gap-2 w-full bg-white text-teal-700 rounded-xl py-2.5 font-semibold hover:bg-teal-50 transition-colors shadow-sm outline-none"
           >
             <Plus className="w-5 h-5" />
-            <span>Add</span>
+            <span>{t('addBtn')}</span>
           </button>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -346,7 +347,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onClick={() => setProfileDropdownOpen(false)}
                 >
                   <User className="w-4 h-4" />
-                  <span className="text-sm font-medium">View Profile</span>
+                  <span className="text-sm font-medium">{t('viewProfile')}</span>
                 </Link>
                 <Link
                   href="/profile"
@@ -354,14 +355,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onClick={() => setProfileDropdownOpen(false)}
                 >
                   <PenLine className="w-4 h-4" />
-                  <span className="text-sm font-medium">Edit Profile</span>
+                  <span className="text-sm font-medium">{t('editProfile')}</span>
                 </Link>
                 <button
                   onClick={handleSignOut}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors w-full border-t border-gray-100 text-left outline-none"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">Sign Out</span>
+                  <span className="text-sm font-medium">{t('signOutBtn')}</span>
                 </button>
               </motion.div>
             )}
@@ -402,7 +403,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="print-only fixed top-0 left-0 right-0 p-4 bg-white border-b">
         <div className="flex justify-between items-center">
           <span className="font-bold text-xl">FinFlow</span>
-          <span className="text-sm text-gray-500">Printed on {getTodayIndianDate()}</span>
+          <span className="text-sm text-gray-500">{t('printedOn').replace('{date}', getTodayIndianDate())}</span>
         </div>
       </div>
     </div>

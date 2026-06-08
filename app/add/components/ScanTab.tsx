@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { ScanLine, Camera, Upload, Check, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
+import { useLanguage } from '@/context/LanguageContext'
 import { getCategoriesByType } from '@/lib/categories'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
 import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory, RED } from '../constants'
@@ -14,14 +15,14 @@ import { ManualForm } from './ManualTab'
 import { aiParseReceipt } from '@/lib/api-client'
 
 /* ─── Scan Progress Steps ─── */
-const SCAN_STEPS = [
-  { label: 'Reading image...' },
-  { label: 'Extracting text...' },
-  { label: 'Parsing details...' },
-  { label: 'Done!' },
-]
-
 function ScanProgress({ currentStep }: { currentStep: number }) {
+  const { t } = useLanguage()
+  const SCAN_STEPS = [
+    { label: t('readingImage') },
+    { label: t('extractingText') },
+    { label: t('parsingDetails') },
+    { label: t('doneLabel') },
+  ]
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '24px 0', fontFamily: FONT }}>
       {/* Progress bar */}
@@ -116,6 +117,7 @@ function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promise<{ ba
 
 export default function ScanTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
+  const { t } = useLanguage()
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
@@ -191,7 +193,7 @@ export default function ScanTab() {
         setParsedMultiple(txs)
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to scan receipt')
+      toast.error(err instanceof Error ? err.message : t('failedToScan'))
     } finally {
       setLoading(false)
       setScanStep(-1)
@@ -216,11 +218,11 @@ export default function ScanTab() {
     setCategoryError('')
     const parsedAmt = parseFloat(amount)
     if (!amount || isNaN(parsedAmt) || parsedAmt <= 0) {
-      setAmountError('Please enter an amount')
+      setAmountError(t('pleaseEnterAmount'))
       valid = false
     }
     if (!category) {
-      setCategoryError('Please select a category')
+      setCategoryError(t('pleaseSelectCategory'))
       valid = false
     }
     if (!valid) return
@@ -298,7 +300,7 @@ export default function ScanTab() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontFamily: FONT }}>
         <p style={{ fontSize: 14, color: '#6b7280', fontWeight: 500 }}>
-          {parsedMultiple.length} transactions found
+          {parsedMultiple.length} {t('transactionsFound')}
         </p>
         {parsedMultiple.map((p, i) => (
           <div key={i} style={{
@@ -326,7 +328,7 @@ export default function ScanTab() {
             fontFamily: FONT,
           }}
         >
-          {isSubmitting ? 'Saving...' : `Save All (${parsedMultiple.length})`}
+          {isSubmitting ? t('savingEllipsis') : t('saveAllX').replace('{count}', String(parsedMultiple.length))}
         </button>
         <button
           onClick={discard}
@@ -337,7 +339,7 @@ export default function ScanTab() {
             fontSize: 14, cursor: 'pointer', fontFamily: FONT,
           }}
         >
-          Discard
+          {t('discard')}
         </button>
       </div>
     )
@@ -402,7 +404,7 @@ export default function ScanTab() {
               fontFamily: FONT,
             }}
           >
-            <Camera size={20} /> Open Camera
+            <Camera size={20} /> {t('openCamera')}
           </button>
 
           <button
@@ -416,11 +418,11 @@ export default function ScanTab() {
               fontFamily: FONT,
             }}
           >
-            <Upload size={18} /> Upload from Gallery
+            <Upload size={18} /> {t('uploadFromGallery')}
           </button>
 
           <p style={{ fontSize: 12, color: '#9ca3af' }}>
-            JPG, PNG, PDF supported
+            {t('jpgPngPdfSupported')}
           </p>
         </>
       )}
@@ -428,7 +430,7 @@ export default function ScanTab() {
       {loading && !scanPreviewUrl && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEAL }}>
           <Loader2 size={18} className="animate-spin" />
-          <span>Scanning...</span>
+          <span>{t('scanningEllipsis')}</span>
         </div>
       )}
     </div>

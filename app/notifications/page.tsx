@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Layout from '@/components/layout/Layout'
+import { useLanguage } from '@/context/LanguageContext'
 import { createClient } from '@/lib/supabase/client'
 import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
 import NotificationsSkeleton from '@/components/skeletons/NotificationsSkeleton'
@@ -53,6 +54,7 @@ function formatDateLabel(createdAt: string) {
 /* ── Component ───────────────────────────────────────────────────────── */
 export default function NotificationsPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -113,7 +115,7 @@ export default function NotificationsPage() {
     const supabase = createClient()
     await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false)
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-    toast.success('All notifications marked as read')
+    toast.success(t('allNotifsMarkedRead'))
   }
 
   const handleDelete = async (id: string, e?: React.MouseEvent) => {
@@ -123,7 +125,7 @@ export default function NotificationsPage() {
 
     try {
       await deleteNotification(id)
-      toast.success('Notification deleted')
+      toast.success(t('notificationDeleted'))
     } catch {
       if (removed) {
         setNotifications(prev =>
@@ -132,7 +134,7 @@ export default function NotificationsPage() {
           )
         )
       }
-      toast.error('Failed to delete notification')
+      toast.error(t('failedDeleteNotification'))
     }
   }
 
@@ -174,14 +176,14 @@ export default function NotificationsPage() {
 
     try {
       await Promise.all(ids.map(id => deleteNotification(id)))
-      toast.success(`${ids.length} notification${ids.length > 1 ? 's' : ''} deleted`)
+      toast.success(t('xNotifsDeleted').replace('{count}', String(ids.length)))
     } catch {
       setNotifications(prev =>
         [...removed, ...prev].sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
       )
-      toast.error('Failed to delete some notifications')
+      toast.error(t('failedDeleteSomeNotifs'))
     }
     setBulkDeleting(false)
   }
@@ -194,7 +196,7 @@ export default function NotificationsPage() {
     setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n))
     setSelected(new Set())
     setSelectMode(false)
-    toast.success(`${ids.length} notification${ids.length > 1 ? 's' : ''} marked as read`)
+    toast.success(t('xNotifsMarkedRead').replace('{count}', String(ids.length)))
   }
   /* ── Derived (Optimized) ────────────────────────────────────────── */
   const { filtered, unreadCount, totalCount, grouped, groupOrder, allSelected } = useMemo(() => {
@@ -267,7 +269,7 @@ export default function NotificationsPage() {
           <div className="flex items-center justify-between px-4 py-2.5 sm:py-3">
             <div className="w-9" />
 
-            <h1 className="text-lg font-semibold text-slate-900">Notifications</h1>
+            <h1 className="text-lg font-semibold text-slate-900">{t('notificationsTitle')}</h1>
 
             <div className="w-9" />
           </div>
@@ -278,7 +280,7 @@ export default function NotificationsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search notifications..."
+                placeholder={t('searchNotifications')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-10 py-2.5 bg-slate-100 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 border-none outline-none focus:ring-2 focus:ring-[#0A7B7B]/20 focus:bg-white transition-all"
@@ -305,14 +307,14 @@ export default function NotificationsPage() {
                     : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 }`}
               >
-                All
+                {t('all')}
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
                   filter === 'all' ? 'bg-white/20' : 'bg-slate-200'
                 }`}>
                   {totalCount}
                 </span>
               </button>
-              
+
               <button
                 onClick={() => { setFilter('unread'); setSelected(new Set()) }}                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                   filter === 'unread'
@@ -320,7 +322,7 @@ export default function NotificationsPage() {
                     : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 }`}
               >
-                Unread
+                {t('unread')}
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
                   filter === 'unread' ? 'bg-white/20' : 'bg-slate-200'
                 }`}>
@@ -354,7 +356,7 @@ export default function NotificationsPage() {
                           className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#0F172A] hover:bg-[#F0FDF9] transition-colors"
                         >
                           <CheckCheck className="w-4 h-4 text-[#0A7B7B]" />
-                          Mark all as read
+                          {t('markAllAsRead')}
                         </button>
                       )}
                       <button
@@ -362,14 +364,14 @@ export default function NotificationsPage() {
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#0F172A] hover:bg-[#F0FDF9] transition-colors border-t border-[#F1F5F9]"
                       >
                         <CheckSquare className="w-4 h-4 text-[#0A7B7B]" />
-                        Select messages
+                        {t('selectMessages')}
                       </button>
                       <button
                         onClick={() => { selectAll(); setSelectMode(true); setMenuOpen(false) }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#0F172A] hover:bg-[#F0FDF9] transition-colors border-t border-[#F1F5F9]"
                       >
                         <Square className="w-4 h-4 text-[#0A7B7B]" />
-                        Select all
+                        {t('selectAllNotifs')}
                       </button>
                       {selectMode && (
                         <button
@@ -377,7 +379,7 @@ export default function NotificationsPage() {
                           className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-[#F1F5F9]"
                         >
                           <X className="w-4 h-4 text-red-500" />
-                          Cancel selection
+                          {t('cancelSelection')}
                         </button>
                       )}
                     </motion.div>
@@ -403,17 +405,17 @@ export default function NotificationsPage() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-slate-700"
                 >
                   {allSelected ? <CheckSquare className="w-4 h-4 text-[#0A7B7B]" /> : <Square className="w-4 h-4" />}
-                  {allSelected ? 'Deselect all' : 'Select all'}
+                  {allSelected ? t('deselectAll') : t('selectAllNotifs')}
                 </button>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-medium text-slate-400">
-                    {selected.size} selected
+                    {t('xSelected').replace('{count}', String(selected.size))}
                   </span>
                   <button
                     onClick={() => clearSelection()}
                     className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors"
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                 </div>
               </div>
@@ -435,14 +437,14 @@ export default function NotificationsPage() {
               )}
             </div>
             <p className="text-sm font-medium text-slate-500">
-              {searchQuery ? 'No matching notifications' : filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+              {searchQuery ? t('noMatchingNotifications') : filter === 'unread' ? t('noUnreadNotifications') : t('noNotificationsYet')}
             </p>
             <p className="text-xs text-slate-400 mt-1 text-center">
-              {searchQuery 
-                ? 'Try adjusting your search'
-                : filter === 'unread' 
-                  ? "You're all caught up!" 
-                  : "We'll notify you when something happens."
+              {searchQuery
+                ? t('tryAdjustingSearch')
+                : filter === 'unread'
+                  ? t('allCaughtUp')
+                  : t('notifyWhenSomethingHappens')
               }
             </p>
             {searchQuery && (
@@ -450,7 +452,7 @@ export default function NotificationsPage() {
                 onClick={() => setSearchQuery('')}
                 className="mt-4 px-4 py-2 rounded-full bg-[#F0FDF9] text-[#0A7B7B] text-xs font-semibold hover:bg-[#E6F7F7] transition-colors"
               >
-                Clear search
+                {t('clearSearch')}
               </button>
             )}
           </div>
@@ -575,9 +577,9 @@ export default function NotificationsPage() {
             >
               {loadingMore ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('loadingMore')}
                 </span>
-              ) : 'Load more'}
+              ) : t('loadMore')}
             </button>
           </div>
         )}
@@ -593,14 +595,14 @@ export default function NotificationsPage() {
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-600">
-                  {selected.size} selected
+                  {t('xSelected').replace('{count}', String(selected.size))}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleBulkMarkRead}
                     className="px-4 py-2 rounded-full text-xs font-semibold text-[#0A7B7B] bg-[#F0FDF9] hover:bg-[#E6F7F7] transition-colors"
                   >
-                    Mark read
+                    {t('markRead')}
                   </button>
                   <button
                     onClick={handleBulkDelete}
@@ -610,7 +612,7 @@ export default function NotificationsPage() {
                     {bulkDeleting ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      `Delete (${selected.size})`
+                      t('deleteXNotifs').replace('{count}', String(selected.size))
                     )}
                   </button>
                 </div>

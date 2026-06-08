@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Loader2, Mic } from 'lucide-react'
 import { getCategoriesByType } from '@/lib/categories'
+import { useLanguage } from '@/context/LanguageContext'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
 import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
 import { useTransaction } from '../hooks/useTransaction'
@@ -16,6 +17,7 @@ const VOICE_ERROR_MIC = 'mic'
 
 export default function VoiceTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
+  const { t } = useLanguage()
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
@@ -145,11 +147,11 @@ export default function VoiceTab() {
     setCategoryError('')
     const parsedAmt = parseFloat(amount)
     if (!amount || isNaN(parsedAmt) || parsedAmt <= 0) {
-      setAmountError('Please enter an amount')
+      setAmountError(t('pleaseEnterAmount'))
       valid = false
     }
     if (!category) {
-      setCategoryError('Please select a category')
+      setCategoryError(t('pleaseSelectCategory'))
       valid = false
     }
     if (!valid) return
@@ -214,9 +216,9 @@ export default function VoiceTab() {
         onConfirm={() => handleSaveSingle(0)}
         onDiscard={discard}
         isSubmitting={isSubmitting}
-        confirmLabel="Save Transaction"
+        confirmLabel={t('saveTransaction')}
         headerIcon={<Mic className="w-4 h-4 text-muted-foreground" />}
-        headerText="Voice captured"
+        headerText={t('voiceCaptured')}
       />
     )
   }
@@ -227,7 +229,7 @@ export default function VoiceTab() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: FONT }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 15, color: '#374151', fontWeight: 600 }}>
-            🎤 {parsedList.length} transactions found
+            🎤 {parsedList.length} {t('transactionsFound')}
           </p>
           <button
             onClick={discard}
@@ -236,7 +238,7 @@ export default function VoiceTab() {
               color: '#9ca3af', fontSize: 13, fontFamily: FONT,
             }}
           >
-            Discard all
+            {t('discardAll')}
           </button>
         </div>
         {parsedList.map((p, i) => (
@@ -247,7 +249,7 @@ export default function VoiceTab() {
             onConfirm={() => handleSaveSingle(i)}
             onDiscard={() => discardSingle(i)}
             isSubmitting={isSubmitting}
-            confirmLabel="Save"
+            confirmLabel={t('save')}
           />
         ))}
         <button
@@ -262,7 +264,7 @@ export default function VoiceTab() {
             fontFamily: FONT,
           }}
         >
-          {isSubmitting ? 'Saving...' : `Save All (${parsedList.length})`}
+          {isSubmitting ? t('savingEllipsis') : t('saveAllX').replace('{count}', String(parsedList.length))}
         </button>
       </div>
     )
@@ -325,19 +327,19 @@ export default function VoiceTab() {
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEAL, justifyContent: 'center' }}>
             <Loader2 size={16} className="animate-spin" />
-            <span style={{ fontSize: 16, fontWeight: 500 }}>Processing...</span>
+            <span style={{ fontSize: 16, fontWeight: 500 }}>{t('processingEllipsis')}</span>
           </div>
         ) : isListening ? (
           <p style={{ color: '#0d9488', fontSize: 14, fontWeight: 500 }}>
-            Listening...
+            {t('listeningStatus')}
           </p>
         ) : (
           <p style={{ color: '#737373', fontSize: 14 }}>
-            Tap to speak
+            {t('tapToSpeakStatus')}
           </p>
         )}
         <p style={{ color: '#a3a3a3', fontSize: 12, marginTop: 6 }}>
-          Hindi · Bengali · Tamil · Telugu &amp; more
+          {t('voiceLanguages')}
         </p>
       </div>
 
@@ -348,8 +350,8 @@ export default function VoiceTab() {
           maxWidth: 260, lineHeight: 1.6,
         }}>
           {parseError === VOICE_ERROR_MIC
-            ? 'Microphone access denied. Please allow access and try again.'
-            : "Couldn\u2019t catch that. Please tap and try again."}
+            ? t('micAccessDenied')
+            : t('couldNotCatch')}
         </p>
       )}
 
@@ -359,7 +361,7 @@ export default function VoiceTab() {
           width: '100%', padding: 16, background: '#f0fdf4',
           borderRadius: 12,
         }}>
-          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Transcript:</p>
+          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>{t('transcriptLabel')}</p>
           <p style={{ fontWeight: 500 }}>{transcript}</p>
         </div>
       )}

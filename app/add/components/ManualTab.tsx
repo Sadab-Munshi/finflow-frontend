@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MoreHorizontal, X } from 'lucide-react'
 import { getCategoriesByType, categories } from '@/lib/categories'
+import { useLanguage } from '@/context/LanguageContext'
 import { Category } from '@/lib/types'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
 import {
@@ -49,6 +50,7 @@ function CategorySheet({
   selected: string
   onSelect: (name: string) => void
 }) {
+  const { t } = useLanguage()
   const all = categories.filter(c => c.type === type || c.type === 'both')
 
   return (
@@ -82,7 +84,7 @@ function CategorySheet({
           >
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <span style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>All Categories</span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>{t('allCategories')}</span>
               <button
                 onClick={onClose}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
@@ -131,6 +133,7 @@ export function ManualForm({
   categoryError, setCategoryError, availableCategories,
   isSubmitting, onSave, onDiscard, confirmMode,
 }: ManualFormProps) {
+  const { t } = useLanguage()
   const dateInputRef = useRef<HTMLInputElement>(null)
   const [showSheet, setShowSheet] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
@@ -266,7 +269,7 @@ export function ManualForm({
               fontFamily: FONT,
             }}
           >
-            More +
+            {t('morePlus')}
           </button>
         </div>
         {categoryError && (
@@ -276,7 +279,7 @@ export function ManualForm({
 
       {/* Description (optional) */}
       <input
-        placeholder="What was this for? (optional)"
+        placeholder={t('whatWasThisFor')}
         value={note}
         onChange={(e) => setNote(e.target.value)}
         style={{
@@ -347,9 +350,9 @@ export function ManualForm({
                 borderTopColor: 'transparent', borderRadius: '50%',
                 animation: 'spin 0.7s linear infinite',
               }} />
-              Saving...
+              {t('savingEllipsis')}
             </>
-          : 'Save Transaction'
+          : t('saveTransaction')
         }
       </button>
 
@@ -364,7 +367,7 @@ export function ManualForm({
             fontSize: 14, cursor: 'pointer', fontFamily: FONT,
           }}
         >
-          Discard
+          {t('discard')}
         </button>
       )}
 
@@ -386,6 +389,7 @@ export function ManualForm({
 /* ─── Manual Tab ─── */
 export default function ManualTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
+  const { t } = useLanguage()
   const [amount, setAmount] = useState('')
   const [type, setType] = useState<'income' | 'expense'>('expense')
   const [category, setCategory] = useState('')
@@ -402,11 +406,11 @@ export default function ManualTab() {
     setCategoryError('')
     const parsed = parseFloat(amount)
     if (!amount || isNaN(parsed) || parsed <= 0) {
-      setAmountError('Please enter an amount')
+      setAmountError(t('pleaseEnterAmount'))
       valid = false
     }
     if (!category) {
-      setCategoryError('Please select a category')
+      setCategoryError(t('pleaseSelectCategory'))
       valid = false
     }
     if (!valid) return
