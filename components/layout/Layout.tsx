@@ -38,23 +38,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { t } = useLanguage()
-
-  const sidebarNavItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: t('dashboard') },
-    { path: '/history', icon: History, label: t('history') },
-    { path: '/budgets', icon: PiggyBank, label: t('budgets') },
-    { path: '/insights', icon: BarChart2, label: t('insights') },
-    { path: '/reports', icon: FileText, label: t('reports') },
-    { path: '/settings', icon: Settings, label: t('settings') },
-  ]
-
-  const fabInputMethods = [
-    { icon: Sparkles, label: t('auto'), color: "bg-purple-500", tab: "text" },
-    { icon: PenLine, label: t('type'), color: "bg-blue-500", tab: "manual" },
-    { icon: Mic, label: t('voice'), color: "bg-green-500", tab: "voice" },
-    { icon: Camera, label: t('scan'), color: "bg-orange-500", tab: "scan" },
-    { icon: FileText, label: t('pdf'), color: "bg-red-500", tab: "scan" },
-  ]
   const { user, loading } = useUser()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
