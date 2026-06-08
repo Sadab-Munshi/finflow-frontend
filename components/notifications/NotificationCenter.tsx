@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { X, CheckCheck, Bell } from 'lucide-react'
-import { useLanguage } from '@/context/LanguageContext'
 import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
 import type { Notification } from '@/lib/types'
 
@@ -21,7 +20,6 @@ export default function NotificationCenter({
   onClose,
 }: NotificationCenterProps) {
   const router = useRouter()
-  const { t } = useLanguage()
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
@@ -37,7 +35,7 @@ export default function NotificationCenter({
     <div className="absolute right-0 top-12 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-        <h3 className="font-semibold text-gray-800 text-sm">{t('notificationsTitle')}</h3>
+        <h3 className="font-semibold text-gray-800 text-sm">Notifications</h3>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-4 h-4" />
         </button>
@@ -47,7 +45,7 @@ export default function NotificationCenter({
       <div className="max-h-80 overflow-y-auto">
         {notifications.length === 0 ? (
           <div className="px-4 py-8 text-center">
-            <p className="text-gray-400 text-sm">{t('noNotificationsYet')}</p>
+            <p className="text-gray-400 text-sm">No notifications yet</p>
           </div>
         ) : (
           notifications.slice(0, 5).map((notification) => (
@@ -100,14 +98,14 @@ export default function NotificationCenter({
             className="flex items-center gap-1.5 text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors"
           >
             <CheckCheck className="w-3.5 h-3.5" />
-            {t('markAllRead')}
+            Mark All as Read
           </button>
           <Link
             href="/notifications"
             onClick={onClose}
             className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors"
           >
-            {t('viewAllNotifs')}
+            View All
           </Link>
         </div>
       )}

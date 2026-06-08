@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion'
 import { Sparkles, Tag, Calendar, FileText, Pencil, Check, AlertTriangle } from 'lucide-react'
 import { MoreHorizontal } from 'lucide-react'
-import { useLanguage } from '@/context/LanguageContext'
 import { TEAL, RED, FONT, categoryIconMap, formatDateDisplay, getTodayIST, resolveCategory, ParsedTransaction } from '../constants'
 
 interface PreviewCardProps {
@@ -19,13 +18,10 @@ interface PreviewCardProps {
 
 export function PreviewCard({
   parsed, onEdit, onConfirm, onDiscard, isSubmitting,
-  confirmLabel,
+  confirmLabel = 'Confirm Save',
   headerIcon,
-  headerText,
+  headerText = 'AI understood this as:',
 }: PreviewCardProps) {
-  const { t } = useLanguage()
-  const resolvedConfirmLabel = confirmLabel ?? t('confirmSave')
-  const resolvedHeaderText = headerText ?? t('aiUnderstoodAs')
   // Fix 1a: normalize confidence — if value is between 0 and 1, multiply by 100
   const rawConfidence = parsed.confidence ?? 0.9
   const confidence = rawConfidence > 0 && rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence)
@@ -51,7 +47,7 @@ export function PreviewCard({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {headerIcon || <Sparkles size={18} color={TEAL} />}
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>{resolvedHeaderText}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>{headerText}</span>
         </div>
         <button
           onClick={onEdit}
@@ -117,7 +113,7 @@ export function PreviewCard({
         padding: '14px 16px', background: '#f9fafb', borderRadius: 12, marginBottom: 20,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>{t('aiConfidence')}</span>
+          <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>AI Confidence</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: confidenceColor }}>{confidence}%</span>
         </div>
         <div style={{ display: 'flex', gap: 3 }}>
@@ -135,7 +131,7 @@ export function PreviewCard({
         {confidence < 70 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
             <AlertTriangle size={14} color={RED} />
-            <span style={{ fontSize: 12, color: RED, fontWeight: 500 }}>{t('pleaseVerifyDetails')}</span>
+            <span style={{ fontSize: 12, color: RED, fontWeight: 500 }}>Please verify details</span>
           </div>
         )}
       </div>
@@ -152,7 +148,7 @@ export function PreviewCard({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          {t('discard')}
+          Discard
         </button>
         <button
           onClick={onConfirm}
@@ -167,7 +163,7 @@ export function PreviewCard({
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           }}
         >
-          <Check size={16} /> {resolvedConfirmLabel}
+          <Check size={16} /> {confirmLabel}
         </button>
       </div>
     </motion.div>

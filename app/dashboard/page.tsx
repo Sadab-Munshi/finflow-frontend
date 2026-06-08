@@ -81,7 +81,8 @@ const CustomTooltip = ({
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { t } = useLanguage()
+  // Fix #4: removed unused `t` destructure
+  useLanguage()
 
   const [mounted, setMounted]           = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -245,11 +246,11 @@ export default function DashboardPage() {
   const displayExpense     = dashboardView === 'month' ? monthExpenses            : totalExpenses
   const displayBalance     = dashboardView === 'month' ? monthIncome - monthExpenses : balance
   const displaySavingsRate = dashboardView === 'month' ? monthSavingsRate         : allTimeSavingsRate
-  const heroLabel          = dashboardView === 'month' ? t('currentBalance')      : t('totalBalance')
-  const periodLabel        = dashboardView === 'month' ? t('thisMonth')           : t('allTime')
+  const heroLabel          = dashboardView === 'month' ? 'Current Balance'        : 'Total Balance'
+  const periodLabel        = dashboardView === 'month' ? 'This Month'             : 'All Time'
 
   // Fix #5: dynamic insight card title
-  const insightLabel = dashboardView === 'month' ? t('thisMonthInsight') : t('allTimeInsight')
+  const insightLabel = dashboardView === 'month' ? 'This Month Insight' : 'All Time Insight'
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const getRelativeTime = (tx: Transaction): string => {
@@ -257,8 +258,8 @@ export default function DashboardPage() {
     const dateStr   = normalizeDateToYMD(tx.created_at)
     const today     = getISTDateOffset(0)
     const yesterday = getISTDateOffset(1)
-    if (dateStr === today)     return t('today')
-    if (dateStr === yesterday) return t('yesterday')
+    if (dateStr === today)     return 'Today'
+    if (dateStr === yesterday) return 'Yesterday'
     return formatIST(tx.created_at)
   }
 
@@ -281,7 +282,7 @@ export default function DashboardPage() {
 
         {/* 1. Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[#0F172A]">{t('dashboard')}</h1>
+          <h1 className="text-2xl font-bold text-[#0F172A]">Dashboard</h1>
           <div className="flex items-center bg-white border border-[#E2E8F0] rounded-full p-0.5">
             <button
               onClick={() => setDashboardView('month')}
@@ -290,7 +291,7 @@ export default function DashboardPage() {
                 dashboardView === 'month' ? "bg-[#0A7B7B] text-white" : "bg-white text-[#475569]",
               )}
             >
-              {t('thisMonth')}
+              This Month
             </button>
             <button
               onClick={() => setDashboardView('all')}
@@ -299,7 +300,7 @@ export default function DashboardPage() {
                 dashboardView === 'all' ? "bg-[#0A7B7B] text-white" : "bg-white text-[#475569]",
               )}
             >
-              {t('allTime')}
+              All Time
             </button>
           </div>
         </div>
@@ -338,7 +339,7 @@ export default function DashboardPage() {
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 bg-[#10B981]/10">
               <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#10B981]" />
             </div>
-            <span className="text-[11px] sm:text-xs text-[#475569] font-medium">{t('income')}</span>
+            <span className="text-[11px] sm:text-xs text-[#475569] font-medium">Income</span>
             <span className="text-xs sm:text-sm font-bold text-[#0F172A]">
               {formatIndianCurrency(displayIncome)}
             </span>
@@ -348,7 +349,7 @@ export default function DashboardPage() {
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 bg-[#EF4444]/10">
               <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#EF4444]" />
             </div>
-            <span className="text-[11px] sm:text-xs text-[#475569] font-medium">{t('expense')}</span>
+            <span className="text-[11px] sm:text-xs text-[#475569] font-medium">Expenses</span>
             <span className="text-xs sm:text-sm font-bold text-[#0F172A]">
               {formatIndianCurrency(displayExpense)}
             </span>
@@ -358,7 +359,7 @@ export default function DashboardPage() {
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 bg-[#7C3AED]/10">
               <PiggyBank className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#7C3AED]" />
             </div>
-            <span className="text-[11px] sm:text-xs text-[#475569] font-medium">{t('saving')}</span>
+            <span className="text-[11px] sm:text-xs text-[#475569] font-medium">Saving</span>
             <span className={cn(
               "text-sm font-bold rounded-full px-2 py-0.5",
               displaySavingsRate >= 0 ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "bg-red-100 text-red-600",
@@ -382,7 +383,7 @@ export default function DashboardPage() {
               <p className="text-[#0A7B7B] text-sm font-semibold">{insightLabel}</p>
               <p className="text-base font-semibold text-[#0F172A]">{topCategory.name}</p>
               <p className="text-[#475569] text-sm">
-                {t('youSpentXSoFar').replace('{amount}', formatIndianCurrency(topCategory.value))}
+                You spent {formatIndianCurrency(topCategory.value)} so far
               </p>
             </div>
             <div className="flex-shrink-0 hidden sm:block">
@@ -404,18 +405,18 @@ export default function DashboardPage() {
         {/* 5. Recent Transactions */}
         <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-[#0F172A]">{t('recentTransactions')}</h2>
+            <h2 className="text-base font-semibold text-[#0F172A]">Recent Transactions</h2>
             <button
               onClick={() => router.push('/history')}
               className="text-[#0A7B7B] text-sm font-medium hover:underline"
             >
-              {t('viewAll')} →
+              View All →
             </button>
           </div>
           {recentTx.length === 0 ? (
             <div className="p-8 text-center text-[#64748B]">
-              <p>{t('noTransactions')}</p>
-              <p className="text-sm">{t('startTracking')}</p>
+              <p>No transactions yet</p>
+              <p className="text-sm">Start tracking your finances</p>
             </div>
           ) : (
             <div>
@@ -463,9 +464,9 @@ export default function DashboardPage() {
         <div className="bg-white rounded-[28px] shadow-[0_10px_40px_rgba(15,23,42,0.06)] border border-[#EEF2F7] p-4 sm:p-6 md:p-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-[#0F172A]">{t('weeklyActivity')}</h2>
+              <h2 className="text-lg font-bold text-[#0F172A]">Weekly Activity</h2>
               <p className="text-xs text-[#64748B] mt-0.5">
-                {t('weeklyActivityDesc')}
+                Income and expenses over the last 7 days
               </p>
             </div>
             <div className="flex items-center gap-4 text-xs">
@@ -473,7 +474,7 @@ export default function DashboardPage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-[#00B894] shadow-[0_0_8px_rgba(0,184,148,0.5)]" />
                 <div>
                   <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">
-                    {t('income')}
+                    Income
                   </span>
                   <span className="text-[#0F172A] font-bold text-sm">
                     {formatIndianCurrency(weeklyIncomeTotal)}
@@ -484,7 +485,7 @@ export default function DashboardPage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FF5A5F] shadow-[0_0_8px_rgba(255,90,95,0.5)]" />
                 <div>
                   <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">
-                    {t('expense')}
+                    Expense
                   </span>
                   <span className="text-[#0F172A] font-bold text-sm">
                     {formatIndianCurrency(weeklyExpenseTotal)}
@@ -530,7 +531,7 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="income"
-                  name={t('income')}
+                  name="Income"
                   stroke="#00B894"
                   strokeWidth={3}
                   fill="url(#incomeGradient)"
@@ -543,7 +544,7 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="expense"
-                  name={t('expense')}
+                  name="Expense"
                   stroke="#FF5A5F"
                   strokeWidth={3}
                   fill="url(#expenseGradient)"
@@ -561,9 +562,9 @@ export default function DashboardPage() {
         {/* 7. Expense Breakdown */}
         {pieExpenseTotal > 0 && pieData.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5">
-            <h2 className="text-base font-semibold text-[#0F172A]">{t('expenseBreakdown')}</h2>
+            <h2 className="text-base font-semibold text-[#0F172A]">Expense Breakdown</h2>
             <p className="text-xs text-[#64748B] mb-3">
-              {dashboardView === 'month' ? t('thisMonthByCategory') : t('allTimeByCategory')}
+              {dashboardView === 'month' ? 'This month by category' : 'All time by category'}
             </p>
             <div className={cn("flex items-center gap-4", isDesktop ? "flex-row" : "flex-col")}>
               <div
@@ -596,7 +597,7 @@ export default function DashboardPage() {
                   <span className="text-sm md:text-base font-bold text-[#0F172A]">
                     {formatIndianCurrency(pieExpenseTotal)}
                   </span>
-                  <span className="text-[10px] md:text-xs text-[#64748B]">{t('spent')}</span>
+                  <span className="text-[10px] md:text-xs text-[#64748B]">Spent</span>
                 </div>
               </div>
               <div className="flex-1 w-full space-y-2">

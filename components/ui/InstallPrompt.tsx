@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { X, Share } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { useLanguage } from '@/context/LanguageContext'
 
 const PUBLIC_ROUTES = ['/', '/login', '/signup', '/forgot-password', 
   '/reset-password', '/privacy', '/terms', '/disclaimer', '/support']
@@ -21,7 +20,6 @@ function isInStandaloneMode() {
 
 export default function InstallPrompt() {
   const pathname = usePathname()
-  const { t } = useLanguage()
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [show, setShow] = useState(false)
   const [isIOSDevice, setIsIOSDevice] = useState(false)
@@ -98,12 +96,12 @@ export default function InstallPrompt() {
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: 700, color: '#111827' }}>
-          {t('installFinFlowApp')}
+          Install FinFlow
         </p>
         <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {isIOSDevice
-            ? t('tapShareAddToHome')
-            : t('addToHomeQuickAccess')}
+            ? 'Tap Share then "Add to Home Screen"'
+            : 'Add to home screen for quick access'}
         </p>
       </div>
       {isIOSDevice ? (
@@ -117,7 +115,7 @@ export default function InstallPrompt() {
             fontWeight: 700, cursor: 'pointer', flexShrink: 0,
           }}
         >
-          {t('installBtn')}
+          Install
         </button>
       )}
       <button

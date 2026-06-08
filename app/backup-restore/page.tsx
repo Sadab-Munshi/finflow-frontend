@@ -10,7 +10,6 @@ import {
   Loader2, CheckCircle,
 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions, getBudgets, deleteBudget, upsertBudget, deleteTransactions } from '@/lib/db'
 import { useUser } from '@/context/UserContext'
 import { createClient } from '@/lib/supabase/client'
@@ -295,7 +294,6 @@ function sanitizeImportedCSV(raw: string): SanitizedImport {
 export default function BackupRestorePage() {
   const router = useRouter()
   const { user } = useUser()
-  const { t } = useLanguage()
   const [authChecked, setAuthChecked] = useState(false)
   const [isExportingCsv, setIsExportingCsv] = useState(false)
   const [isExportingJson, setIsExportingJson] = useState(false)
@@ -330,7 +328,7 @@ export default function BackupRestorePage() {
     try {
       const transactions = await getTransactions()
       if (!transactions.length) {
-        toast(t('noTxToExport'), { icon: 'ℹ️' })
+        toast('No transactions to export.', { icon: 'ℹ️' })
         return
       }
       const headers = ['Date', 'Type', 'Category', 'Amount', 'Note']
@@ -346,7 +344,7 @@ export default function BackupRestorePage() {
       setCsvExportSuccess(true)
       setTimeout(() => setCsvExportSuccess(false), 2000)
     } catch {
-      toast.error(t('exportFailedTryAgain'))
+      toast.error('Export failed, try again.')
     } finally {
       setIsExportingCsv(false)
     }
@@ -381,7 +379,7 @@ export default function BackupRestorePage() {
       setJsonExportSuccess(true)
       setTimeout(() => setJsonExportSuccess(false), 2000)
     } catch {
-      toast.error(t('exportFailedTryAgain'))
+      toast.error('Export failed, try again.')
     } finally {
       setIsExportingJson(false)
     }
@@ -391,13 +389,13 @@ export default function BackupRestorePage() {
 
   async function parseAndPreviewFile(file: File) {
     if (file.size > MAX_FILE_SIZE) {
-      toast.error(t('fileTooLarge'))
+      toast.error('File too large. Maximum size is 5MB.')
       return
     }
 
     const ext = file.name.split('.').pop()?.toLowerCase()
     if (ext !== 'csv' && ext !== 'json') {
-      toast.error(t('onlyJsonCSVSupported'))
+      toast.error('Only .json and .csv files are supported.')
       return
     }
 
@@ -432,7 +430,7 @@ export default function BackupRestorePage() {
       }))
 
       if (txns.length === 0 && bgts.length === 0) {
-        toast.error(t('noValidDataInFile'))
+        toast.error('No valid data found in file.')
         return
       }
 
@@ -454,7 +452,7 @@ export default function BackupRestorePage() {
         dateRange,
       })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('invalidFile'))
+      toast.error(error instanceof Error ? error.message : 'Invalid file. Please use a FinFlow export.')
       setImportPreview(null)
     }
   }
@@ -537,12 +535,12 @@ export default function BackupRestorePage() {
         })
       }
 
-      toast.success(t('dataImportedSuccess').replace('{count}', String(imported)))
+      toast.success(`Data imported successfully (${imported} transaction${imported !== 1 ? 's' : ''} added)`)
       setImportPreview(null)
       setParsedData(null)
       setImportMode('merge')
     } catch {
-      toast.error(t('importFailed'))
+      toast.error('Import failed. Please check your file format.')
     } finally {
       setIsImporting(false)
     }
@@ -569,12 +567,12 @@ export default function BackupRestorePage() {
           >
             <ArrowLeft size={16} className="text-gray-600" />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">{t('backupRestoreTitle')}</h1>
+          <h1 className="text-lg font-bold text-gray-900">Backup & Restore</h1>
         </div>
 
         {/* ── SECTION 1 — BACKUP ─────────────────────────────────────── */}
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-          {t('backupYourData')}
+          Backup Your Data
         </p>
 
         <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
@@ -582,7 +580,7 @@ export default function BackupRestorePage() {
           <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 mb-3 flex items-start gap-2">
             <Info className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
             <p className="text-xs text-teal-700 leading-relaxed">
-              {t('exportCopyForSafekeeping')}
+              Export a copy of your data for safekeeping. You can restore it at any time using the Restore section below.
             </p>
           </div>
 
@@ -602,9 +600,9 @@ export default function BackupRestorePage() {
                 <FileSpreadsheet className="w-8 h-8 text-teal-500" />
               )}
               <span className="text-sm font-semibold text-gray-700">
-                {isExportingCsv ? t('exportingEllipsis') : csvExportSuccess ? t('downloaded') : t('exportCSVBtn')}
+                {isExportingCsv ? 'Exporting...' : csvExportSuccess ? 'Downloaded!' : 'Export CSV'}
               </span>
-              <span className="text-xs text-gray-400 text-center">{t('txBudgetsAsSpreadsheet')}</span>
+              <span className="text-xs text-gray-400 text-center">Transactions &amp; budgets as spreadsheet</span>
             </button>
 
             {/* Export JSON */}
@@ -621,16 +619,16 @@ export default function BackupRestorePage() {
                 <FileJson className="w-8 h-8 text-teal-500" />
               )}
               <span className="text-sm font-semibold text-gray-700">
-                {isExportingJson ? t('exportingEllipsis') : jsonExportSuccess ? t('downloaded') : t('exportJSONBtn')}
+                {isExportingJson ? 'Exporting...' : jsonExportSuccess ? 'Downloaded!' : 'Export JSON'}
               </span>
-              <span className="text-xs text-gray-400 text-center">{t('txBudgetsAsJSON')}</span>
+              <span className="text-xs text-gray-400 text-center">Transactions &amp; budgets as JSON file</span>
             </button>
           </div>
         </div>
 
         {/* ── SECTION 2 — RESTORE ────────────────────────────────────── */}
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4">
-          {t('restoreData')}
+          Restore Data
         </p>
 
         <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
@@ -638,7 +636,7 @@ export default function BackupRestorePage() {
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700 leading-relaxed">
-              {t('importMayOverwrite')}
+              Importing data may overwrite your existing records. We recommend exporting a backup first.
             </p>
           </div>
 
@@ -657,14 +655,14 @@ export default function BackupRestorePage() {
                 }`}
               >
                 <Upload className={`w-10 h-10 text-gray-300 mx-auto mb-3 transition-transform ${isDraggingOver ? 'scale-110 text-teal-400' : ''}`} />
-                <p className="text-sm font-medium text-gray-600">{t('dropBackupFile')}</p>
-                <p className="text-xs text-gray-400 mt-1">{t('supportsCSVJSON')}</p>
+                <p className="text-sm font-medium text-gray-600">Drop your backup file here</p>
+                <p className="text-xs text-gray-400 mt-1">Supports .csv and .json files</p>
                 <button
                   type="button"
                   className="mt-3 text-xs text-teal-600 font-medium border border-teal-300 rounded-full px-4 py-1.5 hover:bg-teal-50"
                   onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
                 >
-                  {t('browseFile')}
+                  Browse File
                 </button>
                 <div className="flex items-center justify-center gap-2 mt-3">
                   <span className="text-xs text-gray-500 bg-gray-100 rounded-full px-2.5 py-0.5">.json</span>
@@ -693,14 +691,14 @@ export default function BackupRestorePage() {
                   )}
                   <span className="text-sm font-semibold text-gray-700">
                     <FileCheck className="w-4 h-4 text-green-500 inline mr-1" />
-                    {t('fileReadyToImport')}
+                    File ready to import
                   </span>
                 </div>
                 <button
                   onClick={resetImport}
                   className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {t('changeBtnLabel')}
+                  Change
                 </button>
               </div>
               <p className="text-xs text-gray-400 mt-0.5 truncate">{importPreview.fileName} · {formatFileSize(importPreview.fileSize)}</p>
@@ -709,7 +707,7 @@ export default function BackupRestorePage() {
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <div className="bg-gray-50 rounded-xl p-3 text-center">
                   <p className="text-lg font-bold text-gray-800">{importPreview.transactionCount}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{t('transactionsFound')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Transactions found</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 text-center">
                   <p className="text-sm font-bold text-gray-800">
@@ -717,20 +715,20 @@ export default function BackupRestorePage() {
                       ? `${importPreview.dateRange.earliest} → ${importPreview.dateRange.latest}`
                       : '—'}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{t('dateRange')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Date range</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 text-center">
                   <p className="text-lg font-bold text-gray-800">{importPreview.budgetCount}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{t('budgetsLabel')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Budgets</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 text-center">
                   <p className="text-lg font-bold text-gray-800">{importPreview.categoryCount}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{t('categoriesLabel')}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Categories</p>
                 </div>
               </div>
 
               {/* Import mode */}
-              <p className="text-sm font-semibold text-gray-700 mt-4 mb-2">{t('importMode')}</p>
+              <p className="text-sm font-semibold text-gray-700 mt-4 mb-2">Import Mode</p>
               <div className="grid grid-cols-2 gap-2">
                 <div
                   onClick={() => setImportMode('merge')}
@@ -739,8 +737,8 @@ export default function BackupRestorePage() {
                   }`}
                 >
                   <GitMerge className="w-5 h-5 mx-auto mb-1 text-teal-600" />
-                  <p className="text-sm font-semibold">{t('merge')}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{t('addToExistingData')}</p>
+                  <p className="text-sm font-semibold">Merge</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Add to existing data</p>
                 </div>
                 <div
                   onClick={() => setImportMode('replace')}
@@ -749,15 +747,15 @@ export default function BackupRestorePage() {
                   }`}
                 >
                   <RefreshCw className="w-5 h-5 mx-auto mb-1 text-red-500" />
-                  <p className="text-sm font-semibold">{t('replace')}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{t('overwriteAllData')}</p>
+                  <p className="text-sm font-semibold">Replace</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Overwrite all data</p>
                 </div>
               </div>
 
               {importMode === 'replace' && (
                 <p className="text-xs text-red-500 flex items-center gap-1 mt-2">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                  {t('willDeleteCurrentData')}
+                  This will delete all your current data
                 </p>
               )}
 
@@ -774,12 +772,12 @@ export default function BackupRestorePage() {
                 {isImporting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {t('importingEllipsis')}
+                    Importing...
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    {importMode === 'merge' ? t('mergeImportData') : t('replaceImportData')}
+                    {importMode === 'merge' ? 'Merge & Import Data' : 'Replace & Import Data'}
                   </>
                 )}
               </button>
@@ -789,7 +787,7 @@ export default function BackupRestorePage() {
                 onClick={resetImport}
                 className="w-full text-center text-xs text-gray-400 hover:text-gray-600 mt-3 transition-colors"
               >
-                {t('cancel')}
+                Cancel
               </button>
             </div>
           )}
