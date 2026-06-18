@@ -135,6 +135,8 @@ export function ManualForm({
   const [showSheet, setShowSheet] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
   const today = getTodayIST()
+  const currentYear = today.split('-')[0]
+  const yearMin = `${currentYear}-01-01`
 
   const isExpense = type === 'expense'
   const amountValue = parseFloat(amount)
@@ -306,6 +308,7 @@ export function ManualForm({
           ref={dateInputRef}
           type="date"
           value={date}
+          min={yearMin}
           max={today}
           onChange={(e) => {
             const safe = validateTransactionDate(e.target.value)
