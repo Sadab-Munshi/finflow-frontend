@@ -58,7 +58,15 @@ export interface AnomalyDetectionResponse {
 export interface YoYComparison {
   current: { month: string; income: number; expense: number; savings: number; savingsRate: number }
   previous: { month: string; income: number; expense: number; savings: number; savingsRate: number }
-  changes: { incomePct: number; expensePct: number; savingsPct: number; savingsRateDiff: number }
+  changes: {
+    incomePct: number | null
+    expensePct: number | null
+    savingsPct: number | null
+    savingsRateDiff: number
+    incomeIsNew: boolean
+    expenseIsNew: boolean
+    savingsIsNew: boolean
+  }
 }
 
 export interface YoYComparisonResponse {

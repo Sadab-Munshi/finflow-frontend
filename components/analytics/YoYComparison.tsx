@@ -4,7 +4,15 @@ import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react'
 import { formatIndianCurrency } from '@/lib/utils'
 import type { YoYComparison as YoYData } from '@/lib/analytics-types'
 
-function ChangeBadge({ value, suffix = '%' }: { value: number; suffix?: string }) {
+function ChangeBadge({ value, isNew = false, suffix = '%' }: { value: number | null; isNew?: boolean; suffix?: string }) {
+  if (value === null) {
+    return (
+      <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-[#3B82F6]">
+        {isNew ? 'New' : 'N/A'}
+      </span>
+    )
+  }
+
   const isPositive = value > 0
   const isNeutral = value === 0
 
@@ -42,6 +50,7 @@ export default function YoYComparison({ data }: { data: YoYData }) {
       current: current.income,
       previous: previous.income,
       change: changes.incomePct,
+      isNew: changes.incomeIsNew,
       color: '#10B981',
       bgColor: '#f4fbf7',
       borderColor: '#e2f5ec',
@@ -51,6 +60,7 @@ export default function YoYComparison({ data }: { data: YoYData }) {
       current: current.expense,
       previous: previous.expense,
       change: changes.expensePct,
+      isNew: changes.expenseIsNew,
       color: '#EF4444',
       bgColor: '#fff5f5',
       borderColor: '#ffe1e1',
@@ -60,6 +70,7 @@ export default function YoYComparison({ data }: { data: YoYData }) {
       current: current.savings,
       previous: previous.savings,
       change: changes.savingsPct,
+      isNew: changes.savingsIsNew,
       color: '#8B5CF6',
       bgColor: '#FAF9FF',
       borderColor: '#eae6ff',
@@ -88,7 +99,7 @@ export default function YoYComparison({ data }: { data: YoYData }) {
               {formatIndianCurrency(m.current)}
             </span>
             <div className="mt-1.5">
-              <ChangeBadge value={m.change} />
+              <ChangeBadge value={m.change} isNew={m.isNew} />
             </div>
             <span className="text-[10px] text-[#9CA3AF] mt-1">
               vs {formatIndianCurrency(m.previous)}

@@ -10,7 +10,8 @@ import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
 import { getTransactionById, updateTransaction, deleteTransaction } from '@/lib/db'
 import { getCategoriesByType, getCategoryByName } from '@/lib/categories'
-import { cn, formatIndianCurrency } from '@/lib/utils'
+import { cn, formatIndianCurrency, getTodayIndianDate } from '@/lib/utils'
+import { validateTransactionDate } from '@/lib/validateTransactionDate'
 import TransactionDetailSkeleton from '@/components/skeletons/TransactionDetailSkeleton'
 import { Transaction } from '@/lib/types'
 
@@ -110,8 +111,12 @@ export default function TransactionDetailPage() {
 
   const cat = getCategoryByName(transaction.category)
 
+  const today = getTodayIndianDate()
+  const currentYear = today.split('-')[0]
+  const yearMin = `${currentYear}-01-01`
+
   const handleSave = async () => {
-    const updates = { amount: parseFloat(amount), type, category, note, date }
+    const updates = { amount: parseFloat(amount), type, category, note, date: validateTransactionDate(date) }
     await updateTransaction(id, updates)
     setTransaction({ ...transaction, ...updates })
     setEditing(false)
@@ -224,7 +229,9 @@ export default function TransactionDetailPage() {
                   <input
                     type="date"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    min={yearMin}
+                    max={today}
+                    onChange={(e) => setDate(validateTransactionDate(e.target.value))}
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-teal-500 transition-colors"
                   />
                 </div>
