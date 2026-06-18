@@ -165,16 +165,10 @@ export async function testAuthAdmin() {
   return request('/api/test-auth/admin')
 }
 
-// ============ User Endpoints ============
-
-export async function getUserProfile() {
-  return request('/api/user/profile')
-}
-
 // ============ Notifications Endpoints ============
 
-export async function getNotifications(limit = 20, unread = false, offset = 0) {
-  return request(`/api/notifications?limit=${limit}&unread=${unread}&offset=${offset}`)
+export async function getNotifications(limit = 20, unread = false) {
+  return request(`/api/notifications?limit=${limit}&unread=${unread}`)
 }
 
 export async function markNotificationRead(notificationId: string) {
@@ -191,22 +185,6 @@ export async function markAllNotificationsRead() {
 
 export async function deleteNotification(id: string) {
   return request(`/api/notifications/${id}`, { method: 'DELETE' })
-}
-
-export async function markNotificationsShown(notificationIds: string[]) {
-  return request('/api/notifications/mark-shown', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notificationIds }),
-  })
-}
-
-export async function bulkMarkRead(ids: string[]) {
-  return request('/api/notifications/bulk-mark-read', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids }),
-  })
 }
 
 export async function sendNotification(data: {
@@ -331,10 +309,6 @@ export async function trackLogin(userId: string, email: string, ipAddress?: stri
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, email, ipAddress }),
   })
-}
-
-export async function heartbeat() {
-  return request('/api/track-login/heartbeat', { method: 'POST' })
 }
 
 // ============ Telegram Endpoints ============
