@@ -18,7 +18,7 @@ import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
 
 import toast from 'react-hot-toast'
-import { aiUsage as fetchAiUsage, telegramNotify, whatsappNotify, submitFeedback } from '@/lib/api-client'
+import { aiUsage as fetchAiUsage, telegramNotify, whatsappNotify, submitFeedback, getUserProfile } from '@/lib/api-client'
 
 type Language = 'en' | 'hi' | 'bn'
 
@@ -129,15 +129,18 @@ export default function ProfilePage() {
         if (extSettings.whatsapp_phone) setWhatsappConnected(true)
       }
 
-      const { data } = await supabase.auth.getUser()
-      if (data.user) {
-        const userName = data.user.user_metadata?.full_name || dbSettings?.name || ''
+      try {
+        const profile = await getUserProfile()
+        const userName = profile.name || dbSettings?.name || ''
         setName(userName)
-        setEmail(data.user.email || '')
-        if (data.user.created_at) {
-          const createdAt = new Date(data.user.created_at)
+        setEmail(profile.email || '')
+        if (profile.created_at) {
+          const createdAt = new Date(profile.created_at)
           setMemberSince(createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
         }
+      } catch {
+        // profile fetch failed, fallback to settings
+        if (dbSettings?.name) setName(dbSettings.name)
       }
 
       // Load stats

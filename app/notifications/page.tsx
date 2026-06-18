@@ -14,7 +14,7 @@ import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
 import NotificationsSkeleton from '@/components/skeletons/NotificationsSkeleton'
 import toast from 'react-hot-toast'
 import type { Notification } from '@/lib/types'
-import { deleteNotification } from '@/lib/api-client'
+import { deleteNotification, getNotifications, markNotificationRead, markAllNotificationsRead, bulkMarkRead } from '@/lib/api-client'
 
 const PAGE_SIZE = 20
 
@@ -74,17 +74,14 @@ export default function NotificationsPage() {
     if (!user) { router.push('/login'); return }
     setUserId(user.id)
 
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
-
-    if (data) {
-      if (append) setNotifications(prev => [...prev, ...data])
-      else setNotifications(data)
-      setHasMore(data.length === PAGE_SIZE)
+    try {
+      const data = await getNotifications(PAGE_SIZE, false, offset)
+      const notifs = data.notifications || []
+      if (append) setNotifications(prev => [...prev, ...notifs])
+      else setNotifications(notifs)
+      setHasMore(notifs.length === PAGE_SIZE)
+    } catch (err) {
+      console.error('[notifications] Failed to load:', err)
     }
   }, [router])
 
@@ -103,15 +100,21 @@ export default function NotificationsPage() {
   }
 
   const handleMarkAsRead = async (id: string) => {
-    const supabase = createClient()
-    await supabase.from('notifications').update({ read: true }).eq('id', id)
+    try {
+      await markNotificationRead(id)
+    } catch {
+      // ignore
+    }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
   }
 
   const handleMarkAllAsRead = async () => {
     if (!userId) return
-    const supabase = createClient()
-    await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false)
+    try {
+      await markAllNotificationsRead()
+    } catch {
+      // ignore
+    }
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     toast.success('All notifications marked as read')
   }
@@ -189,8 +192,11 @@ export default function NotificationsPage() {
   const handleBulkMarkRead = async () => {
     if (selected.size === 0) return
     const ids = Array.from(selected)
-    const supabase = createClient()
-    await supabase.from('notifications').update({ read: true }).in('id', ids)
+    try {
+      await bulkMarkRead(ids)
+    } catch {
+      // ignore
+    }
     setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n))
     setSelected(new Set())
     setSelectMode(false)
