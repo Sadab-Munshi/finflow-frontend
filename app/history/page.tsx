@@ -82,14 +82,17 @@ function HistoryContent() {
   if (loading) return <HistorySkeleton />
   if (!mounted) return null
 
-  const getTxDate = (tx: Transaction) => tx.created_at ?? tx.date
+  const formatTxDate = (dateStr: string): string => {
+    const [y, m, d] = normalizeDateToYMD(dateStr).split('-')
+    return `${d}/${m}/${y}`
+  }
 
   const filtered = transactions.filter(tx => {
     if (typeFilter !== 'all' && tx.type !== typeFilter) return false
     if (categoryFilter !== 'all' && tx.category.trim().toLowerCase() !== categoryFilter.trim().toLowerCase()) return false
     if (searchQuery && !tx.note.toLowerCase().includes(searchQuery.toLowerCase())) return false
     if (appliedFromDate || appliedToDate) {
-      const txDate = normalizeDateToYMD(getTxDate(tx))
+      const txDate = normalizeDateToYMD(tx.date)
       if (appliedFromDate && txDate < appliedFromDate) return false
       if (appliedToDate && txDate > appliedToDate) return false
     }
@@ -114,7 +117,7 @@ function HistoryContent() {
     setDropdownOpen(false)
     const headers = ['Date', 'Type', 'Category', 'Description', 'Amount']
     const rows = filtered.map(tx => [
-      formatIST(getTxDate(tx)),
+      formatTxDate(tx.date),
       tx.type.charAt(0).toUpperCase() + tx.type.slice(1),
       tx.category,
       tx.note,
@@ -231,7 +234,7 @@ function HistoryContent() {
       doc.setDrawColor(220, 220, 220)
       colX.forEach((x, i) => doc.rect(x, y, colW[i], rowH, 'S'))
 
-      const dateStr = formatIST(getTxDate(tx))
+      const dateStr = formatTxDate(tx.date)
       const typeStr = tx.type.charAt(0).toUpperCase() + tx.type.slice(1)
       const desc = tx.note.length > 30 ? tx.note.slice(0, 30) + '...' : tx.note
       const amountStr = (tx.type === 'income' ? '+' : '-') + Math.abs(tx.amount).toLocaleString('en-IN')
