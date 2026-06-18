@@ -145,20 +145,24 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between mb-1">
               <div>
                 <h2 className="text-base font-semibold text-[#0F172A]">Cash Flow Forecast</h2>
-                <p className="text-xs text-[#64748B]">90-day balance projection via linear regression</p>
+                <p className="text-xs text-[#64748B]">90-day balance projection based on your spending patterns</p>
               </div>
               <div className="text-right">
                 <span className="text-xs text-[#64748B]">Confidence</span>
-                <p className="text-lg font-bold text-[#0A7B7B]">{(forecastData.data.confidence * 100).toFixed(0)}%</p>
+                <p className={`text-lg font-bold ${
+                  forecastData.data.confidence >= 0.75 ? 'text-[#0A7B7B]' :
+                  forecastData.data.confidence >= 0.50 ? 'text-[#F59E0B]' :
+                  'text-[#EF4444]'
+                }`}>
+                  {(forecastData.data.confidence * 100).toFixed(0)}%
+                </p>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-3">
               <div className="bg-[#F0FDF9] rounded-xl p-3 text-center">
                 <p className="text-[10px] text-[#64748B] uppercase tracking-wider font-semibold">Current</p>
                 <p className="text-sm font-bold text-[#0F172A] mt-1">
-                  {forecastData.data.projection[0]
-                    ? `₹${Math.round(forecastData.data.projection[0].projectedBalance).toLocaleString('en-IN')}`
-                    : '-'}
+                  ₹{Math.round(forecastData.data.currentBalance).toLocaleString('en-IN')}
                 </p>
               </div>
               <div className="bg-[#FAF9FF] rounded-xl p-3 text-center">

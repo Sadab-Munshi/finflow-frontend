@@ -33,6 +33,7 @@ export interface CashFlowForecastResponse {
   data: {
     projection: ForecastPoint[]
     confidence: number
+    currentBalance: number
   }
   cached: boolean
   computed_at: string
