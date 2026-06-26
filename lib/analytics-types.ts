@@ -33,7 +33,8 @@ export interface CashFlowForecastResponse {
   data: {
     projection: ForecastPoint[]
     confidence: number
-    currentBalance: number
+    /** Net of all recorded income minus expenses — NOT the user's real bank balance. */
+    netBalance: number
   }
   cached: boolean
   computed_at: string

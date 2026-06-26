@@ -141,12 +141,12 @@ export default function AnalyticsPage() {
 
         {/* Cash Flow Forecast */}
         {forecastData?.data?.projection && forecastData.data.projection.length > 0 &&
-         typeof forecastData.data.currentBalance === 'number' && isFinite(forecastData.data.currentBalance) && (
+         typeof forecastData.data.netBalance === 'number' && isFinite(forecastData.data.netBalance) && (
           <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4 md:p-5">
             <div className="flex items-center justify-between mb-1">
               <div>
                 <h2 className="text-base font-semibold text-[#0F172A]">Cash Flow Forecast</h2>
-                <p className="text-xs text-[#64748B]">90-day balance projection based on your spending patterns</p>
+                <p className="text-xs text-[#64748B]">90-day projection based on your recorded transaction history</p>
               </div>
               <div className="text-right">
                 <span className="text-xs text-[#64748B]">Confidence</span>
@@ -161,10 +161,11 @@ export default function AnalyticsPage() {
             </div>
             <div className="mt-3 grid grid-cols-3 gap-3">
               <div className="bg-[#F0FDF9] rounded-xl p-3 text-center">
-                <p className="text-[10px] text-[#64748B] uppercase tracking-wider font-semibold">Current</p>
+                <p className="text-[10px] text-[#64748B] uppercase tracking-wider font-semibold">Net Balance</p>
                 <p className="text-sm font-bold text-[#0F172A] mt-1">
-                  ₹{Math.round(forecastData.data.currentBalance).toLocaleString('en-IN')}
+                  ₹{Math.round(forecastData.data.netBalance).toLocaleString('en-IN')}
                 </p>
+                <p className="text-[9px] text-[#94A3B8] mt-0.5">from transactions</p>
               </div>
               <div className="bg-[#FAF9FF] rounded-xl p-3 text-center">
                 <p className="text-[10px] text-[#64748B] uppercase tracking-wider font-semibold">30-Day</p>
