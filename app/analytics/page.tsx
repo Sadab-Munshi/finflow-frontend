@@ -140,7 +140,8 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Cash Flow Forecast */}
-        {forecastData?.data?.projection && forecastData.data.projection.length > 0 && (
+        {forecastData?.data?.projection && forecastData.data.projection.length > 0 &&
+         typeof forecastData.data.currentBalance === 'number' && isFinite(forecastData.data.currentBalance) && (
           <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4 md:p-5">
             <div className="flex items-center justify-between mb-1">
               <div>
@@ -168,17 +169,17 @@ export default function AnalyticsPage() {
               <div className="bg-[#FAF9FF] rounded-xl p-3 text-center">
                 <p className="text-[10px] text-[#64748B] uppercase tracking-wider font-semibold">30-Day</p>
                 <p className="text-sm font-bold text-[#0F172A] mt-1">
-                  {forecastData.data.projection[29]
+                  {forecastData.data.projection[29] && isFinite(forecastData.data.projection[29].projectedBalance)
                     ? `₹${Math.round(forecastData.data.projection[29].projectedBalance).toLocaleString('en-IN')}`
-                    : '-'}
+                    : '—'}
                 </p>
               </div>
               <div className="bg-[#FFF7ED] rounded-xl p-3 text-center">
                 <p className="text-[10px] text-[#64748B] uppercase tracking-wider font-semibold">90-Day</p>
                 <p className="text-sm font-bold text-[#0F172A] mt-1">
-                  {forecastData.data.projection[89]
+                  {forecastData.data.projection[89] && isFinite(forecastData.data.projection[89].projectedBalance)
                     ? `₹${Math.round(forecastData.data.projection[89].projectedBalance).toLocaleString('en-IN')}`
-                    : '-'}
+                    : '—'}
                 </p>
               </div>
             </div>
