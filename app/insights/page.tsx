@@ -351,7 +351,7 @@ export default function InsightsPage() {
               <div className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-3 flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-[#9CA3AF] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  AI-generated insights may not always be accurate. Always verify with a financial advisor before making major decisions.{' '}
+                  These insights are generated from your recorded transactions and are intended to help you identify spending patterns. They should not be considered financial advice.{' '}
                   <a
                     href="/disclaimer"
                     className="text-[#0A7B7B] font-medium underline-offset-2 hover:underline"
