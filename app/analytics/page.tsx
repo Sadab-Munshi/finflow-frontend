@@ -165,7 +165,9 @@ export default function AnalyticsPage() {
                 <div className="bg-[#F0FDF9] rounded-xl p-3 text-center">
                   <p className="text-[10px] text-[#64748B] uppercase tracking-wider font-semibold">Net Balance</p>
                   <p className="text-sm font-bold text-[#0F172A] mt-1">
-                    ₹{Math.round(forecastData.data.netBalance).toLocaleString('en-IN')}
+                    {isFinite(forecastData.data.netBalance)
+                      ? `₹${Math.round(forecastData.data.netBalance).toLocaleString('en-IN')}`
+                      : '—'}
                   </p>
                   <p className="text-[9px] text-[#94A3B8] mt-0.5">from transactions</p>
                 </div>
