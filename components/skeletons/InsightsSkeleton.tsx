@@ -3,81 +3,60 @@ import Layout from '@/components/layout/Layout'
 export default function InsightsSkeleton() {
   return (
     <Layout>
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-      `}</style>
-
       <div className="space-y-4 pb-6">
-
         {/* Header */}
         <div>
           <div className="flex items-center gap-2">
-            <div className="h-7 w-20 bg-slate-200 rounded animate-pulse" />
-            <div className="w-5 h-5 bg-slate-200 rounded animate-pulse" />
+            <div className="h-8 w-24 rounded-md bg-slate-200 animate-pulse" />
+            <div className="w-6 h-6 rounded-md bg-slate-200 animate-pulse" />
           </div>
-          <div className="h-3.5 w-52 bg-slate-100 rounded mt-2 animate-pulse" />
-          <div className="h-6 w-36 bg-[#F0FDF9] rounded-full mt-2 animate-pulse" />
+          <div className="h-3.5 w-56 rounded bg-slate-100 mt-2 animate-pulse" />
+          <div className="h-6 w-40 rounded-full bg-slate-100 mt-2 animate-pulse" />
         </div>
 
         {/* Timestamp + Refresh row */}
         <div className="flex items-center justify-between">
-          <div className="h-3 w-44 bg-slate-100 rounded animate-pulse" />
-          <div className="h-9 w-24 bg-[#F0FDF9] border border-[#0A7B7B]/20 rounded-xl animate-pulse" />
+          <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
+          <div className="h-9 w-24 rounded-xl border border-slate-200 bg-slate-100 animate-pulse" />
         </div>
 
         {/* Card skeletons */}
         <div className="grid gap-3">
-          {[
-            { titleW: 140, lines: ['92%', '76%', '50%'], borderColor: '#00b894' },
-            { titleW: 175, lines: ['95%', '82%', '60%'], borderColor: '#ef4444' },
-            { titleW: 155, lines: ['88%', '70%', '45%'], borderColor: '#10b981' },
-            { titleW: 160, lines: ['90%', '74%', '55%'], borderColor: '#8b5cf6' },
-          ].map((card, i) => (
+          {[140, 175, 155, 160].map((titleW, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden"
-              style={{ borderLeft: `3px solid ${card.borderColor}40` }}
+              className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-4"
             >
-              <div
-                className="p-4"
-                style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(248,250,252,0.8) 50%, transparent 100%)',
-                  backgroundSize: '200% 100%',
-                  animation: `shimmer 2s ease-in-out infinite`,
-                  animationDelay: `${i * 0.2}s`,
-                }}
-              >
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2 flex-1">
-                    <div
-                      className="w-8 h-8 rounded-full flex-shrink-0 animate-pulse"
-                      style={{ backgroundColor: `${card.borderColor}25`, animationDelay: `${i * 0.1}s` }}
-                    />
-                    <div
-                      className="h-4 rounded-md bg-slate-100 animate-pulse"
-                      style={{ width: card.titleW, animationDelay: `${i * 0.1}s` }}
-                    />
-                  </div>
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="w-8 h-8 rounded-full flex-shrink-0 bg-slate-200 animate-pulse" />
                   <div
-                    className="h-5 w-16 rounded-full flex-shrink-0 animate-pulse"
-                    style={{ backgroundColor: `${card.borderColor}20`, animationDelay: `${i * 0.1 + 0.05}s` }}
+                    className="h-4 rounded-md bg-slate-100 animate-pulse"
+                    style={{ width: titleW }}
                   />
                 </div>
-                <div className="pl-10 space-y-2">
-                  {card.lines.map((w, j) => (
-                    <div
-                      key={j}
-                      className="h-3 rounded-md bg-slate-100 animate-pulse"
-                      style={{ width: w, animationDelay: `${i * 0.1 + j * 0.07}s` }}
-                    />
-                  ))}
-                </div>
+                <div className="h-5 w-16 rounded-full flex-shrink-0 bg-slate-100 animate-pulse" />
+              </div>
+              <div className="pl-10 space-y-2">
+                {['92%', '76%', '50%'].map((w, j) => (
+                  <div
+                    key={j}
+                    className="h-3 rounded-md bg-slate-100 animate-pulse"
+                    style={{ width: w }}
+                  />
+                ))}
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Empty-state card placeholder */}
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-10 text-center">
+          <div className="w-20 h-20 rounded-full bg-slate-100 mx-auto animate-pulse" />
+          <div className="h-5 w-36 rounded bg-slate-200 mt-4 mx-auto animate-pulse" />
+          <div className="h-3 w-52 rounded bg-slate-100 mt-2 mx-auto animate-pulse" />
+          <div className="h-3 w-44 rounded bg-slate-100 mt-2 mx-auto animate-pulse" />
+          <div className="h-9 w-36 rounded-xl bg-slate-100 mt-6 mx-auto animate-pulse" />
         </div>
 
         {/* Disclaimer skeleton */}
@@ -88,7 +67,6 @@ export default function InsightsSkeleton() {
             <div className="h-2.5 w-3/4 bg-slate-100 rounded animate-pulse" />
           </div>
         </div>
-
       </div>
     </Layout>
   )
