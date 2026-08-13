@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description:
     'Free personal finance tracker for India. Track expenses by voice, WhatsApp, or photo. Hindi, English & Bengali supported.',
   alternates: {
-    canonical: 'https://app.sadabmunshi.online',
+    canonical: 'https://app.sadabmunshi.me',
   },
 }
 

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://app.sadabmunshi.online/sitemap.xml
+Sitemap: https://app.sadabmunshi.me/sitemap.xml

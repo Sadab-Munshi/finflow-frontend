@@ -833,7 +833,7 @@ export default function ProfilePage() {
                 </button>
               ))}
               <Link
-                href="https://app.sadabmunshi.online/support"
+                href="https://app.sadabmunshi.me/support"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors border-b border-gray-100"

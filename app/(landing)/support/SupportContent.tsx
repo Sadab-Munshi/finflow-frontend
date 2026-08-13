@@ -37,7 +37,7 @@ function FAQItem({ question, answer }: FAQItemProps) {
 
 export default function SupportPage() {
   const handleContactSupport = () => {
-    window.location.href = 'mailto:contact@sadabmunshi.online'
+    window.location.href = 'mailto:contact@sadabmunshi.me'
   }
 
   return (
