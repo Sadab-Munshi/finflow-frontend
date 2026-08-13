@@ -491,15 +491,19 @@ export default function BudgetsPage() {
               No budgets for {formatMonthLabel(selectedMonth)}
             </p>
             <p className="text-sm text-gray-400 leading-relaxed mt-1">
-              Create a budget to track your spending and stay on top of your finances.
+              {isCurrentMonth
+                ? 'Create a budget to track your spending and stay on top of your finances.'
+                : 'No budget was set for this month.'}
             </p>
-            <button
-              onClick={openCreate}
-              className="mt-4 inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-6 py-2.5 font-semibold text-sm transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Create Budget
-            </button>
+            {isCurrentMonth && (
+              <button
+                onClick={openCreate}
+                className="mt-4 inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-6 py-2.5 font-semibold text-sm transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Create Budget
+              </button>
+            )}
           </motion.div>
         ) : (
           <>
