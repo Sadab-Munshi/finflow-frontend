@@ -1,7 +1,7 @@
 # FinFlow
 
 <p align="center">
-  <img src="public/finflow-logo.png" alt="FinFlow Logo" width="120" />
+  <img src="public/images/report-logo.png" alt="FinFlow Logo" width="120" />
 </p>
 
 <p align="center">
