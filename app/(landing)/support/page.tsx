@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   },
   description:
     'Get help with FinFlow. Find answers to common questions or contact our support team.',
-  alternates: { canonical: 'https://app.sadabmunshi.online/support' },
+  alternates: { canonical: 'https://app.sadabmunshi.me/support' },
 }
 
 export default function SupportPage() {

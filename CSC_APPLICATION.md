@@ -12,7 +12,7 @@
 - Highlights security awareness (JWT, RLS, bot protection, rate limiting)
 
 ## Live Demo
-https://app.sadabmunshi.online
+https://app.sadabmunshi.me
 ## GitHub
 https://github.com/Sadab-Munshi/finflow-frontend
 https://github.com/Sadab-Munshi/finflow-api

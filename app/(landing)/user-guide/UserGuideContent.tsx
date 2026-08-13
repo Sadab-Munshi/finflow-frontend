@@ -138,7 +138,7 @@ export default function UserGuidePage() {
             <p className="text-sm text-neutral-300">Sign up, add your first transaction, and let FinFlow do the rest.</p>
           </div>
           <a
-            href="https://app.sadabmunshi.online/signup"
+            href="https://app.sadabmunshi.me/signup"
             target="_blank"
             rel="noreferrer"
             className="shrink-0 inline-flex items-center justify-center rounded-full bg-white text-neutral-900 text-sm font-medium px-5 py-2.5 hover:bg-neutral-100 transition-colors"
@@ -160,8 +160,8 @@ export default function UserGuidePage() {
                   spent or earned, snap a photo of a receipt, or speak into your phone — FinFlow records,
                   categorises, and analyses your financial data automatically. Access everything through the web
                   app at{' '}
-                  <a href="https://app.sadabmunshi.online" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
-                    app.sadabmunshi.online
+                  <a href="https://app.sadabmunshi.me" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
+                    app.sadabmunshi.me
                   </a>
                   , with optional WhatsApp and Telegram bots for on-the-go convenience.
                 </p>
@@ -186,8 +186,8 @@ export default function UserGuidePage() {
                 <ol className="list-decimal pl-5 space-y-1.5 text-sm">
                   <li>
                     Visit{' '}
-                    <a href="https://app.sadabmunshi.online" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
-                      app.sadabmunshi.online
+                    <a href="https://app.sadabmunshi.me" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
+                      app.sadabmunshi.me
                     </a>{' '}
                     and tap <strong>Sign Up</strong>.
                   </li>
@@ -325,8 +325,8 @@ export default function UserGuidePage() {
               <p className="text-sm text-neutral-500 italic">
                 The web app has no usage limits. If you ever hit the bot&rsquo;s fair-use threshold, you can
                 always log transactions freely at{' '}
-                <a href="https://app.sadabmunshi.online" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
-                  app.sadabmunshi.online
+                <a href="https://app.sadabmunshi.me" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">
+                  app.sadabmunshi.me
                 </a>.
               </p>
 
@@ -467,7 +467,7 @@ export default function UserGuidePage() {
               />
               <FAQEntry
                 q="Can I use FinFlow without WhatsApp or Telegram?"
-                a={<>Yes. Every feature is fully available on the web app at <a href="https://app.sadabmunshi.online" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">app.sadabmunshi.online</a>. WhatsApp and Telegram are optional convenience channels.</>}
+                a={<>Yes. Every feature is fully available on the web app at <a href="https://app.sadabmunshi.me" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">app.sadabmunshi.me</a>. WhatsApp and Telegram are optional convenience channels.</>}
               />
               <FAQEntry
                 q="What happens if I disconnect WhatsApp or Telegram?"
@@ -495,7 +495,7 @@ export default function UserGuidePage() {
               />
               <FAQEntry
                 q="Is there a mobile app?"
-                a={<>FinFlow is a fully mobile-responsive web app at <a href="https://app.sadabmunshi.online" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">app.sadabmunshi.online</a> that works smoothly on every smartphone. A native mobile app may be released in a future update.</>}
+                a={<>FinFlow is a fully mobile-responsive web app at <a href="https://app.sadabmunshi.me" className="underline hover:text-neutral-900" target="_blank" rel="noreferrer">app.sadabmunshi.me</a> that works smoothly on every smartphone. A native mobile app may be released in a future update.</>}
               />
               <FAQEntry
                 q="How do I permanently delete my account?"

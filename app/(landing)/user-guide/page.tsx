@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   },
   description:
     'Learn how to use FinFlow — add expenses by voice, scan receipts, set budgets and read AI insights.',
-  alternates: { canonical: 'https://app.sadabmunshi.online/user-guide' },
+  alternates: { canonical: 'https://app.sadabmunshi.me/user-guide' },
 }
 
 export default function UserGuidePage() {

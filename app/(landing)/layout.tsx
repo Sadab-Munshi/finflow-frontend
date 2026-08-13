@@ -162,7 +162,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               <ul className="space-y-1 text-sm">
                 <li><a href="/support" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Support</a></li>
                 <li><a href="/user-guide" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">User Guide</a></li>
-                <li><a href="https://status.app.sadabmunshi.online" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">System Status</a></li>
+                <li><a href="https://status.app.sadabmunshi.me" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">System Status</a></li>
                 <li><a href="https://sadabmunshi.me/blog/" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">Blog</a></li>
               </ul>
             </div>
