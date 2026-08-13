@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Smart Personal Finance Tracker</strong><br />
+  <strong>Personal Finance Management System</strong><br />
   Track, analyze, and manage your finances with AI-powered insights, voice input, receipt scanning, and natural language processing.
 </p>
 
