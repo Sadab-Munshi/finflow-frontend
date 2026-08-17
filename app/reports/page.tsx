@@ -169,7 +169,7 @@ export default function ReportsPage() {
         <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 flex items-start gap-3">
           <Info className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
           <p className="text-sm text-teal-700 leading-relaxed">
-            Reports are automatically generated on the 1st of each month and include your complete financial summary with AI-powered insights.
+            Reports are automatically generated on the 1st of each month .
           </p>
         </div>
       </div>
