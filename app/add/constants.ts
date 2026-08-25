@@ -1,7 +1,7 @@
 import {
   UtensilsCrossed, Car, ShoppingBag, Zap, Film, Heart,
   GraduationCap, Home, Apple, Scissors, Wallet, Laptop,
-  Briefcase, TrendingUp, Gift, MoreHorizontal,
+  Briefcase, TrendingUp, Gift, MoreHorizontal, ArrowUpRight, ArrowDownLeft,
   PenLine, Sparkles, Mic, ScanLine,
 } from 'lucide-react'
 import { categories } from '@/lib/categories'
@@ -27,6 +27,8 @@ export const categoryIconMap: Record<string, React.ComponentType<{ size?: number
   'Freelance': Laptop,
   'Business': Briefcase,
   'Investment': TrendingUp,
+  'Money Sent': ArrowUpRight,
+  'Money Received': ArrowDownLeft,
   'Gift': Gift,
   'Other': MoreHorizontal,
 }

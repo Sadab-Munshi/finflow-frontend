@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Clock, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, Download, FileSpreadsheet, FileText, X, Filter, Search, CheckSquare } from 'lucide-react'
+import { Clock, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, Download, FileSpreadsheet, FileText, X, Filter, Search, CheckSquare, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -32,6 +32,8 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'Freelance': <Briefcase className="w-4 h-4" />,
   'Business': <Briefcase className="w-4 h-4" />,
   'Investment': <TrendingUp className="w-4 h-4" />,
+  'Money Sent': <ArrowUpRight className="w-4 h-4" />,
+  'Money Received': <ArrowDownLeft className="w-4 h-4" />,
   'Gift': <Gift className="w-4 h-4" />,
   'Other': <CircleDot className="w-4 h-4" />,
 }

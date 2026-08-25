@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ChevronLeft, Edit, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp } from 'lucide-react'
+import { ChevronLeft, Edit, Trash2, Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
@@ -30,6 +30,8 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'Freelance': <Briefcase className="w-7 h-7" />,
   'Business': <Briefcase className="w-7 h-7" />,
   'Investment': <TrendingUp className="w-7 h-7" />,
+  'Money Sent': <ArrowUpRight className="w-7 h-7" />,
+  'Money Received': <ArrowDownLeft className="w-7 h-7" />,
   'Gift': <Gift className="w-7 h-7" />,
   'Other': <CircleDot className="w-7 h-7" />,
 }
@@ -49,6 +51,8 @@ const categoryIconMap: Record<string, typeof Utensils> = {
   'Freelance': Briefcase,
   'Business': Briefcase,
   'Investment': TrendingUp,
+  'Money Sent': ArrowUpRight,
+  'Money Received': ArrowDownLeft,
   'Gift': Gift,
   'Other': CircleDot,
 }

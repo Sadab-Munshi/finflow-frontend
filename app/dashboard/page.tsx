@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, TrendingDown, PiggyBank, Eye, EyeOff, Lightbulb, ChevronRight } from 'lucide-react'
+import { Utensils, Car, ShoppingBag, Zap, Film, Heart, GraduationCap, Building, ShoppingCart, Sparkles, Briefcase, Wallet, Gift, CircleDot, TrendingUp, TrendingDown, PiggyBank, Eye, EyeOff, Lightbulb, ChevronRight, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import {
   AreaChart,
   Area,
@@ -41,6 +41,8 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'Freelance':       <Briefcase  className="w-4 h-4" />,
   'Business':        <Briefcase  className="w-4 h-4" />,
   'Investment':      <TrendingUp className="w-4 h-4" />,
+  'Money Sent':      <ArrowUpRight className="w-4 h-4" />,
+  'Money Received':  <ArrowDownLeft className="w-4 h-4" />,
   'Gift':            <Gift       className="w-4 h-4" />,
   'Other':           <CircleDot  className="w-4 h-4" />,
 }

@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Wallet,
   Utensils, Car, ShoppingBag, Zap, Film, Heart,
   GraduationCap, Building, ShoppingCart, Sparkles,
-  Briefcase, Gift, CircleDot, TrendingUp, AlertTriangle,
+  Briefcase, Gift, CircleDot, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownLeft,
 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { useLanguage } from '@/context/LanguageContext'
@@ -62,6 +62,8 @@ const categoryIconMap: Record<string, typeof Utensils> = {
   'Freelance': Briefcase,
   'Business': Briefcase,
   'Investment': TrendingUp,
+  'Money Sent': ArrowUpRight,
+  'Money Received': ArrowDownLeft,
   'Gift': Gift,
   'Other': CircleDot,
 }
