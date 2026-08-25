@@ -88,7 +88,7 @@ const VALID_CATEGORIES = [
   'Bills & Utilities', 'Entertainment', 'Health',
   'Education', 'Rent', 'Groceries', 'Personal Care',
   'Salary', 'Freelance', 'Business', 'Investment',
-  'Gift', 'Other',
+  'Gift', 'Other', 'Money Sent', 'Money Received',
 ]
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/

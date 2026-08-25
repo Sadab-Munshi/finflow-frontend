@@ -17,6 +17,8 @@ export const categories: Category[] = [
   { id: 14, name: "Investment", type: "income", color: "#0d9488" },
   { id: 15, name: "Gift", type: "both", color: "#a855f7" },
   { id: 16, name: "Other", type: "both", color: "#6b7280" },
+  { id: 17, name: "Money Sent", type: "expense", color: "#fb7185" },
+  { id: 18, name: "Money Received", type: "income", color: "#22c55e" },
 ];
 
 export const getCategoryById = (id: number): Category | undefined => {
