@@ -2,9 +2,8 @@
 
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import AuthBackground from '@/components/auth/AuthBackground'
+import AuthShell from '@/components/auth/AuthShell'
 import LoginForm from '@/components/auth/LoginForm'
-import BackButton from '@/components/landing/BackButton'
 
 function LoginContent() {
   const searchParams = useSearchParams()
@@ -12,55 +11,36 @@ function LoginContent() {
   const isConfirmed = searchParams.get('confirmed')
 
   return (
-    <main className="min-h-screen overflow-y-auto flex items-center justify-center py-8 px-4">
-      <AuthBackground />
-      <div className="w-full max-w-md">
-        <BackButton />
-        {/* Card */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-[0_0_60px_rgba(0,212,255,0.05)]">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#00D4FF]/10 border border-[#00D4FF]/20 mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M3 17 Q8 7 12 12 Q16 17 21 7" stroke="#00D4FF" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-            <p className="text-gray-500 text-sm mt-1">Sign in to continue your financial journey</p>
-          </div>
-
+    <AuthShell mode="login">
+      {(isConfirmed || isBanned) && (
+        <div className="auth-fade-up mb-5 space-y-3" style={{ animationDelay: '70ms' }}>
           {isConfirmed && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 text-sm text-green-700 text-center">
-              Email confirmed! Please log in.
+            <div className="rounded-2xl border border-teal-200 bg-teal-50 p-3 text-center text-sm font-semibold text-teal-700">
+              Email confirmed. Please sign in to continue.
             </div>
           )}
 
           {isBanned && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-sm text-red-600 text-center">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-center text-sm font-semibold text-rose-600">
               Your account has been suspended. Please contact support for assistance.
             </div>
           )}
-
-          <LoginForm />
         </div>
-      </div>
-    </main>
+      )}
+
+      <LoginForm />
+    </AuthShell>
   )
 }
 
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen overflow-y-auto flex items-center justify-center py-8 px-4">
-        <AuthBackground />
-        <div className="w-full max-w-md">
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-[0_0_60px_rgba(0,212,255,0.05)]">
-            <div className="text-center">
-              <p className="text-gray-500 text-sm">Loading...</p>
-            </div>
-          </div>
+      <AuthShell mode="login">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500 shadow-sm">
+          Loading...
         </div>
-      </main>
+      </AuthShell>
     }>
       <LoginContent />
     </Suspense>

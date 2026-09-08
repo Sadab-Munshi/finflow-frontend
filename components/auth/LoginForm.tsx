@@ -1,10 +1,10 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Mail, Lock, FlaskConical } from 'lucide-react'
+import { FlaskConical, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
@@ -12,6 +12,10 @@ import { useRouter } from 'next/navigation'
 import TurnstileWidget, { TurnstileInstance } from './TurnstileWidget'
 import GoogleButton from './GoogleButton'
 import MicrosoftButton from './MicrosoftButton'
+import AuthField from './AuthField'
+import AuthModeSwitcher from './AuthModeSwitcher'
+import AuthPrimaryButton from './AuthPrimaryButton'
+import { getEmailSuggestion } from './emailSuggestion'
 import { authVerifyTurnstile, authWelcomeEmail } from '@/lib/api-client'
 
 const schema = z.object({
@@ -20,12 +24,13 @@ const schema = z.object({
 })
 
 type FormData = z.infer<typeof schema>
+type SubmitState = 'idle' | 'loading' | 'success'
 
 export default function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [turnstileError, setTurnstileError] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [submitState, setSubmitState] = useState<SubmitState>('idle')
+  const [emailValue, setEmailValue] = useState('')
   const turnstileRef = useRef<TurnstileInstance>(null)
   const router = useRouter()
 
@@ -33,18 +38,19 @@ export default function LoginForm() {
     resolver: zodResolver(schema),
   })
 
+  const emailSuggestion = getEmailSuggestion(emailValue)
+  const emailLooksValid = z.string().email().safeParse(emailValue).success
+
   const onSubmit = async (data: FormData) => {
-    // Reset turnstile error state
     setTurnstileError(false)
-    
-    // Check if Turnstile is completed
+
     if (!turnstileToken) {
       setTurnstileError(true)
       toast.error('Please complete the security verification')
       return
     }
 
-    setLoading(true)
+    setSubmitState('loading')
     try {
       const { success } = await authVerifyTurnstile(turnstileToken)
       if (!success) {
@@ -52,6 +58,7 @@ export default function LoginForm() {
         setTurnstileError(true)
         turnstileRef.current?.reset()
         setTurnstileToken(null)
+        setSubmitState('idle')
         return
       }
 
@@ -65,21 +72,20 @@ export default function LoginForm() {
         toast.error(error.message)
         turnstileRef.current?.reset()
         setTurnstileToken(null)
+        setSubmitState('idle')
         return
       }
 
-      // Send welcome email on first login after email confirmation
       const user = signInData?.user
-      if (user?.email_confirmed_at) {
+      const userEmail = user?.email
+      if (user?.email_confirmed_at && userEmail) {
         try {
-          // Fetch or create settings row
           let { data: settingsData } = await supabase
             .from('settings')
             .select('welcome_email_sent')
             .eq('user_id', user.id)
             .single()
 
-          // If no settings row exists, create one with defaults
           if (!settingsData) {
             await supabase.from('settings').upsert({
               user_id: user.id,
@@ -92,9 +98,8 @@ export default function LoginForm() {
           }
 
           if (!settingsData.welcome_email_sent) {
-            const fullName = user.user_metadata?.full_name || user.email || 'there'
-            await authWelcomeEmail(fullName, user.email)
-            // Use upsert to ensure it works even if row was just created
+            const fullName = user.user_metadata?.full_name || userEmail
+            await authWelcomeEmail(fullName, userEmail)
             await supabase
               .from('settings')
               .upsert({ user_id: user.id, welcome_email_sent: true }, { onConflict: 'user_id' })
@@ -105,6 +110,7 @@ export default function LoginForm() {
       }
 
       toast.success('Welcome back!')
+      setSubmitState('success')
       router.push('/dashboard')
       router.refresh()
     } catch (err) {
@@ -112,8 +118,7 @@ export default function LoginForm() {
       toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       turnstileRef.current?.reset()
       setTurnstileToken(null)
-    } finally {
-      setLoading(false)
+      setSubmitState('idle')
     }
   }
 
@@ -135,94 +140,114 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Email Login Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Email */}
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-widest text-gray-800 mb-2">Email</label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              {...register('email')}
-              type="email"
-              placeholder="you@example.com"
-              className="w-full bg-gray-100 border-0 rounded-2xl pl-10 pr-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
-            />
-          </div>
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-        </div>
+    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }}>
+      <AuthModeSwitcher mode="login" />
 
-        {/* Password */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-xs font-semibold uppercase tracking-widest text-gray-800">Password</label>
-            <Link href="/forgot-password" className="text-xs text-gray-800 font-semibold hover:text-black hover:underline">Forgot password?</Link>
-          </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              {...register('password')}
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Your password"
-              className="w-full bg-gray-100 border-0 rounded-2xl pl-10 pr-10 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10 transition-all"
-            />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
-        </div>
-
-        {/* Turnstile */}
-        <div>
-          <TurnstileWidget
-            ref={turnstileRef}
-            onSuccess={handleTurnstileSuccess}
-            onError={handleTurnstileError}
-            onExpire={handleTurnstileExpire}
-          />
-        </div>
-
-        {/* Try Demo */}
-        <button
-          type="button"
-          onClick={() => {
-            setValue('email', 'demo@finflow.com')
-            setValue('password', '#demofinflow2026')
-          }}
-          className="w-full py-2.5 px-4 rounded-full border-2 border-dashed border-black text-gray-500 text-sm font-medium hover:text-gray-700 transition-all duration-200 flex items-center justify-center gap-2"
-        >
-          <FlaskConical className="w-4 h-4" />
-          Try Demo Account
-        </button>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 rounded-full font-semibold text-white bg-black hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Signing in...' : 'Sign In'}
-        </button>
-      </form>
-
-      {/* Divider */}
-      <div className="flex items-center gap-3 my-2">
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-gray-600 text-xs">or continue with</span>
-        <div className="flex-1 h-px bg-gray-200" />
-      </div>
-
-      {/* OAuth buttons - Outside form to prevent validation */}
-      <div className="flex flex-col items-center gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <GoogleButton />
         <MicrosoftButton />
       </div>
 
-      <p className="text-center text-gray-700 text-sm">
-        New to FinFlow?{' '}
-        <Link href="/signup" className="text-gray-800 font-semibold hover:text-black hover:underline">Create an account →</Link>
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-200" />
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">or with email</span>
+        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200" />
+      </div>
+
+      {/* eslint-disable-next-line react-hooks/refs -- react-hook-form handleSubmit is safe as a form submit handler. */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <AuthField
+          {...register('email', {
+            onChange: (event: ChangeEvent<HTMLInputElement>) => setEmailValue(event.target.value),
+          })}
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
+          icon={<Mail className="h-4 w-4" />}
+          error={errors.email?.message}
+          isValid={emailLooksValid}
+          suggestion={emailSuggestion ? {
+            label: emailSuggestion,
+            onApply: () => {
+              setValue('email', emailSuggestion, { shouldValidate: true, shouldDirty: true })
+              setEmailValue(emailSuggestion)
+            },
+          } : null}
+        />
+
+        <AuthField
+          {...register('password')}
+          label="Password"
+          type="password"
+          placeholder="Your password"
+          autoComplete="current-password"
+          icon={<Lock className="h-4 w-4" />}
+          error={errors.password?.message}
+          action={(
+            <Link href="/forgot-password" className="text-xs font-bold text-teal-700 hover:text-teal-800 hover:underline">
+              Forgot password?
+            </Link>
+          )}
+        />
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              setValue('email', 'demo@finflow.com', { shouldValidate: true, shouldDirty: true })
+              setValue('password', '#demofinflow2026', { shouldValidate: true, shouldDirty: true })
+              setEmailValue('demo@finflow.com')
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-500 transition-all hover:border-teal-300 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+          >
+            <FlaskConical className="h-3.5 w-3.5" />
+            Use demo
+          </button>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-teal-600" />
+              Verify you are human
+            </span>
+            <span className={turnstileToken ? 'text-teal-600' : 'text-slate-400'}>
+              {turnstileToken ? 'Success' : 'Security check'}
+            </span>
+          </div>
+          <TurnstileWidget
+            ref={turnstileRef}
+            theme="light"
+            className="mt-2"
+            onSuccess={handleTurnstileSuccess}
+            onError={handleTurnstileError}
+            onExpire={handleTurnstileExpire}
+          />
+          {turnstileError && (
+            <p className="mt-2 text-xs font-medium text-amber-600">Please wait for verification to finish.</p>
+          )}
+        </div>
+
+        <AuthPrimaryButton
+          type="submit"
+          status={submitState}
+          idleLabel="Sign in"
+          loadingLabel="Signing in…"
+          successLabel="Welcome back"
+        />
+      </form>
+
+      <p className="flex items-center justify-center gap-2 text-center text-xs font-medium text-slate-500">
+        <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
+        Your data is encrypted in transit and protected by Supabase Auth.
+      </p>
+
+      <p className="text-center text-sm text-slate-500">
+        New here?{' '}
+        <Link href="/signup" className="font-black text-slate-900 underline decoration-teal-300 underline-offset-4 hover:text-teal-700">
+          Create a free account
+        </Link>
       </p>
     </div>
   )

@@ -25,9 +25,10 @@ export default function MicrosoftButton({ disabled }: MicrosoftButtonProps) {
 
   return (
     <button
+      type="button"
       onClick={handleMicrosoftLogin}
       disabled={loading || disabled}
-      className="flex items-center justify-center gap-3 bg-black text-white rounded-2xl px-6 py-3 font-medium hover:bg-gray-900 transition-all mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+      className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:border-teal-200 hover:bg-teal-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50"
     >
       {/* Microsoft SVG Icon */}
       <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
@@ -36,7 +37,7 @@ export default function MicrosoftButton({ disabled }: MicrosoftButtonProps) {
         <path fill="#00A4EF" d="M1 10.5h8.5V19H1z" />
         <path fill="#FFB900" d="M10.5 10.5H19V19h-8.5z" />
       </svg>
-      {loading ? 'Connecting...' : 'Continue with Microsoft'}
+      <span className="whitespace-nowrap">{loading ? 'Connecting...' : 'Continue with Microsoft'}</span>
     </button>
   )
 }
