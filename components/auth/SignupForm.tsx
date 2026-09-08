@@ -169,62 +169,70 @@ export default function SignupForm() {
       </div>
 
       {/* eslint-disable-next-line react-hooks/refs -- react-hook-form handleSubmit is safe as a form submit handler. */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <AuthField
-          {...register('fullName', {
-            onChange: (event: ChangeEvent<HTMLInputElement>) => setFullNameValue(event.target.value),
-          })}
-          label="Full name"
-          placeholder="John Doe"
-          autoComplete="name"
-          icon={<User className="h-4 w-4" />}
-          error={errors.fullName?.message}
-          isValid={nameLooksValid}
-        />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-7 sm:space-y-8">
+          <AuthField
+            {...register('fullName', {
+              onChange: (event: ChangeEvent<HTMLInputElement>) => setFullNameValue(event.target.value),
+            })}
+            label="Full name"
+            placeholder="John Doe"
+            autoComplete="name"
+            icon={<User className="h-4 w-4" />}
+            error={errors.fullName?.message}
+            isValid={nameLooksValid}
+            reserveHelperSpace={false}
+          />
 
-        <AuthField
-          {...register('email', {
-            onChange: (event: ChangeEvent<HTMLInputElement>) => setEmailValue(event.target.value),
-          })}
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          autoComplete="email"
-          icon={<Mail className="h-4 w-4" />}
-          error={errors.email?.message}
-          isValid={emailLooksValid}
-          suggestion={emailSuggestion ? {
-            label: emailSuggestion,
-            onApply: () => {
-              setValue('email', emailSuggestion, { shouldValidate: true, shouldDirty: true })
-              setEmailValue(emailSuggestion)
-            },
-          } : null}
-        />
+          <AuthField
+            {...register('email', {
+              onChange: (event: ChangeEvent<HTMLInputElement>) => setEmailValue(event.target.value),
+            })}
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            icon={<Mail className="h-4 w-4" />}
+            error={errors.email?.message}
+            isValid={emailLooksValid}
+            suggestion={emailSuggestion ? {
+              label: emailSuggestion,
+              onApply: () => {
+                setValue('email', emailSuggestion, { shouldValidate: true, shouldDirty: true })
+                setEmailValue(emailSuggestion)
+              },
+            } : null}
+            reserveHelperSpace={false}
+          />
 
-        <AuthField
-          {...register('password', {
-            onChange: (event: ChangeEvent<HTMLInputElement>) => setPasswordValue(event.target.value),
-          })}
-          label="Password"
-          type="password"
-          placeholder="Min. 8 characters"
-          autoComplete="new-password"
-          icon={<Lock className="h-4 w-4" />}
-          error={errors.password?.message}
-        />
+          <div className="space-y-3">
+            <AuthField
+              {...register('password', {
+                onChange: (event: ChangeEvent<HTMLInputElement>) => setPasswordValue(event.target.value),
+              })}
+              label="Password"
+              type="password"
+              placeholder="Min. 8 characters"
+              autoComplete="new-password"
+              icon={<Lock className="h-4 w-4" />}
+              error={errors.password?.message}
+              reserveHelperSpace={false}
+            />
 
-        <PasswordStrengthMeter password={passwordValue} />
+            <PasswordStrengthMeter password={passwordValue} />
+          </div>
 
-        <AuthField
-          {...register('confirmPassword')}
-          label="Confirm password"
-          type="password"
-          placeholder="Repeat password"
-          autoComplete="new-password"
-          icon={<Lock className="h-4 w-4" />}
-          error={errors.confirmPassword?.message}
-        />
+          <AuthField
+            {...register('confirmPassword')}
+            label="Confirm password"
+            type="password"
+            placeholder="Repeat password"
+            autoComplete="new-password"
+            icon={<Lock className="h-4 w-4" />}
+            error={errors.confirmPassword?.message}
+            reserveHelperSpace={false}
+          />
+        </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
           <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">

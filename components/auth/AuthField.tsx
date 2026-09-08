@@ -17,6 +17,7 @@ interface AuthFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'si
   isValid?: boolean
   helperText?: string
   suggestion?: EmailSuggestion | null
+  reserveHelperSpace?: boolean
   containerClassName?: string
 }
 
@@ -29,6 +30,7 @@ const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(function AuthFiel
     isValid,
     helperText,
     suggestion,
+    reserveHelperSpace = true,
     containerClassName,
     id,
     type = 'text',
@@ -54,9 +56,10 @@ const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(function AuthFiel
         : helperText
           ? { tone: 'hint' as const, message: helperText }
           : null
+  const shouldReserveHelperSpace = Boolean(helper) || reserveHelperSpace
 
   return (
-    <div className={cn('space-y-2', containerClassName)}>
+    <div className={cn(containerClassName)}>
       <div className="flex items-center justify-between gap-3">
         <label htmlFor={inputId} className="text-sm font-semibold text-slate-700">
           {label}
@@ -66,7 +69,7 @@ const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(function AuthFiel
 
       <div
         className={cn(
-          'group relative flex items-center rounded-2xl border bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition-all duration-200 focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100',
+          'group relative mt-2.5 flex items-center rounded-2xl border bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition-all duration-200 focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100',
           error ? 'auth-shake border-rose-300 ring-4 ring-rose-100' : 'border-slate-200',
           className
         )}
@@ -114,7 +117,8 @@ const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(function AuthFiel
         id={`${inputId}-helper`}
         aria-live="polite"
         className={cn(
-          'min-h-5 overflow-hidden text-xs transition-all duration-200',
+          'overflow-hidden text-xs transition-all duration-200',
+          shouldReserveHelperSpace ? 'mt-2 min-h-5' : 'h-0',
           helper ? 'opacity-100' : 'opacity-0'
         )}
       >
