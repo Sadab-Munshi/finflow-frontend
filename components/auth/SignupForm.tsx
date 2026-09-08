@@ -170,7 +170,7 @@ export default function SignupForm() {
 
       {/* eslint-disable-next-line react-hooks/refs -- react-hook-form handleSubmit is safe as a form submit handler. */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="space-y-7 sm:space-y-8">
+        <div className="space-y-[25px] sm:space-y-[29px]">
           <AuthField
             {...register('fullName', {
               onChange: (event: ChangeEvent<HTMLInputElement>) => setFullNameValue(event.target.value),

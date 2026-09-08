@@ -14,7 +14,7 @@ const copy = {
     body: 'Pick up exactly where you left off with budgets, trends, and every rupee neatly organized.',
   },
   signup: {
-    badge: 'Free forever · No card required',
+    badge: '',
     heading: 'Know where your money goes in minutes.',
     highlight: 'minutes.',
     body: 'Start with a clean dashboard, smart categories, and a calmer way to understand daily expenses.',
@@ -46,12 +46,14 @@ export default function AuthBrandPanel({ mode }: AuthBrandPanelProps) {
         </div>
 
         <div className="my-auto max-w-xl py-12">
-          <div className="auth-fade-up inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-teal-100 shadow-sm backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-teal-300" />
-            {activeCopy.badge}
-          </div>
+          {activeCopy.badge && (
+            <div className="auth-fade-up inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-teal-100 shadow-sm backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5 text-teal-300" />
+              {activeCopy.badge}
+            </div>
+          )}
 
-          <h2 className="auth-fade-up mt-7 text-5xl font-black leading-[0.96] tracking-[-0.08em] xl:text-6xl" style={{ animationDelay: '70ms' }}>
+          <h2 className={`${activeCopy.badge ? 'mt-7' : 'mt-0'} auth-fade-up text-5xl font-black leading-[0.96] tracking-[-0.08em] xl:text-6xl`} style={{ animationDelay: '70ms' }}>
             {headingPrefix}
             <span className="block bg-gradient-to-r from-teal-200 via-teal-300 to-emerald-200 bg-clip-text text-transparent">
               {activeCopy.highlight}

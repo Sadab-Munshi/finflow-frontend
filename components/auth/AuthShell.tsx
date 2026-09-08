@@ -17,7 +17,7 @@ const copy = {
     subtitle: 'Your dashboard, budgets, and spending history are ready when you are.',
   },
   signup: {
-    eyebrow: 'Free forever · No card required',
+    eyebrow: '',
     heading: 'Create your account',
     subtitle: 'Set up your personal finance workspace in just a few calm minutes.',
   },
@@ -73,8 +73,10 @@ export default function AuthShell({ mode, children }: AuthShellProps) {
             </div>
 
             <div className="auth-fade-up mb-8" style={{ animationDelay: '40ms' }}>
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-teal-600">{activeCopy.eyebrow}</p>
-              <h1 className="mt-3 text-4xl font-black tracking-[-0.07em] text-slate-950 sm:text-5xl">
+              {activeCopy.eyebrow && (
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-teal-600">{activeCopy.eyebrow}</p>
+              )}
+              <h1 className={`${activeCopy.eyebrow ? 'mt-3' : ''} text-4xl font-black tracking-[-0.07em] text-slate-950 sm:text-5xl`}>
                 {activeCopy.heading}
               </h1>
               <p className="mt-3 text-sm leading-6 text-slate-500">{activeCopy.subtitle}</p>
