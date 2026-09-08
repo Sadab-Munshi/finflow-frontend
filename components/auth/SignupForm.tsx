@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import TurnstileWidget, { TurnstileInstance } from './TurnstileWidget'
 import GoogleButton from './GoogleButton'
+import MicrosoftButton from './MicrosoftButton'
 import { authVerifyTurnstile } from '@/lib/api-client'
 
 const schema = z.object({
@@ -292,8 +293,11 @@ export default function SignupForm() {
         <div className="flex-1 h-px bg-gray-200" />
       </div>
 
-      {/* Google Button - Outside form to prevent validation */}
-      <GoogleButton disabled={!agreedToTerms} />
+      {/* OAuth buttons - Outside form to prevent validation */}
+      <div className="flex flex-col items-center gap-3">
+        <GoogleButton disabled={!agreedToTerms} />
+        <MicrosoftButton disabled={!agreedToTerms} />
+      </div>
 
       <p className="text-center text-gray-700 text-sm">
         Already have an account?{' '}
