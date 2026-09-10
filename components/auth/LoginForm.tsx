@@ -139,6 +139,12 @@ export default function LoginForm() {
     turnstileRef.current?.reset()
   }
 
+  const handleDemoCredentials = () => {
+    setValue('email', 'demo@finflow.com', { shouldValidate: true, shouldDirty: true })
+    setValue('password', '#demofinflow2026', { shouldValidate: true, shouldDirty: true })
+    setEmailValue('demo@finflow.com')
+  }
+
   return (
     <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }}>
       <AuthModeSwitcher mode="login" />
@@ -167,6 +173,17 @@ export default function LoginForm() {
           icon={<Mail className="h-4 w-4" />}
           error={errors.email?.message}
           isValid={emailLooksValid}
+          action={(
+            <button
+              type="button"
+              onClick={handleDemoCredentials}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-slate-500 transition-all hover:border-teal-300 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+              aria-label="Fill demo credentials"
+              title="Demo credentials"
+            >
+              <FlaskConical className="h-4 w-4" />
+            </button>
+          )}
           suggestion={emailSuggestion ? {
             label: emailSuggestion,
             onApply: () => {
@@ -174,6 +191,7 @@ export default function LoginForm() {
               setEmailValue(emailSuggestion)
             },
           } : null}
+          reserveHelperSpace={false}
         />
 
         <AuthField
@@ -184,28 +202,13 @@ export default function LoginForm() {
           autoComplete="current-password"
           icon={<Lock className="h-4 w-4" />}
           error={errors.password?.message}
+          reserveHelperSpace={false}
           action={(
             <Link href="/forgot-password" className="text-xs font-bold text-teal-700 hover:text-teal-800 hover:underline">
               Forgot password?
             </Link>
           )}
         />
-
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              setValue('email', 'demo@finflow.com', { shouldValidate: true, shouldDirty: true })
-              setValue('password', '#demofinflow2026', { shouldValidate: true, shouldDirty: true })
-              setEmailValue('demo@finflow.com')
-            }}
-            className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-500 transition-all hover:border-teal-300 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-          >
-            <FlaskConical className="h-3.5 w-3.5" />
-            Use demo
-          </button>
-        </div>
-
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
           <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
             <span className="inline-flex items-center gap-2">
@@ -238,9 +241,9 @@ export default function LoginForm() {
         />
       </form>
 
-      <p className="flex items-center justify-center gap-2 text-center text-xs font-medium text-slate-500">
-        <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
-        Your data is encrypted in transit and protected by Supabase Auth.
+      <p className="mx-auto flex max-w-sm items-start justify-center gap-2 text-left text-xs font-medium text-slate-500">
+        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600" />
+        <span>Your data is encrypted in transit and kept strictly private.</span>
       </p>
 
       <p className="text-center text-sm text-slate-500">
