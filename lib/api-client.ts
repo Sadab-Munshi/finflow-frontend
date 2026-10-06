@@ -65,29 +65,6 @@ async function requestMultipart(path: string, formData: FormData) {
   return res.json()
 }
 
-async function internalRequest(path: string, options: RequestInit = {}) {
-  const internalSecret = process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || ''
-  const headers: Record<string, string> = {
-    'x-internal-secret': internalSecret,
-  }
-
-  if (options.headers) {
-    Object.assign(headers, options.headers)
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  })
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    throw new Error(error.error || `API error: ${res.status}`)
-  }
-
-  return res.json()
-}
-
 // ============ AI Endpoints ============
 
 export async function aiParseText(text: string) {
@@ -192,21 +169,17 @@ export async function sendNotification(data: {
   })
 }
 
+// BLOCKED until finflow-api accepts JWT auth on this endpoint.
+// Required API change: mount authMiddleware on POST /api/notifications/budget-alert
+// (finflow-api src/routes/notifications.ts:161) so the existing Bearer branch,
+// which reads req.user.id, actually works. Today a JWT call returns 401 and the
+// caller (app/add/hooks/useTransaction.tsx:19) swallows the failure via .catch().
 export async function budgetAlertCheck(userId: string) {
-  const botSecret = process.env.NEXT_PUBLIC_BOT_SECRET || ''
-  const res = await fetch(`${API_BASE}/api/notifications/budget-alert`, {
+  return request('/api/notifications/budget-alert', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-bot-secret': botSecret,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: userId }),
   })
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    throw new Error(error.error || `API error: ${res.status}`)
-  }
-  return res.json()
 }
 
 // ============ Feedback Endpoints ============
@@ -226,13 +199,19 @@ export async function getReports() {
 }
 
 // ============ Ban Check Endpoints ============
+// BLOCKED until finflow-api accepts JWT auth on these endpoints.
+// Required API change (finflow-api src/routes/ban.ts:22,50): accept
+// Authorization: Bearer <user JWT> as an alternative to x-internal-secret —
+// verify via authMiddleware and restrict check-ban to userId === req.user.id
+// (self-service only). Until then both calls return 401; callers fail-open
+// (context/UserContext.tsx catch blocks treat errors as "not banned").
 
 export async function checkBan(userId: string) {
-  return internalRequest(`/api/check-ban?userId=${encodeURIComponent(userId)}`)
+  return request(`/api/check-ban?userId=${encodeURIComponent(userId)}`)
 }
 
 export async function checkIpBan(ipAddress: string) {
-  return internalRequest('/api/check-ip-ban', {
+  return request('/api/check-ip-ban', {
     headers: { 'x-forwarded-for': ipAddress },
   })
 }
