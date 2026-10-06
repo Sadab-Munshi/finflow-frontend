@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -17,7 +17,10 @@ import AuthPrimaryButton from './AuthPrimaryButton'
 import AuthSuccessState from './AuthSuccessState'
 import PasswordStrengthMeter from './PasswordStrengthMeter'
 import { getEmailSuggestion } from './emailSuggestion'
-import { authVerifyTurnstile } from '@/lib/api-client'
+import { authSignupStatus, authVerifyTurnstile } from '@/lib/api-client'
+
+export const SIGNUP_FULL_MESSAGE =
+  'Signups are temporarily closed — the user limit has been reached. Please try again later.'
 
 const schema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -42,7 +45,22 @@ export default function SignupForm() {
   const [fullNameValue, setFullNameValue] = useState('')
   const [emailValue, setEmailValue] = useState('')
   const [passwordValue, setPasswordValue] = useState('')
+  const [signupClosed, setSignupClosed] = useState(false)
   const turnstileRef = useRef<TurnstileInstance>(null)
+
+  // Prefetch the admin-set signup cap so the form can show the closed state
+  // up front (the DB trigger still enforces on race). Failed fetch = allowed.
+  useEffect(() => {
+    let cancelled = false
+    authSignupStatus()
+      .then((status) => {
+        if (!cancelled && !status.allowed) setSignupClosed(true)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -70,6 +88,18 @@ export default function SignupForm() {
 
     setSubmitState('loading')
     try {
+      // Soft gate — re-check right before signup so the cap set minutes ago
+      // is honored; errors here must not block signups (trigger is the gate).
+      try {
+        const status = await authSignupStatus()
+        if (!status.allowed) {
+          setSignupClosed(true)
+          toast.error(SIGNUP_FULL_MESSAGE)
+          setSubmitState('idle')
+          return
+        }
+      } catch { /* status check unavailable → proceed */ }
+
       const { success } = await authVerifyTurnstile(turnstileToken)
       if (!success) {
         toast.error('Security check failed. Please try again.')
@@ -91,7 +121,13 @@ export default function SignupForm() {
       })
 
       if (error) {
-        toast.error(error.message)
+        // DB trigger rejection (race between status check and insert)
+        if (error.message?.includes('signup_limit_reached')) {
+          setSignupClosed(true)
+          toast.error(SIGNUP_FULL_MESSAGE)
+        } else {
+          toast.error(error.message)
+        }
         turnstileRef.current?.reset()
         setTurnstileToken(null)
         setSubmitState('idle')
@@ -155,8 +191,8 @@ export default function SignupForm() {
       <AuthModeSwitcher mode="signup" />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <GoogleButton disabled={!agreedToTerms} />
-        <MicrosoftButton disabled={!agreedToTerms} />
+        <GoogleButton disabled={!agreedToTerms || signupClosed} />
+        <MicrosoftButton disabled={!agreedToTerms || signupClosed} />
       </div>
       {!agreedToTerms && (
         <p className="text-center text-xs font-medium text-slate-500">Accept the terms below to continue with social sign up.</p>
@@ -282,10 +318,16 @@ export default function SignupForm() {
           )}
         </div>
 
+        {signupClosed && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-800">
+            {SIGNUP_FULL_MESSAGE}
+          </p>
+        )}
+
         <AuthPrimaryButton
           type="submit"
           status={submitState}
-          disabled={!agreedToTerms}
+          disabled={!agreedToTerms || signupClosed}
           idleLabel="Create account"
           loadingLabel="Creating account…"
           successLabel="Check your inbox"

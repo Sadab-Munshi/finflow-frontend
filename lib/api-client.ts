@@ -122,6 +122,18 @@ export async function aiUsage() {
   return request('/api/ai/usage')
 }
 
+// Pre-signup check for the admin-set signup cap (finflow-api
+// src/routes/auth.ts). The DB trigger is the real enforcement; this only
+// drives the friendly UI. Callers must tolerate a failed call = "allowed".
+export async function authSignupStatus(): Promise<{
+  allowed: boolean
+  limit: number | null
+  count: number | null
+  remaining?: number
+}> {
+  return request('/api/auth/signup-status')
+}
+
 export async function aiReportSummary(data: {
   month: string
   firstName: string
