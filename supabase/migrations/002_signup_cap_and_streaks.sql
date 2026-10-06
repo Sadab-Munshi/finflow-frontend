@@ -49,8 +49,8 @@ create trigger trg_enforce_signup_limit
   for each row execute function enforce_signup_limit();
 
 -- ── Activity streaks: consecutive days with ≥1 transaction, ending today or
--- yesterday (Asia/Kolkata). transactions.date is TEXT — only well-formed
--- YYYY-MM-DD values participate. ──
+-- yesterday (Asia/Kolkata). Type-agnostic: cast to text first so the regex
+-- works whether transactions.date is `date` (production) or `text`.
 create or replace function user_activity_streaks()
 returns table(user_id uuid, streak_days integer)
 language sql security definer stable
@@ -59,7 +59,8 @@ as $$
 with days as (
   select distinct t.user_id as uid, t.date::date as d
   from transactions t
-  where t.date ~ '^\d{4}-\d{2}-\d{2}$'
+  where t.date is not null
+    and t.date::text ~ '^\d{4}-\d{2}-\d{2}$'
 ),
 numbered as (
   select uid, d,
