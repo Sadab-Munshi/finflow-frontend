@@ -10,7 +10,7 @@ related: [agents, routes, conventions]
 
 ## Inputs
 - URL path (kebab-case) + which group: public `(landing)`/`(auth)` or app page
-- Auth level: middleware-protected / admin / public
+- Auth level: middleware-protected / public
 - Data source: Supabase table(s) and/or finflow-api endpoint(s)
 
 ## Steps
@@ -19,7 +19,7 @@ related: [agents, routes, conventions]
      `loading.tsx` — copy `app/insights/page.tsx` + `components/skeletons/InsightsSkeleton.tsx` + `app/insights/loading.tsx`.
    - **Public/SEO page**: server `page.tsx` with `export const metadata`
      rendering a client `*Content.tsx` — copy `app/(landing)/support/page.tsx`.
-   - **Admin page**: copy the `app/admin-dy26zyfv/page.tsx:5-23` guard shell.
+     (No admin pages here — admin lives on a separate domain since 2026-10-06.)
 2. `mkdir app/<path>` and create the files; use the `@/` import alias
    (`app/dashboard/page.tsx:20`).
 3. If the path is private: add it to `protectedRoutes`

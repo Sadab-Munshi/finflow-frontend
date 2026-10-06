@@ -12,20 +12,23 @@ Target: **Vercel** (`vercel.json`), region `bom1` (Mumbai — primary user base 
 India). Build = `next build`; note builds ignore lint + type errors
 (`next.config.ts:4-9`), so merge gates must run them in CI, not at build.
 
-⚠️ **`vercel.json:6-14` declares two Vercel Cron entries hitting
-`/api/cron/monthly-report` (0 0 1 * *) and `/api/cron/process-report-queue`
-(0 2 1 * *) — but no `app/api/` routes exist in this repo; the endpoints live in
-the separate finflow-api service. These crons will 404** — see `docs/DEBT.md`.
-Either delete them here and schedule against finflow-api directly, or re-add
-server route handlers that proxy with `CRON_SECRET`. <!-- TODO: verify what the Vercel dashboard actually runs today -->
+`vercel.json` declares only the region — the stale `/api/cron/*` cron entries
+were removed 2026-10-06. Report/queue schedules belong to finflow-api's own
+deployment now. <!-- TODO: verify nothing in the Vercel dashboard still schedules the old frontend crons -->
 
 ## Environment groups (names; details `docs/CONFIG.md`)
 
 | Group | Vars | Where set |
 |---|---|---|
-| Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Vercel → Environment Variables (Production + Preview) |
+| Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel → Environment Variables (Production + Preview) |
 | Turnstile | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | same |
-| Backend | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_INTERNAL_API_SECRET`⚠️, `NEXT_PUBLIC_BOT_SECRET`⚠️ | same (⚠️ scheduled for removal — `docs/DEBT.md`) |
+| Backend | `NEXT_PUBLIC_API_URL` | same |
+
+Delete from Vercel env (removed from code 2026-10-06): `SUPABASE_SERVICE_ROLE_KEY`,
+`NEXT_PUBLIC_INTERNAL_API_SECRET`, `NEXT_PUBLIC_BOT_SECRET`. The two public
+Supabase vars are also required **at build time** — since the `finflow_visitor`
+block left `app/layout.tsx`, every page prerenders statically and the build
+fails without them.
 | Analytics | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` | same (optional) |
 | Push | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | same (optional) |
 

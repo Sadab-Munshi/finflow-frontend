@@ -28,10 +28,10 @@ redirects; tracked in `docs/DEBT.md`. <!-- TODO: verify which host the Vercel pr
 
 ## Sitemap & robots
 
-- `app/sitemap.ts` emits **only 3 entries** (`/`, `/login`, `/signup`) — the
-  public marketing/legal pages (`/terms`, `/privacy`, `/disclaimer`,
-  `/support`, `/user-guide`) are indexable but absent from the sitemap. Adding
-  them is a safe quick win (`docs/DEBT.md`).
+- `app/sitemap.ts` emits 8 entries (`:4-31`): `/`, `/login`, `/signup` plus the
+  five public marketing/legal pages (`/terms`, `/privacy`, `/disclaimer`,
+  `/support`, `/user-guide`, appended at `:23-29`, priority 0.3) — expanded
+  2026-10-06.
 - `public/robots.txt`: `Allow: /` + sitemap line. No `Disallow` — protected
   routes are effectively un-indexable anyway because middleware 307s crawlers
   to `/login` (bot likely has no session); don't add app routes to the sitemap.
