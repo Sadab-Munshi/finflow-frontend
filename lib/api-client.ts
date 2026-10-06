@@ -155,16 +155,6 @@ export async function authWelcomeEmail(fullName: string, email: string) {
   })
 }
 
-// ============ Test Auth Endpoints ============
-
-export async function testAuth() {
-  return request('/api/test-auth')
-}
-
-export async function testAuthAdmin() {
-  return request('/api/test-auth/admin')
-}
-
 // ============ Notifications Endpoints ============
 
 export async function getNotifications(limit = 20, unread = false) {
@@ -233,60 +223,6 @@ export async function submitFeedback(message: string, type: 'general' | 'bug' | 
 
 export async function getReports() {
   return request('/api/reports')
-}
-
-// ============ Admin Endpoints ============
-
-export async function adminBan(data: {
-  userId?: string
-  action: 'ban' | 'unban' | 'ip_ban'
-  reason?: string
-  ipAddress?: string
-}) {
-  return request('/api/admin/ban', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-}
-
-export async function adminClearTestNotifications() {
-  return request('/api/admin/clear-test-notifications', { method: 'POST' })
-}
-
-export async function adminGetFeedback() {
-  return request('/api/admin/feedback')
-}
-
-export async function adminGetUsers() {
-  return request('/api/admin/users')
-}
-
-export async function adminSendNotification(data: {
-  type: string
-  title: string
-  message: string
-  icon?: string
-  link?: string
-  sendPush?: boolean
-  sendInApp?: boolean
-  sendEmail?: boolean
-  targetType: 'all' | 'specific'
-  userIds?: string[]
-}) {
-  return request('/api/admin/send-notification', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-}
-
-export async function adminVerify(password: string) {
-  return request('/api/admin/verify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
-  })
 }
 
 // ============ Ban Check Endpoints ============
