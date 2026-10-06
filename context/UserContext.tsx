@@ -161,7 +161,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
         ipAddress = ipData.ip
       } catch {}
 
-      const banData = await checkBan(user.userId)
+      let banned = false
+      try {
+        const banData = await checkBan(user.userId)
+        banned = banData.banned || false
+      } catch {
+        // fail silently, treat as not banned (matches middleware's fail-open ban check)
+      }
 
       let ipBanned = false
       try {
@@ -171,7 +177,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         // fail silently, treat as not banned
       }
 
-      if (banData.banned || ipBanned) {
+      if (banned || ipBanned) {
         await supabase.auth.signOut({ scope: 'local' })
         window.location.href = '/login?banned=true'
       }

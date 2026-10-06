@@ -6,8 +6,6 @@ import { LanguageProvider } from '@/context/LanguageContext'
 import { UserProvider } from '@/context/UserContext'
 import AuthListener from '@/components/auth/AuthListener'
 import { WebsiteJsonLd, OrganizationJsonLd } from '@/components/JsonLd'
-import { cookies } from 'next/headers'
-import { v4 as uuidv4 } from 'uuid'
 import './globals.css'
 
 const PostHogProvider = dynamic(() => import('@/components/PostHogProvider'))
@@ -103,11 +101,6 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies()
-  let cookieId = cookieStore.get('finflow_visitor')?.value
-  if (!cookieId) {
-    cookieId = uuidv4()
-  }
 
   return (
     <html lang="en">

@@ -12,8 +12,8 @@ Next.js 15 App Router PWA for personal finance. Supabase provides Auth +
 Postgres (with RLS) + Storage; a separate Express backend (`finflow-api`) owns
 AI calls, emails, push delivery, and admin operations. Despite being an
 App Router app, **almost every app page is a client component** that fetches via
-Supabase/browser calls in `useEffect`; server components are used for the admin
-guard shell, public marketing/auth pages, and the root layout. State is two
+Supabase/browser calls in `useEffect`; server components cover public
+marketing/auth pages and the root layout. State is two
 React contexts only. Deployed on Vercel (region `bom1`, `vercel.json:2`).
 
 ## Request flow
@@ -31,17 +31,16 @@ middleware.ts ──────────────────────
        banned → /login?banned=true                                  │
   ▼
 App Router server layer
-  ├─ app/layout.tsx (RSC): metadata/OG/JSON-LD, font, cookie read,
+  ├─ app/layout.tsx (RSC): metadata/OG/JSON-LD, font,
   │     providers (Language, User, AuthListener, PostHog, Toaster),
-  │     inline SW registration script (:120-130)
-  ├─ route handler: app/auth/callback/route.ts (OAuth/email confirm)
-  └─ server guard shell: app/admin-dy26zyfv/page.tsx
+  │     inline SW registration script (:111-123)
+  └─ route handler: app/auth/callback/route.ts (OAuth/email confirm)
   ▼
 Client components ('use client') — dashboards & app pages
   ├─→ Supabase  (lib/supabase/client.ts → direct DB w/ RLS, Auth, Storage)
   └─→ finflow-api (lib/api-client.ts → Bearer JWT → /api/*)
         AI parse/STT · receipts · insights · notifications · push ·
-        admin · ban checks · track-login · reports
+        ban checks · track-login · reports
 ```
 
 ## Route groups
@@ -50,7 +49,7 @@ Client components ('use client') — dashboards & app pages
 |---|---|---|
 | `(landing)` | `/`, `/terms`, `/privacy`, `/disclaimer`, `/support`, `/user-guide` | public marketing/legal; shared layout (`app/(landing)/layout.tsx`) |
 | `(auth)` | `/login`, `/signup`, `/forgot-password`, `/reset-password` | public auth flow; pages keep metadata via thin server wrappers over client content (pattern: `app/(auth)/login/page.tsx` → `LoginContent.tsx`) |
-| (ungrouped) | `/dashboard`, `/add`, `/history`, `/budgets`, `/insights`, `/reports`, `/analytics`, `/notifications`, `/profile`, `/settings`, `/privacy-security`, `/backup-restore`, `/transaction/[id]`, `/admin-dy26zyfv/*` | the app itself — client pages behind middleware and/or admin guard |
+| (ungrouped) | `/dashboard`, `/add`, `/history`, `/budgets`, `/insights`, `/reports`, `/analytics`, `/notifications`, `/profile`, `/settings`, `/privacy-security`, `/backup-restore`, `/transaction/[id]` | the app itself — client pages behind middleware |
 
 ## Feature → file map
 
@@ -64,7 +63,6 @@ Client components ('use client') — dashboards & app pages
 | Analytics suite | `app/analytics/page.tsx` + `components/analytics/*` | `lib/analytics-api.ts:44-62`, Recharts |
 | Reports | `app/reports/page.tsx` | `lib/api-client.ts:234` (`getReports`) |
 | Notifications | `app/notifications/page.tsx` + `components/notifications/*` | `lib/api-client.ts:170-220`, `lib/notification-utils.ts` |
-| Admin panel | `app/admin-dy26zyfv/{page,AdminPanelClient}.tsx` (+`/notifications`) | `lib/api-client.ts:240-292` (admin* calls) |
 | Auth | `app/(auth)/*`, `components/auth/*`, `app/auth/callback/route.ts` | `docs/AUTH.md` |
 | i18n | — | `context/LanguageContext.tsx` (en/hi/bn) |
 | PWA / push | — | `public/sw.js`, `lib/push.ts`, `components/UpdateNotification.tsx` |
@@ -114,12 +112,10 @@ Client components ('use client') — dashboards & app pages
 1. The three Supabase clients are context-bound: browser (`lib/supabase/client.ts`),
    server components/route handlers (`lib/supabase/server.ts`), middleware
    (`lib/supabase/middleware.ts`) — never cross-import (`docs/AUTH.md`).
-2. Auto-protected routes = exactly the list in `lib/supabase/middleware.ts:30-41`;
-   anything else is public or self-guarded (admin). `/analytics`,
-   `/backup-restore`, `/privacy-security` are currently **not** middleware-protected
-   — see `docs/DEBT.md`; do not widen silently.
+2. Auto-protected routes = exactly the list in `lib/supabase/middleware.ts:30-45`;
+   anything else is public. Do not widen silently (decide per-page instead).
 3. All finflow-api traffic goes through `lib/api-client.ts` (Bearer from session,
-   `:14-27`) — the API never sees cookies, only JWTs.
+   `:20-44`) — the API never sees cookies, only JWTs.
 4. All displayed/stored dates go through IST helpers in `lib/utils.ts`
    (`normalizeDateToYMD:23`, `toIndianDate:57`, `getISTDateOffset:120`).
 5. Global state = `UserContext` + `LanguageContext` only, provided once in
@@ -129,10 +125,10 @@ Client components ('use client') — dashboards & app pages
    contents requires a new filename, not an overwrite.
 7. `public/sw.js` cache-busts **only** via `CACHE_NAME` (`public/sw.js:1`);
    bump on every SW change (`docs/PWA.md#versioning`).
-8. The obfuscated admin path `app/admin-dy26zyfv/` is *security through
-   obscurity plus* a real server-side `is_admin` check
-   (`app/admin-dy26zyfv/page.tsx:16-22`) — renaming it requires updating
-   `docs/ROUTES.md`, the sitemap exclusions, and any external links.
+8. There is no admin UI in this repo: admin moved to a separate domain
+   (2026-10-06, `docs/DECISIONS.md` ADR-6 — superseded). The `settings.is_admin`
+   column still exists in the DB but nothing here reads it; never reintroduce
+   a privileged surface behind an obscured path.
 9. Builds tolerate nothing locally: `ignoreDuringBuilds` +
    `ignoreBuildErrors` (`next.config.ts:4-9`) mean `npm run lint` and
    `npx tsc --noEmit` are the only honest gates.

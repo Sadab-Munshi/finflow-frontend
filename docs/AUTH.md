@@ -16,12 +16,13 @@ the browser never stores tokens itself.
 | Client | Context | File | Notes |
 |---|---|---|---|
 | Browser | client components, `useEffect` | `lib/supabase/client.ts:3-8` (`createBrowserClient`, anon key) | RLS-scoped, sees the session cookie |
-| Server | RSC render, route handlers | `lib/supabase/server.ts:13-34` (await `cookies()`; `createServerClient`) | swallows `setAll` errors in RSC (cookies read-only there) |
+| Server | RSC render, route handlers | `lib/supabase/server.ts:5-24` (await `cookies()`; `createServerClient`) | swallows `setAll` errors in RSC (cookies read-only there) |
 | Middleware | edge interceptor | `lib/supabase/middleware.ts:3-34` | re-emits rotated cookies onto the response — **this is why session refresh works** |
 
-Fourth export `createServiceClient` (`lib/supabase/server.ts:5-9`, service-role
-key, bypasses RLS) is **unused** — server-only if revived; never import into
-client code (`docs/DEBT.md`). Cross-import rules: `docs/CONVENTIONS.md`.
+A fourth export `createServiceClient` (service-role key, bypasses RLS) was
+**deleted 2026-10-06** — it had no callers and a leaked-copy risk.
+`SUPABASE_SERVICE_ROLE_KEY` is no longer consumed anywhere in this repo
+(`docs/CONFIG.md`). Cross-import rules: `docs/CONVENTIONS.md`.
 
 ## Middleware rules (`middleware.ts` → `updateSession`)
 
@@ -29,14 +30,16 @@ client code (`docs/DEBT.md`). Cross-import rules: `docs/CONVENTIONS.md`.
    `middleware.ts:9-11`; coverage table in `docs/ROUTES.md`).
 2. Refreshes the session and mirrors cookie mutations onto the response
    (`lib/supabase/middleware.ts:14-30`).
-3. `protectedRoutes` (`:30-41`): `/dashboard /history /add /budgets /insights
-   /reports /settings /transaction /profile /notifications` (prefix match, `:43`).
-   No user → `307 /login` (`:49`).
+3. `protectedRoutes` (`:30-45`): `/dashboard /history /add /budgets /insights
+   /reports /settings /transaction /profile /notifications /analytics
+   /backup-restore /privacy-security` (prefix match, `:47`).
+   No user → `307 /login` (`:53`).
 4. User present on a protected route → DB ban check on `user_management`
    (`:55-72`): `is_banned || ip_banned` → `/login?banned=true`. A check failure
    logs and **lets the request through** (fail-open, `:70-72`).
-5. Notably absent from the list: `/analytics`, `/backup-restore`,
-   `/privacy-security`, `/admin-*` (self-guarded) — see `docs/DEBT.md`.
+5. `/analytics`, `/backup-restore`, `/privacy-security` joined the list
+   2026-10-06 — every app page is now middleware-protected; the public surface
+   is only `(landing)`, `(auth)`, `/auth/callback`, and the generated files.
 
 ## Email + password + Turnstile
 
@@ -89,8 +92,8 @@ Dual-layer enforcement: middleware (edge) + this polling loop (live sessions).
 
 ## Ban flow (end-to-end)
 
-Admin ban (API) → `user_management`/`banned_ips` rows → three enforcement
-points here: middleware per navigation (`lib/supabase/middleware.ts:62-67`),
+Admin ban (separate admin domain → API) → `user_management`/`banned_ips` rows → three enforcement
+points here: middleware per navigation (`lib/supabase/middleware.ts:55-72`),
 20 s poll in `UserContext:155-181`, and login-page banner via `?banned=true`
 (read in `app/(auth)/login/LoginContent.tsx` via `useSearchParams`).
 

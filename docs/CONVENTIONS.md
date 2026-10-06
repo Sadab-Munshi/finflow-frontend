@@ -40,9 +40,9 @@ related: [agents, architecture, state, design-system]
    (`getTransactions:8`, `addTransaction:17`, budget/settings fns) using
    `lib/supabase/client.ts`. RLS enforces scoping.
 2. **finflow-api (`api-client`)** for anything privileged or external: AI
-   (`lib/api-client.ts:93-142`), notifications, feedback, reports, push, admin,
+   (`lib/api-client.ts:70-118`), notifications, feedback, reports, push,
    ban/track, bot notifies. Token injected from the active session
-   (`lib/api-client.ts:14-27`) — never hand-roll `fetch` with the JWT.
+   (`lib/api-client.ts:20-44`) — never hand-roll `fetch` with the JWT.
 - `lib/analytics-api.ts` is a thin typed wrapper over api-client's transport for
   the analytics feature (`lib/analytics-api.ts:44-62`).
 - `lib/storage.ts` (localStorage mirror) is legacy — do not add new storage
@@ -95,5 +95,6 @@ related: [agents, architecture, state, design-system]
 9. **No `any` escapes for shared types** — extend `lib/types.ts` /
    `lib/analytics-types.ts`. `tsconfig` `strict: true`, but builds ignore errors
    (`next.config.ts:7-9`), so discipline is social, not enforced.
-10. **No renaming/moving the admin path** `app/admin-dy26zyfv` without updating
-    guards, docs, and external references together (`docs/ROUTES.md`).
+10. **No privileged UI in this repo** — admin lives on a separate domain
+    (ADR-6, `docs/DECISIONS.md`); do not reintroduce admin pages, obscured
+    paths, or secret-holding proxy behavior in this codebase.
