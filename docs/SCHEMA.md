@@ -22,7 +22,7 @@ through finflow-api with the service-role key (RLS bypassed there).
 
 | Table | Migration lines | RLS policies (effect) | Read/write from this app |
 |---|---|---|---|
-| `transactions` | `001_create_tables.sql:5-36` | full CRUD where `auth.uid() = user_id` (4 policies) | `lib/db.ts:8-89`; columns: `id, user_id, amount, type CHECK income/expense, category, note, date (text!), created_at` |
+| `transactions` | `001_create_tables.sql:5-36` | full CRUD where `auth.uid() = user_id` (4 policies) | `lib/db.ts:8-89`; columns: `id, user_id, amount, type CHECK income/expense, category, note, date (text in repo SQL, `date` in prod — see quirks), created_at` |
 | `budgets` | `:39-69` | full CRUD own-row | `lib/db.ts:92-146`; `user_id, category, amount, month (text), created_at` |
 | `settings` | `:71-100` | view/insert/update own row (no delete) | `lib/db.ts:149-186`, `UserContext:40-42`, profile/settings pages; many nullable pref columns + `is_admin` (no longer read here — admin moved out), `avatar_url`, `name`, bot linkage |
 | `notifications` | `:102-135` | full CRUD own row | `lib/api-client.ts:170-188` (API mirror) — backend also writes |
@@ -32,9 +32,12 @@ through finflow-api with the service-role key (RLS bypassed there).
 
 ## Notable schema quirks
 
-- **`transactions.date` is `text`** (`001_create_tables.sql:12`), not `date` —
-  normalization burden lives in the app (`lib/utils.ts:23`). Compare as
-  `YYYY-MM-DD` strings only after `normalizeDateToYMD`.
+- **`transactions.date` has drifted between repo and prod**: migration
+  `001_create_tables.sql:12` declares `date text NOT NULL`, but the live
+  production column is a real **`date` type** (verified 2026-10-06 — a
+  `date ~ regex` query errors with "operator does not exist"). Treat SQL as
+  type-agnostic (`t.date::text` before any string ops); in app code, compare
+  `YYYY-MM-DD` strings only after `normalizeDateToYMD` (`lib/utils.ts:23`).
 - `settings.user_id` is the joining key across nearly every feature; several
   columns are `NOT NULL` only by first migration — later columns are nullable
   additions made outside this SQL file. <!-- TODO: verify whether later ALTERs were applied manually; only 001 exists in-repo -->
