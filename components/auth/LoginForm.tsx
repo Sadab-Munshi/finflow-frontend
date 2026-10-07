@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { FlaskConical, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { identifyUser, track } from '@/lib/posthog'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -78,6 +79,8 @@ export default function LoginForm() {
 
       const user = signInData?.user
       const userEmail = user?.email
+      track('login', { method: 'email' })
+      if (user?.id) identifyUser(user.id, userEmail ?? undefined)
       if (user?.email_confirmed_at && userEmail) {
         try {
           let { data: settingsData } = await supabase

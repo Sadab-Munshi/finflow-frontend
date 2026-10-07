@@ -13,6 +13,8 @@ export default function MicrosoftButton({ disabled }: MicrosoftButtonProps) {
   const handleMicrosoftLogin = async () => {
     setLoading(true)
     const supabase = createClient()
+    // So AuthListener can fire the right login/signup event after the redirect back.
+    try { sessionStorage.setItem('ff-oauth-provider', 'microsoft') } catch { /* noop */ }
     await supabase.auth.signInWithOAuth({
       provider: 'azure',
       options: {

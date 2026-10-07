@@ -18,6 +18,7 @@ import AuthSuccessState from './AuthSuccessState'
 import PasswordStrengthMeter from './PasswordStrengthMeter'
 import { getEmailSuggestion } from './emailSuggestion'
 import { authSignupStatus, authVerifyTurnstile, type SignupStatus } from '@/lib/api-client'
+import { track } from '@/lib/posthog'
 
 export const SIGNUP_FULL_MESSAGE =
   'Signups are temporarily closed — the user limit has been reached. Please try again later.'
@@ -208,6 +209,7 @@ export default function SignupForm() {
         }
       }
 
+      track('signup_completed', { method: 'email' })
       toast.success('Check your email to confirm your account!')
       setSubmitState('success')
       setSuccessEmail(data.email)

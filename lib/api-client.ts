@@ -1,6 +1,7 @@
 import { createClient } from './supabase/client'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { track } from './posthog'
 
 let supabaseClient: ReturnType<typeof createClient> | null = null
 
@@ -91,31 +92,39 @@ async function internalRequest(path: string, options: RequestInit = {}) {
 // ============ AI Endpoints ============
 
 export async function aiParseText(text: string) {
-  return request('/api/ai/parse-text', {
+  const result = await request('/api/ai/parse-text', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   })
+  track('ai_used', { feature: 'nlp' })
+  return result
 }
 
 export async function aiParseReceipt(base64: string, mimeType: string) {
-  return request('/api/ai/parse-receipt', {
+  const result = await request('/api/ai/parse-receipt', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ base64, mimeType }),
   })
+  track('ai_used', { feature: 'receipt' })
+  return result
 }
 
 export async function aiSpeechToText(formData: FormData) {
-  return requestMultipart('/api/ai/speech-to-text', formData)
+  const result = await requestMultipart('/api/ai/speech-to-text', formData)
+  track('ai_used', { feature: 'voice' })
+  return result
 }
 
 export async function aiInsights(transactions: unknown[]) {
-  return request('/api/ai/insights', {
+  const result = await request('/api/ai/insights', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transactions }),
   })
+  track('ai_used', { feature: 'insights' })
+  return result
 }
 
 export async function aiUsage() {
