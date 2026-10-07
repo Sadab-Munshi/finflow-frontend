@@ -102,13 +102,33 @@ export async function aiUsage() {
 // Pre-signup check for the admin-set signup cap (finflow-api
 // src/routes/auth.ts). The DB trigger is the real enforcement; this only
 // drives the friendly UI. Callers must tolerate a failed call = "allowed".
-export async function authSignupStatus(): Promise<{
+export interface SignupStatus {
   allowed: boolean
   limit: number | null
   count: number | null
   remaining?: number
+  mode?: 'open' | 'invite_only' | 'closed'
+  allowed_domains?: string[] | null
+  reason?: 'closed' | 'invite_only' | 'domain' | null
+}
+
+// Pass `email` to also evaluate the admin's allowed-domain list for that
+// specific address (domain extracted server-side).
+export async function authSignupStatus(email?: string): Promise<SignupStatus> {
+  const qs = email ? `?email=${encodeURIComponent(email)}` : ''
+  return request(`/api/auth/signup-status${qs}`)
+}
+
+// Public platform flags (maintenance / read-only / announcement). Never
+// throws semantically — callers fail open (treat an unreachable API as
+// "no maintenance") so the app never locks itself out on a network blip.
+export async function authAppStatus(): Promise<{
+  ok: boolean
+  maintenance: boolean
+  read_only: boolean
+  announcement: string | null
 }> {
-  return request('/api/auth/signup-status')
+  return request('/api/auth/app-status')
 }
 
 export async function aiReportSummary(data: {
