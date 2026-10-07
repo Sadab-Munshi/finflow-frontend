@@ -238,6 +238,13 @@ export async function trackLogin(userId: string, email: string, ipAddress?: stri
   })
 }
 
+// Presence ping. Goes THROUGH THE API (service role) rather than writing
+// user_heartbeat with the anon key — direct client upserts were being
+// silently RLS-rejected in prod, which is why "Online now" was always 0.
+export async function sendHeartbeat() {
+  return request('/api/track-login/heartbeat', { method: 'POST' })
+}
+
 // ============ Telegram Endpoints ============
 
 export async function telegramNotify(chatId: string, type: 'connected' | 'disconnected') {

@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
-import { trackLogin, checkBan, checkIpBan } from '@/lib/api-client'
+import { trackLogin, sendHeartbeat, checkBan, checkIpBan } from '@/lib/api-client'
 
 interface UserProfile {
   userId: string
@@ -91,16 +91,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       trackLogin(authUser.id, authUser.email, ipAddress).catch(e => console.error('[trackLogin] Failed:', e))
 
-      // Heartbeat
+      // Heartbeat — via the API (the old direct Supabase upsert was silently
+      // RLS-blocked in prod, so presence never updated)
       const pingHeartbeat = async () => {
-        const supabase = createClient()
-        const { error } = await supabase
-          .from('user_heartbeat')
-          .upsert(
-            { user_id: authUser.id, last_seen: new Date().toISOString() },
-            { onConflict: 'user_id' }
-          )
-        if (error) console.warn('[heartbeat] Failed:', error.message)
+        try {
+          await sendHeartbeat()
+        } catch (e) {
+          console.warn('[heartbeat] Failed:', e)
+        }
       }
       pingHeartbeat()
       if (heartbeatRef.current) clearInterval(heartbeatRef.current)
