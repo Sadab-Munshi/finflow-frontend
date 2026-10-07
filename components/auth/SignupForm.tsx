@@ -17,10 +17,36 @@ import AuthPrimaryButton from './AuthPrimaryButton'
 import AuthSuccessState from './AuthSuccessState'
 import PasswordStrengthMeter from './PasswordStrengthMeter'
 import { getEmailSuggestion } from './emailSuggestion'
-import { authSignupStatus, authVerifyTurnstile } from '@/lib/api-client'
+import { authSignupStatus, authVerifyTurnstile, type SignupStatus } from '@/lib/api-client'
 
 export const SIGNUP_FULL_MESSAGE =
   'Signups are temporarily closed — the user limit has been reached. Please try again later.'
+
+const SIGNUP_CLOSED_MESSAGE =
+  'Registrations are currently closed. Please check back later.'
+const SIGNUP_INVITE_MESSAGE =
+  'Signups are currently invite-only. Please contact us for an invitation.'
+
+// Maps an API signup-status response to a user-facing block reason. A
+// response of allowed:false without a `reason` means the user cap fired
+// (legacy behavior, kept as the default).
+function blockMessageFor(status: SignupStatus): string | null {
+  if (status.allowed) return null
+  switch (status.reason) {
+    case 'closed':
+      return SIGNUP_CLOSED_MESSAGE
+    case 'invite_only':
+      return SIGNUP_INVITE_MESSAGE
+    case 'domain':
+      return `This email domain cannot register right now.${
+        status.allowed_domains?.length
+          ? ` Allowed domains: ${status.allowed_domains.join(', ')}.`
+          : ''
+      }`
+    default:
+      return SIGNUP_FULL_MESSAGE
+  }
+}
 
 const schema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -45,7 +71,9 @@ export default function SignupForm() {
   const [fullNameValue, setFullNameValue] = useState('')
   const [emailValue, setEmailValue] = useState('')
   const [passwordValue, setPasswordValue] = useState('')
-  const [signupClosed, setSignupClosed] = useState(false)
+  const [signupBlockMessage, setSignupBlockMessage] = useState<string | null>(null)
+  const blockCauseRef = useRef<string | null>(null)
+  const signupClosed = !!signupBlockMessage
   const turnstileRef = useRef<TurnstileInstance>(null)
 
   // Prefetch the admin-set signup cap so the form can show the closed state
@@ -54,13 +82,44 @@ export default function SignupForm() {
     let cancelled = false
     authSignupStatus()
       .then((status) => {
-        if (!cancelled && !status.allowed) setSignupClosed(true)
+        if (cancelled) return
+        const msg = blockMessageFor(status)
+        blockCauseRef.current = status.reason ?? (status.allowed ? null : 'limit')
+        setSignupBlockMessage(msg)
       })
       .catch(() => {})
     return () => {
       cancelled = true
     }
   }, [])
+
+  // Live domain gate — once the typed email parses, re-check it against the
+  // admin's allowed-domain list (debounced). Platform-level blocks (closed /
+  // invite-only / cap) take precedence over domain feedback.
+  useEffect(() => {
+    const email = emailValue.trim()
+    const valid = z.string().email().safeParse(email).success
+    if (!valid) {
+      // Editing away from a rejected domain shouldn't keep the form blocked.
+      if (blockCauseRef.current === 'domain') {
+        blockCauseRef.current = null
+        setSignupBlockMessage(null)
+      }
+      return
+    }
+    const timer = setTimeout(() => {
+      authSignupStatus(email)
+        .then((status) => {
+          const platformBlocked =
+            !status.allowed && status.reason && status.reason !== 'domain'
+          if (platformBlocked) return // keep the platform-level message
+          blockCauseRef.current = status.allowed ? null : (status.reason ?? 'limit')
+          setSignupBlockMessage(blockMessageFor(status))
+        })
+        .catch(() => {})
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [emailValue])
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -91,10 +150,12 @@ export default function SignupForm() {
       // Soft gate — re-check right before signup so the cap set minutes ago
       // is honored; errors here must not block signups (trigger is the gate).
       try {
-        const status = await authSignupStatus()
-        if (!status.allowed) {
-          setSignupClosed(true)
-          toast.error(SIGNUP_FULL_MESSAGE)
+        const status = await authSignupStatus(data.email)
+        const msg = blockMessageFor(status)
+        if (msg) {
+          blockCauseRef.current = status.reason ?? 'limit'
+          setSignupBlockMessage(msg)
+          toast.error(msg)
           setSubmitState('idle')
           return
         }
@@ -123,7 +184,7 @@ export default function SignupForm() {
       if (error) {
         // DB trigger rejection (race between status check and insert)
         if (error.message?.includes('signup_limit_reached')) {
-          setSignupClosed(true)
+          setSignupBlockMessage(SIGNUP_FULL_MESSAGE)
           toast.error(SIGNUP_FULL_MESSAGE)
         } else {
           toast.error(error.message)
@@ -318,9 +379,9 @@ export default function SignupForm() {
           )}
         </div>
 
-        {signupClosed && (
+        {signupBlockMessage && (
           <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-800">
-            {SIGNUP_FULL_MESSAGE}
+            {signupBlockMessage}
           </p>
         )}
 
