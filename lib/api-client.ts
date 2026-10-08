@@ -178,6 +178,15 @@ export async function aiReportSummary(data: {
   })
 }
 
+// ============ Feature Flags (PRD §8.4) ============
+
+// Evaluated per-user by the API (/api/flags/me) — enabled + environment +
+// percentage rollout + segment targeting already resolved server-side.
+// Treat a missing key as OFF (fail closed when flags are added/removed).
+export async function myFeatureFlags(): Promise<{ ok: boolean; flags: Record<string, boolean> }> {
+  return request('/api/flags/me')
+}
+
 // ============ Auth Endpoints ============
 
 export async function authVerifyTurnstile(token: string) {
