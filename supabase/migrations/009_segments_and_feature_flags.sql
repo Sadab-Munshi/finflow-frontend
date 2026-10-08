@@ -12,9 +12,13 @@ create table if not exists public.user_segments (
 );
 
 alter table if exists public.user_segments enable row level security;
-create policy if not exists "user_segments_service_all" on public.user_segments
+
+-- idempotent: drop first (CREATE POLICY has no IF NOT EXISTS)
+drop policy if exists "user_segments_service_all" on public.user_segments;
+create policy "user_segments_service_all" on public.user_segments
   for all to service_role using (true) with check (true);
-create policy if not exists "user_segments_auth_none" on public.user_segments
+drop policy if exists "user_segments_auth_none" on public.user_segments;
+create policy "user_segments_auth_none" on public.user_segments
   for select to authenticated using (false);
 
 create table if not exists public.feature_flags (
@@ -32,9 +36,13 @@ create table if not exists public.feature_flags (
 );
 
 alter table if exists public.feature_flags enable row level security;
-create policy if not exists "feature_flags_service_all" on public.feature_flags
+
+-- idempotent: drop first (CREATE POLICY has no IF NOT EXISTS)
+drop policy if exists "feature_flags_service_all" on public.feature_flags;
+create policy "feature_flags_service_all" on public.feature_flags
   for all to service_role using (true) with check (true);
-create policy if not exists "feature_flags_auth_none" on public.feature_flags
+drop policy if exists "feature_flags_auth_none" on public.feature_flags;
+create policy "feature_flags_auth_none" on public.feature_flags
   for select to authenticated using (false);
 
 -- Segment audiences on campaigns (set when audience = 'segment')
