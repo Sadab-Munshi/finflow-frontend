@@ -52,3 +52,14 @@ until 2026-10-06, when it moved to a separate domain.)
 4. Schema changes: new numbered SQL file, manual apply, then update
    `docs/SCHEMA.md` + `lib/types.ts` together (see `docs/SCHEMA.md#changing-the-schema`).
 5. Record notable migrations here with date + evidence, not from memory.
+
+## Supabase migrations ledger (post-split, run manually in the SQL editor)
+
+| File | Purpose | Notes |
+|---|---|---|
+| `007_notification_campaigns.sql` | Notifications 2.0 — campaigns, templates, `read` tracking, campaign stats | required by `/api/admin/notifications*` + cron dispatcher |
+| `008_ai_daily_usage.sql` | per-user **daily** AI cap (`ai_usage_daily`, PK user_id+day, IST) | rows roll forever; manual prune: `delete … where day < current_date - 40` |
+| `009_segments_and_feature_flags.sql` | `user_segments` + `feature_flags` (service-role only) + `notification_campaigns.segment_id/_name` | **fix 2026-10-08:** Postgres has no `CREATE POLICY IF NOT EXISTS` — policies use drop-then-create (same as 004). Safe to re-run top-to-bottom after a partial run. |
+
+Apply order matters: 008 before deploying the AI-limits build; 009 before the
+segments/flags build. Tables are additive; nothing here alters existing data.

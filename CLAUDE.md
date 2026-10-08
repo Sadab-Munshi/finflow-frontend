@@ -125,3 +125,20 @@ NEXT_PUBLIC_API_URL=... (optional, defaults to http://localhost:3001)
 - **Route protection** is dual-layer: middleware (server) + UserProvider ban polling (client).
 - **Date handling** consistently uses IST (`Asia/Kolkata`) — `normalizeDateToYMD()`, `getISTDateOffset()`, `toIndianDate()`.
 - **No test files exist** in the project source — only in `node_modules/`.
+
+---
+
+## 2026-10-08 addendum — platform controls & instrumentation
+
+- `components/PlatformGate.tsx` (root layout): maintenance lockout / read-only
+  + announcement banners from `GET /api/auth/app-status`. **Fails open** — keep
+  it that way.
+- SignupForm calls `/api/auth/signup-status` with reason-aware blocking
+  (closed/invite-only/cap/domain) incl. live `?email=` domain checks.
+- Feature flags: `myFeatureFlags()` in `lib/api-client.ts` → evaluated
+  booleans from `/api/flags/me`; missing key = OFF.
+- Analytics events flow through `lib/posthog.ts track()/identifyUser()`:
+  `signup_completed`, `login`, `transaction_added`, `ai_used{feature}` —
+  these power the Vertex admin funnels/cohorts. `identifyUser` runs on every
+  session (distinct_id = Supabase user id).
+- Detail doc: `docs/PLATFORM_CONTROLS.md` (wins over this file).
