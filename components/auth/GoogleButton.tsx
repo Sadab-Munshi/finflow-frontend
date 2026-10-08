@@ -13,6 +13,8 @@ export default function GoogleButton({ disabled }: GoogleButtonProps) {
   const handleGoogleLogin = async () => {
     setLoading(true)
     const supabase = createClient()
+    // So AuthListener can fire the right login/signup event after the redirect back.
+    try { sessionStorage.setItem('ff-oauth-provider', 'google') } catch { /* noop */ }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

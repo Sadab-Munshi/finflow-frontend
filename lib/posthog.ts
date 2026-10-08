@@ -15,4 +15,24 @@ export const initPostHog = () => {
   return posthog
 }
 
+// Fire-and-forget product events. SSR + init-order safe.
+export function track(event: string, props?: Record<string, unknown>) {
+  if (typeof window === 'undefined') return
+  try {
+    posthog.capture(event, props)
+  } catch {
+    /* analytics must never break the product */
+  }
+}
+
+// Tie anonymous device history to the account (person_profiles: identified_only).
+export function identifyUser(id: string, email?: string) {
+  if (typeof window === 'undefined' || !id) return
+  try {
+    posthog.identify(id, email ? { email } : undefined)
+  } catch {
+    /* noop */
+  }
+}
+
 export { posthog }
