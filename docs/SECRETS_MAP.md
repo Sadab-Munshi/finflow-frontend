@@ -17,14 +17,17 @@ credential.
 |---|---|---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | public | project URL | all three `lib/supabase/*` clients | Supabase project change (rare) → Vercel env → redeploy |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | RLS-scoped client key | same | rotate in Supabase → update **all** apps (this + finflow-api) |
-| `SUPABASE_SERVICE_ROLE_KEY` | **secret** | RLS bypass (unused code path `lib/supabase/server.ts:5-9`) | server build only | Supabase service key rotation → Vercel env; **never** prefix with `NEXT_PUBLIC_` |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public | widget site key | `components/auth/TurnstileWidget.tsx` | Cloudflare → Turnstile → rotate site key |
-| `NEXT_PUBLIC_API_URL` | public | backend base URL | `lib/api-client.ts:3`, `lib/analytics-api.ts` | config change; also update CSP `connect-src` (`next.config.ts:102`) |
-| `NEXT_PUBLIC_INTERNAL_API_SECRET` | public ⚠️ | mirrors API `INTERNAL_API_SECRET` for ban checks | `lib/api-client.ts:69` | **debt-removal preferred over rotation** (`docs/DEBT.md`); until then rotate in Vercel + finflow-api together |
-| `NEXT_PUBLIC_BOT_SECRET` | public ⚠️ | mirrors API `WEBHOOK_SECRET` for budget-alert | `lib/api-client.ts:206` | same as above — rotate in Vercel + finflow-api + WhatsApp bot together |
-| `NEXT_PUBLIC_POSTHOG_KEY` | public by design | PostHog project key | `lib/posthog.ts:5` | PostHog project — treat as semi-public anyway (browser analytics key) |
-| `NEXT_PUBLIC_POSTHOG_HOST` | public | ingest host | `lib/posthog.ts:6` | config change; also CSP `script-src`/`connect-src` |
+| `NEXT_PUBLIC_API_URL` | public | backend base URL | `lib/api-client.ts:3`, `lib/analytics-api.ts` | config change; also update CSP `connect-src` (`next.config.ts:101`) |
+| `NEXT_PUBLIC_POSTHOG_KEY` | public by design | PostHog project key | `lib/posthog.ts:4-6` | PostHog project — treat as semi-public anyway (browser analytics key) |
+| `NEXT_PUBLIC_POSTHOG_HOST` | public | ingest host | `lib/posthog.ts:7` | config change; also CSP `script-src`/`connect-src` |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | public | push subscribe key | `lib/push.ts` | regenerate VAPID pair on finflow-api side and update here (invalidates subscriptions) |
+
+Removed 2026-10-06 (branch `fix/security-remove-admin`) — delete from Vercel
+env: `NEXT_PUBLIC_INTERNAL_API_SECRET`, `NEXT_PUBLIC_BOT_SECRET` (shipped API
+secrets into the browser bundle), `SUPABASE_SERVICE_ROLE_KEY` (no consumer
+after `createServiceClient` was deleted). If any of these was ever committed to
+a place outside Vercel env, treat it as exposed and rotate on the API side.
 
 ## Rules
 

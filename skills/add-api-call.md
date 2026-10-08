@@ -17,14 +17,16 @@ related: [agents, conventions, secrets-map]
 
 ## Steps
 1. Add an exported async function to `lib/api-client.ts` in the right section
-   (grouped by domain — AI/Auth/Notifications/Admin/Push…).
-2. Pick the transport:
-   - JSON, JWT → `request()` (`lib/api-client.ts:20`)
+   (grouped by domain — AI/Auth/Notifications/Push/Bots…).
+2. Transport is always the user's Bearer JWT:
+   - JSON → `request()` (`lib/api-client.ts:20`)
    - multipart/file → `requestMultipart()` (`:46`)
-   - shared-secret → ⚠️ do NOT extend `internalRequest()` (`:68`) — it leaks the
-     secret to the browser. Use a server route handler (`app/api/<x>/route.ts`)
-     with a non-public env var instead.
-3. Type payloads inline (like `adminSendNotification`, `:265-292`) or extend
+   - shared-secret → **not allowed**; `internalRequest()` was deleted
+     2026-10-06 because a browser bundle must never hold API secrets. If an
+     endpoint only accepts a shared secret, the fix is API-side (accept
+     `Authorization: Bearer` scoped to `req.user.id`) — mark it BLOCKED in
+     `docs/DEBT.md` like `checkBan` (`:209`) / `budgetAlertCheck` (`:177`).
+3. Type payloads inline (like `sendNotification`, `:157`) or extend
    `lib/analytics-types.ts`-style sibling types for larger domains.
 4. Error handling is built in: transports throw `Error(serverMessage)`
    (`:38-43`) — wrap the call site in try/catch and `toast.error(err.message)`.

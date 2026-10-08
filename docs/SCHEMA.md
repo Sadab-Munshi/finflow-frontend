@@ -24,7 +24,7 @@ through finflow-api with the service-role key (RLS bypassed there).
 |---|---|---|---|
 | `transactions` | `001_create_tables.sql:5-36` | full CRUD where `auth.uid() = user_id` (4 policies) | `lib/db.ts:8-89`; columns: `id, user_id, amount, type CHECK income/expense, category, note, date (text in repo SQL, `date` in prod — see quirks), created_at` |
 | `budgets` | `:39-69` | full CRUD own-row | `lib/db.ts:92-146`; `user_id, category, amount, month (text), created_at` |
-| `settings` | `:71-100` | view/insert/update own row (no delete) | `lib/db.ts:149-186`, `UserContext:40-42`, profile/settings/admin pages; many nullable pref columns + `is_admin`, `avatar_url`, `name`, bot linkage |
+| `settings` | `:71-100` | view/insert/update own row (no delete) | `lib/db.ts:149-186`, `UserContext:40-42`, profile/settings pages; many nullable pref columns + `is_admin` (no longer read here — admin moved out), `avatar_url`, `name`, bot linkage |
 | `notifications` | `:102-135` | full CRUD own row | `lib/api-client.ts:170-188` (API mirror) — backend also writes |
 | `push_subscriptions` | `:137-163` | view/insert/delete own row (no update — upsert via API) | written via API (`lib/api-client.ts:340`) |
 | `user_management` | `:165-183` | **SELECT own row only** ("view own ban status") | ban checks in `lib/supabase/middleware.ts:56-61` + `UserContext` + `trackLogin` upsert goes through API |

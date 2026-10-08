@@ -14,12 +14,12 @@ related: [config, architecture, routes]
   the root layout (`components/PostHogProvider.tsx`, mounted
   `app/layout.tsx:13`).
 - Config: `capture_pageview: true`, `person_profiles: 'identified_only'`
-  (`lib/posthog.ts:7-8`) — anonymous traffic is not profiled.
+  (`lib/posthog.ts:8-9`) — anonymous traffic is not profiled.
 - Identity: `posthog.identify(userId)` happens inside `UserContext` after login
   (`context/UserContext.tsx` — posthog imported at `:5`).
-- Env: `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` — note the
-  **hardcoded fallback key** at `lib/posthog.ts:5` (tracked in `docs/DEBT.md`);
-  always set env in each deployment.
+- Env: `NEXT_PUBLIC_POSTHOG_KEY` / `NEXT_PUBLIC_POSTHOG_HOST` — the hardcoded
+  fallback key was removed 2026-10-06; when the key is unset, `initPostHog`
+  simply never inits (`lib/posthog.ts:4-5`) — telemetry is a clean no-op.
 - CSP allowlist for the named host + asset CDN lives in
   `next.config.ts` CSP `script-src`/`connect-src`.
 - Guidance: capture events for meaningful product actions only; never send
@@ -46,11 +46,12 @@ User-facing money analytics computed by finflow-api + cached server-side:
   "last generated" UI cues.
 - Server-side computation details (SQL tables, 24 h TTL, cron pre-warm) are in
   the API repo's docs (`finflow-api/docs/AI.md`, `finflow-api/docs/JOBS.md`).
-- Note: `/analytics` is **not** in the middleware protected list — client-only
-  guard (`docs/DEBT.md`, `docs/ROUTES.md`).
+- Note: `/analytics` joined the middleware protected list 2026-10-06
+  (`lib/supabase/middleware.ts:41`).
 
 ## Related but different
 
 `trackLogin` (login geo/device records), `user_heartbeat` (online presence),
-and ban checks are *telemetry for the admin panel*, not product analytics —
-documented in `docs/AUTH.md` and `docs/STATE.md`.
+and ban checks are *operational telemetry consumed by the separate admin
+deployment*, not product analytics — documented in `docs/AUTH.md` and
+`docs/STATE.md`.

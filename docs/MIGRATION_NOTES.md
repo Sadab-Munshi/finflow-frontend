@@ -18,13 +18,16 @@ admin logic lived inside this app. The backend was extracted into
 
 | Artifact | Where | Status |
 |---|---|---|
-| `vercel.json` crons for `/api/cron/monthly-report` + `process-report-queue` | `vercel.json:6-14` | **stale** — no `app/api/` in this repo; scheduled calls 404. See `docs/DEBT.md`. |
-| Unused npm deps `web-push`, `@getbrevo/brevo`, `bcryptjs` (+ `@types/bcryptjs`) | `package.json` dependencies | candidates for removal after a usage grep — currently unreferenced in `app/`, `components/`, `lib/` |
-| `createServiceClient` (service-role) | `lib/supabase/server.ts:5-9` | unused leftover; service-role work moved server-side |
-| `NEXT_PUBLIC_INTERNAL_API_SECRET`, `NEXT_PUBLIC_BOT_SECRET` | `lib/api-client.ts:69,206` | split-era client calls to endpoints meant to be machine-only — High debt |
-| CSP `connect-src` still lists `https://api.mistral.ai` | `next.config.ts:102` | Mistral was replaced by Sarvam/Groq/Gemini on the backend; allowlist entry is dead |
 | `lib/storage.ts` localStorage mirror | `lib/storage.ts` | pre-Supabase/Sync transition layer; read `docs/DEBT.md` before touching |
 | README claims of Next.js API routes + server-side secret vars | `README.md` (old) | corrected in this refresh (2026-10-06) |
+
+Cleaned up 2026-10-06 (branch `fix/security-remove-admin`): the stale
+`vercel.json` crons, dead deps (`web-push`, `@getbrevo/brevo`, `bcryptjs`,
+`@types/bcryptjs`, `@types/web-push`), the unused `createServiceClient`, the
+two browser-shipped API secrets (`NEXT_PUBLIC_INTERNAL_API_SECRET`,
+`NEXT_PUBLIC_BOT_SECRET`), the dead `api.mistral.ai` CSP entry, the unset
+`finflow_visitor` cookie block, and the `app/admin-dy26zyfv/` UI (admin moved
+to a separate domain).
 
 ## What moved out (now owned by finflow-api)
 
@@ -35,7 +38,8 @@ Turnstile verification, ban-check endpoints — consumed via `lib/api-client.ts`
 ## What stayed here
 
 Auth (Supabase), own-user CRUD on 7 RLS tables (`docs/SCHEMA.md`), PWA shell,
-SW + push subscription, i18n, PostHog telemetry, admin **UI** (calls API).
+SW + push subscription, i18n, PostHog telemetry. (The admin UI also lived here
+until 2026-10-06, when it moved to a separate domain.)
 
 ## Conventions for future migrations
 

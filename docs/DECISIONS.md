@@ -17,7 +17,7 @@ related: [architecture, conventions, debt, migration-notes]
 | **Alternatives** | Keep monolith API routes; go "BFF-only" where every DB call passes through the API. |
 | **Rationale** | Heavy/privileged work gets a real server; simple own-user CRUD keeps low latency and zero proxy cost thanks to RLS. |
 | **File evidence** | `lib/api-client.ts` (all privileged calls), `lib/db.ts` (direct CRUD), `supabase/migrations/001_create_tables.sql` (RLS), `docs/MIGRATION_NOTES.md`. |
-| **Cost** | Two auth checks to reason about (RLS + API JWT); two definitions of admin drifted (debt). |
+| **Cost** | Two auth checks to reason about (RLS + API JWT); the frontend/backend admin definitions drifted — resolved 2026-10-06 by moving admin out of this repo (ADR-6 superseded). |
 
 ## ADR-2 · Triple-client Supabase split with cookie-synced sessions
 
@@ -32,7 +32,7 @@ related: [architecture, conventions, debt, migration-notes]
 
 | | |
 |---|---|
-| **Decision** | App pages fetch in `useEffect` and show domain skeletons; RSC is reserved for landing/auth shells, admin guard, layout. |
+| **Decision** | App pages fetch in `useEffect` and show domain skeletons; RSC is reserved for landing/auth shells and the root layout. |
 | **Alternatives** | RSC data fetching + streaming; React Server Functions. |
 | **Rationale** | Pages need immediate interactivity + PostHog + contexts; data is per-user so static rendering buys little; skeletons mask the waterfalls. |
 | **File evidence** | `'use client'` on `app/dashboard/page.tsx:1` (and 12 siblings), `components/skeletons/*`, loading map in `docs/ROUTES.md`. |
@@ -60,13 +60,18 @@ related: [architecture, conventions, debt, migration-notes]
 
 ## ADR-6 · Obfuscated admin path + server-side is_admin gate
 
+> **Status: Superseded 2026-10-06 — admin moved to a separate domain.** The
+> `app/admin-dy26zyfv/` tree, `admin*` helpers in `lib/api-client.ts`, and the
+> `settings.is_admin` read were deleted (branch `fix/security-remove-admin`).
+> The API's `requireAdmin` is now the only admin definition. The `is_admin`
+> column remains in the DB for the admin deployment to consume.
+
 | | |
 |---|---|
-| **Decision** | Admin UI lives at `/admin-dy26zyfv` — unlinked anywhere in the UI — with a real RSC check of `settings.is_admin`. |
-| **Alternatives** | Separate admin app/domain; same path + middleware admin matcher. |
-| **Rationale** | Cheap discovery protection while keeping one deploy; the *actual* security is the server-side gate + API's `requireAdmin` on every admin endpoint (`finflow-api/src/routes/admin.ts:22`). |
-| **File evidence** | `app/admin-dy26zyfv/page.tsx:11-23` (redirect/show "Not authorized"). |
-| **Cost** | Obscurity is not security; user/DB role sources can drift (debt). |
+| **Decision (historical)** | Admin UI lived at `/admin-dy26zyfv` — unlinked anywhere in the UI — with a real RSC check of `settings.is_admin`. |
+| **Alternatives** | Separate admin app/domain (eventually taken); same path + middleware admin matcher. |
+| **Rationale** | Cheap discovery protection while keeping one deploy; the *actual* security was the server-side gate + API's `requireAdmin` on every admin endpoint (`finflow-api/src/routes/admin.ts`). |
+| **Cost** | Obscurity is not security; user/DB role sources did drift, which the removal fixed. |
 
 ## ADR-7 · Manual service-worker versioning over a framework (Workbox)
 

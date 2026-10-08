@@ -40,7 +40,7 @@ Derived consumers: avatar/name in `Layout` header, gating render until
 | Data | Owner of truth | Fetched by | Where |
 |---|---|---|---|
 | Transactions, budgets, settings | Supabase (RLS) | `lib/db.ts` inside page effects | each app page on mount (+ `refreshProfile` for name/avatar) |
-| AI parse results, insights, usage, reports, notifications, admin data | finflow-api | `lib/api-client.ts` / `lib/analytics-api.ts` in page effects | the feature page (`/insights`, `/reports`, `/notifications`, admin) |
+| AI parse results, insights, usage, reports, notifications | finflow-api | `lib/api-client.ts` / `lib/analytics-api.ts` in page effects | the feature page (`/insights`, `/reports`, `/notifications`) |
 | Analytics (4 features) | API + `analytics_cache` | `lib/analytics-api.ts:44-62` | `/analytics` page |
 | Session/user identity | Supabase Auth cookies | middleware + `UserContext` | everywhere automatic |
 | Language/UI prefs | localStorage + settings row | `LanguageContext`, `app/settings/page.tsx` | global |
@@ -56,7 +56,9 @@ There is **no request-level cache or SWR** — remounting a page re-fetches.
 | `finflow_language` | `LanguageContext:176` | UI language |
 | `finflow_current_user_id` | `AuthListener:19-22` (login), cleared on sign-out | keying per-user storage |
 | `finflow_{userId}_transactions` etc. (`lib/storage.ts:9-15`) | `lib/storage.ts` | **legacy local mirror** of transactions/budgets/settings/insights/rate-limit — see `docs/DEBT.md` before relying on it |
-| `finflow_visitor` cookie | read-only at `app/layout.tsx:104-108` | generated but **never set** — dead code, `docs/DEBT.md` |
+
+(The dead `finflow_visitor` cookie block in `app/layout.tsx` was removed
+2026-10-06 — no cookie-based visitor tracking remains.)
 
 ## Rules of thumb
 

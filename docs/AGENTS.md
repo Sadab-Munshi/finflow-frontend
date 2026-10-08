@@ -54,8 +54,8 @@ details in `docs/CONFIG.md`.
 1. App pages are overwhelmingly **client components** (`'use client'` on
    `app/dashboard/page.tsx:1` etc.) that fetch in `useEffect` — documented
    reality; do not refute it with the old README story.
-2. Server components exist at: admin guard shell (`app/admin-dy26zyfv/page.tsx:5`),
-   public landing/auth pages (metadata + thin client wrappers), root layout.
+2. Server components exist at: public landing/auth pages (metadata + thin
+   client wrappers) and the root layout — nothing else.
 3. Never import `lib/supabase/server.ts` into a client component (uses
    `next/headers`); never import `lib/supabase/client.ts` at module top-level in
    a server component.
@@ -63,16 +63,18 @@ details in `docs/CONFIG.md`.
 
 ## Never...
 
-1. Never write secret values — env var *names* only (two `NEXT_PUBLIC_*` secrets
-   already exist and are tracked as High debt in `docs/DEBT.md`; do not add more).
-2. Never commit `.env*`; never paste Supabase service-role key into client code —
-   its only consumer (`createServiceClient`, `lib/supabase/server.ts:5`) is
-   currently unused and must stay server-only.
+1. Never write secret values — env var *names* only; never create a new
+   `NEXT_PUBLIC_*` secret (the two that existed —
+   `NEXT_PUBLIC_INTERNAL_API_SECRET` / `NEXT_PUBLIC_BOT_SECRET` — were removed
+   2026-10-06 and must not come back).
+2. Never commit `.env*`; never paste a Supabase service-role key anywhere —
+   `SUPABASE_SERVICE_ROLE_KEY` and `createServiceClient` were removed from this
+   repo 2026-10-06 and must not be reintroduced.
 3. Never bypass middleware protection: new private routes must be added to
    `protectedRoutes` in `lib/supabase/middleware.ts:30` AND the same PR updates
    `docs/ROUTES.md`.
 4. Never fetch from `finflow-api` ad-hoc with raw `fetch` — extend
-   `lib/api-client.ts` (it attaches the Bearer token, `:14-27`).
+   `lib/api-client.ts` (it attaches the Bearer token, `:20-44`).
 5. Never hardcode user-facing strings — add keys to `context/LanguageContext.tsx`
    for all three languages (`docs/CONVENTIONS.md#i18n`).
 6. Never format dates with server/local timezone math for display or storage —
