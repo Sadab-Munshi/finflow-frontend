@@ -8,5 +8,22 @@
   "cancel": "रद्द करें",
   "category": "श्रेणी",
   "expense": "व्यय",
-  "income": "आय"
+  "income": "आय",
+  "download": "डाउनलोड करें",
+  "exportCSV": "CSV के रूप में निर्यात करें (.csv)",
+  "exportPDF": "PDF के रूप में निर्यात करें (.pdf)",
+  "selectedCount": "{count} चयनित",
+  "selectAll": "सभी चुनें",
+  "deleteN": "{count} हटाएं",
+  "from": "से",
+  "to": "तक",
+  "applyFilter": "फ़िल्टर लागू करें",
+  "clear": "हटाएं",
+  "deleteManyTitle": "लेन-देन हटाएं?",
+  "deleteManyMessage": "क्या आप वाकई {count, plural, one {# लेन-देन} other {# लेन-देन}} हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।",
+  "yesDeleteN": "हां, {count} हटाएं",
+  "colDate": "तारीख",
+  "colType": "प्रकार",
+  "colDescription": "विवरण",
+  "colAmount": "राशि"
 }
