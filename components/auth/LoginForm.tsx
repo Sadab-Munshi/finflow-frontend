@@ -31,7 +31,7 @@ type SubmitState = 'idle' | 'loading' | 'success'
 export default function LoginForm() {
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [emailValue, setEmailValue] = useState('')
-  const { turnstileRef, acquireToken, reset: resetTurnstile, turnstileCallbacks } = useInvisibleTurnstile()
+  const { turnstileRef, acquireToken, reset: resetTurnstile, turnstileCallbacks, fallbackVisible: turnstileFallback } = useInvisibleTurnstile()
   const router = useRouter()
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
@@ -211,8 +211,20 @@ export default function LoginForm() {
         </Link>
       </p>
 
-      {/* Invisible Turnstile — nothing renders until "Sign in" is clicked. */}
-      <TurnstileWidget ref={turnstileRef} invisible theme="light" {...turnstileCallbacks} />
+      {/* Invisible Turnstile — fires on "Sign in"; a visible check appears only if the silent pass is not possible. */}
+      <TurnstileWidget
+        key={turnstileFallback ? 'visible' : 'invisible'}
+        ref={turnstileRef}
+        invisible={!turnstileFallback}
+        theme="light"
+        className={turnstileFallback ? 'mt-1 flex justify-center' : 'mt-2'}
+        {...turnstileCallbacks}
+      />
+      {turnstileFallback && submitState === 'loading' && (
+        <p className="text-center text-xs font-medium text-slate-500">
+          Complete the quick check above — we&apos;ll continue automatically.
+        </p>
+      )}
     </div>
   )
 }

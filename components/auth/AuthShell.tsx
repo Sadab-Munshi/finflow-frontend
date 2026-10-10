@@ -22,16 +22,6 @@ const copy = {
   },
 }
 
-function LogoMark() {
-  return (
-    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-teal-300 shadow-[0_12px_30px_rgba(15,23,42,0.18)]">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M3 17 Q8 7 12 12 Q16 17 21 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" fill="none" />
-      </svg>
-    </span>
-  )
-}
-
 // Single-column centered auth layout (post-overhaul): the heavy dark split
 // hero panel was removed for the "calm brand" direction — soft backdrop
 // blobs, logo neatly above the title, form is the primary focus.
@@ -66,12 +56,7 @@ export default function AuthShell({ mode, children }: AuthShellProps) {
 
       <div className="relative z-10 flex flex-1 items-center justify-center py-8 sm:py-10">
         <div className="w-full max-w-[416px]">
-          <div className="auth-fade-up mb-6 flex items-center justify-center gap-3">
-            <LogoMark />
-            <span className="text-xl font-black tracking-[-0.04em] text-slate-950">FinFlow</span>
-          </div>
-
-          <div className="auth-fade-up mb-7 text-center" style={{ animationDelay: '40ms' }}>
+          <div className="auth-fade-up mb-7 text-center">
             {activeCopy.eyebrow && (
               <p className="text-xs font-black uppercase tracking-[0.24em] text-teal-600">{activeCopy.eyebrow}</p>
             )}
