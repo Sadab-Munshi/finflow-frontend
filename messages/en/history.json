@@ -1,0 +1,12 @@
+{
+  "history": "History",
+  "all": "All",
+  "search": "Search",
+  "next": "Next",
+  "previous": "Previous",
+  "noResults": "No transactions found",
+  "cancel": "Cancel",
+  "category": "Category",
+  "expense": "Expense",
+  "income": "Income"
+}

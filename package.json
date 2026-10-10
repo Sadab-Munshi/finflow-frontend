@@ -30,6 +30,7 @@
     "jspdf": "^4.2.0",
     "lucide-react": "^0.447.0",
     "next": "^15.1.11",
+    "next-intl": "^4.14.9",
     "posthog-js": "^1.358.1",
     "radix-ui": "^1.4.3",
     "react": "^19.0.0",

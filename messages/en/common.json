@@ -1,0 +1,16 @@
+{
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "close": "Close",
+  "back": "Back",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "save": "Save",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "edit": "Edit",
+  "delete": "Delete",
+  "search": "Search",
+  "all": "All"
+}

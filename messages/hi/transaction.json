@@ -1,0 +1,17 @@
+{
+  "transactionDetails": "लेनदेन विवरण",
+  "amount": "राशि",
+  "type": "प्रकार",
+  "category": "श्रेणी",
+  "description": "विवरण",
+  "date": "तारीख",
+  "save": "सहेजें",
+  "edit": "संपादित करें",
+  "delete": "हटाएं",
+  "cancel": "रद्द करें",
+  "deleteConfirmTitle": "लेनदेन हटाएं",
+  "deleteConfirmMessage": "क्या आप निश्चित हैं?",
+  "expense": "व्यय",
+  "income": "आय",
+  "noResults": "कोई लेनदेन नहीं"
+}

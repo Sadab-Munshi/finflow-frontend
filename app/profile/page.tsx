@@ -12,7 +12,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Layout from '@/components/layout/Layout'
 import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton'
-import { useLanguage } from '@/context/LanguageContext'
+import { useLocale } from 'next-intl'
+import { setLocaleCookie } from '@/lib/i18n-cookie'
+import { LOCALE_NAMES, LOCALES, type Locale } from '@/i18n/config'
 import { getSettings, upsertSettings, getTransactions } from '@/lib/db'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
@@ -57,11 +59,9 @@ function Toggle({
   )
 }
 
-const languageLabels: Record<Language, string> = { en: 'English', hi: 'हिंदी', bn: 'বাংলা' }
-
 export default function ProfilePage() {
   const router = useRouter()
-  const { language, setLanguage } = useLanguage()
+  const language = useLocale() as Locale
   const [mounted, setMounted] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -224,10 +224,11 @@ export default function ProfilePage() {
     setEditingName(false)
   }
 
-  const handleLanguageChange = async (lang: Language) => {
-    setLanguage(lang)
-    await upsertSettings({ language: lang, currency: 'INR', name })
+  // Cookie-only locale switching (v1 decision): write NEXT_LOCALE + re-render.
+  const handleLanguageChange = (lang: Locale) => {
+    setLocaleCookie(lang)
     setShowLanguageSheet(false)
+    router.refresh()
   }
 
   const connectTelegram = async () => {
@@ -604,11 +605,11 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-[#64748B] mb-0.5">Language</p>
-                  <p className="text-sm font-semibold text-[#0F172A]">{languageLabels[language as Language]}</p>
+                  <p className="text-sm font-semibold text-[#0F172A]">{LOCALE_NAMES[language]}</p>
                 </div>
                 {/* Desktop pills */}
                 <div className="hidden sm:flex gap-1">
-                  {(['en', 'hi', 'bn'] as Language[]).map(lang => (
+                  {(LOCALES as readonly Locale[]).map(lang => (
                     <button
                       key={lang}
                       onClick={() => handleLanguageChange(lang)}
@@ -616,7 +617,7 @@ export default function ProfilePage() {
                         language === lang ? 'bg-[#0A7B7B] text-white' : 'border border-gray-200 text-gray-500 hover:border-teal-300'
                       }`}
                     >
-                      {languageLabels[lang]}
+                      {LOCALE_NAMES[lang]}
                     </button>
                   ))}
                 </div>
@@ -908,7 +909,7 @@ export default function ProfilePage() {
             >
               <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
               <p className="text-base font-semibold text-gray-800 mb-4">Select Language</p>
-              {(['en', 'hi', 'bn'] as Language[]).map(lang => (
+              {(LOCALES as readonly Locale[]).map(lang => (
                 <button
                   key={lang}
                   onClick={() => handleLanguageChange(lang)}
@@ -916,7 +917,7 @@ export default function ProfilePage() {
                     language === lang ? 'bg-teal-600 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  {languageLabels[lang]}
+                  {LOCALE_NAMES[lang]}
                   {language === lang && <Check size={16} />}
                 </button>
               ))}

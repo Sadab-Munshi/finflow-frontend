@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Sparkles, Loader2, AlertCircle, BarChart2, Lightbulb, AlertTriangle, Trophy, TrendingUp, AlertOctagon, FileText, RefreshCw, Search, PenLine } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
+import { useTranslations } from 'next-intl'
 import { useUser } from '@/context/UserContext'
 import { getTransactions } from '@/lib/db'
 import { cn } from '@/lib/utils'
@@ -28,7 +28,7 @@ const insightStyles: Record<string, { bgColor: string; borderColor: string; icon
 }
 
 export default function InsightsPage() {
-  const { t } = useLanguage()
+  const t = useTranslations('insights')
   const { user } = useUser()
   const userId = user?.userId
   const [mounted, setMounted] = useState(false)

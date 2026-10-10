@@ -1,0 +1,17 @@
+{
+  "transactionDetails": "Transaction Details",
+  "amount": "Amount",
+  "type": "Type",
+  "category": "Category",
+  "description": "Description",
+  "date": "Date",
+  "save": "Save",
+  "edit": "Edit",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "deleteConfirmTitle": "Delete Transaction",
+  "deleteConfirmMessage": "Are you sure? This cannot be undone.",
+  "expense": "Expense",
+  "income": "Income",
+  "noResults": "No transactions found"
+}

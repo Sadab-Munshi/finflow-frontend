@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import dynamic from 'next/dynamic'
 import { Toaster } from 'react-hot-toast'
-import { LanguageProvider } from '@/context/LanguageContext'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 import { UserProvider } from '@/context/UserContext'
 import AuthListener from '@/components/auth/AuthListener'
 import { WebsiteJsonLd, OrganizationJsonLd } from '@/components/JsonLd'
@@ -103,9 +104,12 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale()
+  const messages = await getMessages()
+
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <WebsiteJsonLd />
         <OrganizationJsonLd />
@@ -126,7 +130,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={inter.className}>
         <PostHogProvider>
-          <LanguageProvider>
+          <NextIntlClientProvider locale={locale} messages={messages}>
             <UserProvider>
               <AuthListener />
               <UpdateNotification />
@@ -143,7 +147,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 }}
               />
             </UserProvider>
-          </LanguageProvider>
+          </NextIntlClientProvider>
         </PostHogProvider>
       </body>
     </html>

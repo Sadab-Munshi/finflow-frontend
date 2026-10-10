@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
-import { useLanguage } from '@/context/LanguageContext'
+import { useTranslations } from 'next-intl'
 import { useUser } from '@/context/UserContext'
 import { createClient } from '@/lib/supabase/client'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -37,7 +37,7 @@ const fabInputMethods = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { t } = useLanguage()
+  const t = useTranslations('nav')
   const { user, loading } = useUser()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)

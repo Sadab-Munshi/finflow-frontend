@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { FileText, Download, Calendar, Info, Loader2 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
+import { useTranslations } from 'next-intl'
 import ReportsSkeleton from '@/components/skeletons/ReportsSkeleton'
 import toast from 'react-hot-toast'
 import { getReports } from '@/lib/api-client'
@@ -54,7 +54,7 @@ function getNextMonthInfo(): { nextMonthName: string; nextYear: number } {
 }
 
 export default function ReportsPage() {
-  const { t } = useLanguage()
+  const t = useTranslations('reports')
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
