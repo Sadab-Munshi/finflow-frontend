@@ -39,25 +39,33 @@ export default function OnboardingModal() {
       const skipped = typeof window !== 'undefined' && localStorage.getItem(`ff-onboarding-skipped:${user.id}`) === '1'
       if (skipped) return
 
-      const providerName = (user.user_metadata?.full_name as string | undefined)?.trim()
-      let settingsName = ''
-      if (!providerName) {
-        try {
-          const { data: settingsData } = await supabase
-            .from('settings')
-            .select('name')
-            .eq('user_id', user.id)
-            .maybeSingle()
-          settingsName = ((settingsData?.name as string | null) || '').trim()
-        } catch {
-          /* settings unreadable → treat as unnamed */
+      // Gate on `welcome_email_sent`, NOT on name presence: social signups get
+      // a full_name from the provider, but they still must pass through this
+      // step (it is what triggers the welcome email). New social signups have
+      // no settings row at all → row missing ⇒ flag false ⇒ modal shows,
+      // prefilled with the provider name. Users welcomed by the old first-login
+      // flow have flag=true and never see this.
+      let name = (user.user_metadata?.full_name as string | undefined)?.trim() || ''
+      let welcomed = true
+      try {
+        const { data: settingsData } = await supabase
+          .from('settings')
+          .select('name, welcome_email_sent')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        welcomed = !!settingsData?.welcome_email_sent
+        if (!welcomed) {
+          name = name || ((settingsData?.name as string | null) || '').trim()
         }
+      } catch {
+        welcomed = false
       }
-      if (providerName || settingsName) return
+      if (welcomed) return
+      if (!name) name = nameFromEmail(user.email || '')
 
       setUserId(user.id)
       setEmail(user.email || '')
-      setName(nameFromEmail(user.email || ''))
+      setName(name)
       setOpen(true)
     })
   }, [])

@@ -264,9 +264,9 @@ export default function SignupForm() {
         </p>
       </form>
 
-      <p className="flex items-center justify-center gap-2 text-center text-xs font-medium text-slate-500">
-        <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
-        Read-only connections and full data deletion controls keep you in charge.
+      <p className="mx-auto flex max-w-sm items-start justify-center gap-2 text-left text-xs font-medium text-slate-500">
+        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600" />
+        <span>Read-only connections and full data deletion controls keep you in charge.</span>
       </p>
 
       <p className="text-center text-sm text-slate-500">
