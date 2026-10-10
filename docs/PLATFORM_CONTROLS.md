@@ -1,7 +1,7 @@
 ---
 name: platform-controls
 description: How the app consumes Vertex's platform controls — maintenance gate, banners, signup gating, feature flags, and the PostHog product-event instrumentation feeding admin analytics
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 audience: [human, agent]
 related: [analytics, auth, config, routes]
 ---
@@ -38,8 +38,24 @@ app never locks itself out on a network blip; only an affirmative
 3. **Right before submit** — re-check, so limits set minutes ago apply.
 
 Rejections are reason-aware (`reason: closed | invite_only | domain | null`
-where null means cap) and each has its own user-facing string. API
-unreachable = allowed (the DB trigger on `auth.users` remains the hard gate).
+where null means cap). Since the **2026-10-10 auth overhaul**, presentation is:
+platform blocks (closed / invite-only / cap) **replace the entire form** with a
+`SignupClosedCard` — calm card + waitlist email capture (`POST /api/auth/waitlist-join`
+→ `signup_waitlist`, migration 010); domain rejections render **inline** under
+the email field while typing. An active form never shows a warning banner. API
+unreachable = allowed (the DB trigger on `auth.users` remains the hard gate;
+its `signup_limit_reached` race maps to the capacity card).
+
+**Post-verification onboarding:** the confirm-email callback
+(`type=signup`) keeps the fresh session and redirects to **/onboarding**
+(protected route; name field prefilled from the email local-part, Skip for now,
+writes `user_metadata.full_name` + `settings.name`). Users who already have a
+name (OAuth signups) bounce straight to /dashboard. Full name was removed from
+the signup form itself (2-field signup: email + password).
+
+**Invisible Turnstile:** the visible widget box was removed from both login and
+signup; tokens are acquired on button click via `useInvisibleTurnstile()`
+(`size: 'invisible'`, `execution: 'execute'`) and verified server-side as before.
 
 ## Feature flags — `lib/api-client.ts → myFeatureFlags()`
 

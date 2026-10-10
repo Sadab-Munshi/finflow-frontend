@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Email confirmation (signup) - sign out and redirect to login
-      // Note: type param is standard Supabase callback param; even if manipulated,
-      // worst case is user is signed out and redirected to login (safe outcome)
+      // Email confirmation (signup): keep the fresh session and land the user
+      // on post-verification onboarding (name collection). The confirm link
+      // is only usable by whoever owns the inbox, so staying signed in is
+      // safe — and it removes a full log-in roundtrip from the first-run flow.
       if (type === 'signup') {
-        await supabase.auth.signOut({ scope: 'local' })
-        return NextResponse.redirect(`${origin}/login?confirmed=true`)
+        return NextResponse.redirect(`${origin}/onboarding`)
       }
       return NextResponse.redirect(`${origin}${next}`)
     }

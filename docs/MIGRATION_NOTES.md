@@ -61,5 +61,7 @@ until 2026-10-06, when it moved to a separate domain.)
 | `008_ai_daily_usage.sql` | per-user **daily** AI cap (`ai_usage_daily`, PK user_id+day, IST) | rows roll forever; manual prune: `delete … where day < current_date - 40` |
 | `009_segments_and_feature_flags.sql` | `user_segments` + `feature_flags` (service-role only) + `notification_campaigns.segment_id/_name` | **fix 2026-10-08:** Postgres has no `CREATE POLICY IF NOT EXISTS` — policies use drop-then-create (same as 004). Safe to re-run top-to-bottom after a partial run. |
 
+| `010_signup_waitlist.sql` | `signup_waitlist` (email unique lower-cased, reason closed/invite_only/capacity) | service-role only, no RLS policies; captured by the closed-signup card via `/api/auth/waitlist-join` |
+
 Apply order matters: 008 before deploying the AI-limits build; 009 before the
 segments/flags build. Tables are additive; nothing here alters existing data.
