@@ -52,8 +52,9 @@ globally in the root layout. After email confirmation the callback
 collects the display name (prefilled from the email local-part; Skip for now,
 persisted in localStorage). Writes `user_metadata.full_name` + `settings.name`
 and **sends the welcome email here** (greeting now uses the real name).
-Covers social signups too: OAuth users keep the same dashboard path, and users
-whose provider already supplied `full_name` never see the modal. Full name was
+Covers social signups too — the gate is `settings.welcome_email_sent == false`
+(not name presence), so provider-named users still see the modal (prefilled with
+their provider name) and receive the welcome email only after it. Full name was
 removed from the signup form itself (2-field signup: email + password).
 
 **Invisible Turnstile with pre-warm + visible fallback:** `useInvisibleTurnstile()`

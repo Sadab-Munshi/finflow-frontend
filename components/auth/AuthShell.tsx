@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CircleHelp, ShieldCheck } from 'lucide-react'
+import { CircleHelp, Home, ShieldCheck } from 'lucide-react'
 
 type AuthMode = 'login' | 'signup'
 
@@ -35,14 +35,14 @@ export default function AuthShell({ mode, children }: AuthShellProps) {
         <div className="absolute -top-16 right-[8%] h-52 w-52 rounded-full bg-violet-200/40 blur-3xl" />
       </div>
 
-      <header className="relative z-10 flex items-center justify-between gap-4">
+      <header className="relative z-10 mx-auto flex w-full max-w-[416px] items-center justify-between gap-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-3 rounded-full text-sm font-semibold text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2"
+          aria-label="Back to home"
+          title="Back to home"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/75 text-slate-600 shadow-sm backdrop-blur transition-all hover:border-teal-200 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Back to site</span>
-          <span className="sm:hidden">Back</span>
+          <Home className="h-4 w-4" />
         </Link>
 
         <Link
@@ -54,13 +54,13 @@ export default function AuthShell({ mode, children }: AuthShellProps) {
         </Link>
       </header>
 
-      <div className="relative z-10 flex flex-1 items-center justify-center py-8 sm:py-10">
+      <div className="relative z-10 flex flex-1 items-center justify-center py-8 sm:py-12 lg:py-14">
         <div className="w-full max-w-[416px]">
           <div className="auth-fade-up mb-7 text-center">
             {activeCopy.eyebrow && (
               <p className="text-xs font-black uppercase tracking-[0.24em] text-teal-600">{activeCopy.eyebrow}</p>
             )}
-            <h1 className={`${activeCopy.eyebrow ? 'mt-3' : ''} text-4xl font-black tracking-[-0.07em] text-slate-950 sm:text-5xl`}>
+            <h1 className={`${activeCopy.eyebrow ? 'mt-3' : ''} text-[clamp(1.9rem,3vw+1.2rem,2.5rem)] font-black tracking-[-0.06em] text-slate-950`}>
               {activeCopy.heading}
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-500">{activeCopy.subtitle}</p>
