@@ -2,5 +2,18 @@
   "dashboard": "Dashboard",
   "history": "History",
   "insights": "Insights",
-  "profile": "Profile"
+  "profile": "Profile",
+  "budgets": "Budgets",
+  "analytics": "Analytics",
+  "reports": "Reports",
+  "settings": "Settings",
+  "add": "Add",
+  "fabAuto": "Auto",
+  "fabType": "Type",
+  "fabVoice": "Voice",
+  "fabScan": "Scan",
+  "fabPdf": "PDF",
+  "viewProfile": "View Profile",
+  "editProfile": "Edit Profile",
+  "signOut": "Sign Out"
 }

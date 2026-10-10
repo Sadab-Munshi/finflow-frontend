@@ -2,5 +2,18 @@
   "dashboard": "ড্যাশবোর্ড",
   "history": "ইতিহাস",
   "insights": "অন্তর্দৃষ্টি",
-  "profile": "প্রোফাইল"
+  "profile": "প্রোফাইল",
+  "budgets": "বাজেট",
+  "analytics": "অ্যানালিটিক্স",
+  "reports": "রিপোর্ট",
+  "settings": "সেটিংস",
+  "add": "যোগ করুন",
+  "fabAuto": "অটো",
+  "fabType": "টাইপ",
+  "fabVoice": "ভয়েস",
+  "fabScan": "স্ক্যান",
+  "fabPdf": "PDF",
+  "viewProfile": "প্রোফাইল দেখুন",
+  "editProfile": "প্রোফাইল সম্পাদনা করুন",
+  "signOut": "সাইন আউট"
 }

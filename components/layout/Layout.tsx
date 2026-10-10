@@ -16,22 +16,22 @@ import { createClient } from '@/lib/supabase/client'
 import NotificationBell from '@/components/notifications/NotificationBell'
 
 const sidebarNavItems = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/history', icon: History, label: 'History' },
-  { path: '/budgets', icon: PiggyBank, label: 'Budgets' },
-  { path: '/insights', icon: BarChart2, label: 'Insights' },
-  { path: '/analytics', icon: TrendingUp, label: 'Analytics' },
-  { path: '/reports', icon: FileText, label: 'Reports' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
+  { path: '/history', icon: History, labelKey: 'history' },
+  { path: '/budgets', icon: PiggyBank, labelKey: 'budgets' },
+  { path: '/insights', icon: BarChart2, labelKey: 'insights' },
+  { path: '/analytics', icon: TrendingUp, labelKey: 'analytics' },
+  { path: '/reports', icon: FileText, labelKey: 'reports' },
+  { path: '/settings', icon: Settings, labelKey: 'settings' },
 ]
 
 // Exact demo colors. Order: Auto & Type at the bottom (closest to thumb), moving up to PDF
 const fabInputMethods = [
-  { icon: Sparkles, label: "Auto", color: "bg-purple-500", tab: "text" },
-  { icon: PenLine, label: "Type", color: "bg-blue-500", tab: "manual" },
-  { icon: Mic, label: "Voice", color: "bg-green-500", tab: "voice" },
-  { icon: Camera, label: "Scan", color: "bg-orange-500", tab: "scan" },
-  { icon: FileText, label: "PDF", color: "bg-red-500", tab: "scan" },
+  { icon: Sparkles, labelKey: "fabAuto", color: "bg-purple-500", tab: "text" },
+  { icon: PenLine, labelKey: "fabType", color: "bg-blue-500", tab: "manual" },
+  { icon: Mic, labelKey: "fabVoice", color: "bg-green-500", tab: "voice" },
+  { icon: Camera, labelKey: "fabScan", color: "bg-orange-500", tab: "scan" },
+  { icon: FileText, labelKey: "fabPdf", color: "bg-red-500", tab: "scan" },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -181,7 +181,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     )}
                   >
                     <item.icon className="w-5 h-5" />
-                    <span className="text-sm">{item.label}</span>
+                    <span className="text-sm">{t(item.labelKey)}</span>
                   </Link>
                 ))}
               </nav>
@@ -233,7 +233,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             const Icon = method.icon
             return (
               <button
-                key={method.label}
+                key={method.tab}
                 onClick={() => {
                   setFabOpen(false)
                   // Tiny delay ensures the closing animation plays before Next.js interrupts it with a route change
@@ -250,7 +250,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="h-4 w-4" />
                 </div>
-                <span className="font-medium text-gray-900 pr-2">{method.label}</span>
+                <span className="font-medium text-gray-900 pr-2">{t(method.labelKey)}</span>
               </button>
             )
           })}
@@ -311,7 +311,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             className="flex items-center justify-center gap-2 w-full bg-white text-teal-700 rounded-xl py-2.5 font-semibold hover:bg-teal-50 transition-colors shadow-sm outline-none"
           >
             <Plus className="w-5 h-5" />
-            <span>Add</span>
+            <span>{t('add')}</span>
           </button>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -327,7 +327,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               )}
             >
               <item.icon className="w-5 h-5" />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           ))}
         </nav>
@@ -347,7 +347,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onClick={() => setProfileDropdownOpen(false)}
                 >
                   <User className="w-4 h-4" />
-                  <span className="text-sm font-medium">View Profile</span>
+                  <span className="text-sm font-medium">{t('viewProfile')}</span>
                 </Link>
                 <Link
                   href="/profile"
@@ -355,14 +355,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   onClick={() => setProfileDropdownOpen(false)}
                 >
                   <PenLine className="w-4 h-4" />
-                  <span className="text-sm font-medium">Edit Profile</span>
+                  <span className="text-sm font-medium">{t('editProfile')}</span>
                 </Link>
                 <button
                   onClick={handleSignOut}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors w-full border-t border-gray-100 text-left outline-none"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">Sign Out</span>
+                  <span className="text-sm font-medium">{t('signOut')}</span>
                 </button>
               </motion.div>
             )}
