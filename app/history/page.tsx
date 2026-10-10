@@ -99,7 +99,7 @@ function HistoryContent() {
       if (appliedToDate && txDate > appliedToDate) return false
     }
     return true
-  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }).sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime())
 
   const applyDateFilter = () => {
     setAppliedFromDate(fromDate)
@@ -117,7 +117,7 @@ function HistoryContent() {
 
   const handleExportCSV = () => {
     setDropdownOpen(false)
-    const headers = ['Date', 'Type', 'Category', 'Description', 'Amount']
+    const headers = [t('colDate'), t('colType'), t('category'), t('colDescription'), t('colAmount')]
     const rows = filtered.map(tx => [
       formatTxDate(tx.date),
       tx.type.charAt(0).toUpperCase() + tx.type.slice(1),
@@ -310,7 +310,7 @@ function HistoryContent() {
               onClick={() => setDropdownOpen(prev => !prev)}
               className="bg-teal-600 hover:bg-teal-700 text-white"
             >
-              <Download className="w-4 h-4 mr-2" /> Download
+              <Download className="w-4 h-4 mr-2" /> {t('download')}
             </Button>
             {dropdownOpen && (
               <div className="absolute right-0 mt-1 w-52 bg-white rounded-lg shadow-lg border border-gray-100 z-50">
@@ -319,14 +319,14 @@ function HistoryContent() {
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-teal-50 hover:text-teal-700 rounded-t-lg"
                 >
                   <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
-                  Export as CSV (.csv)
+                  {t('exportCSV')}
                 </button>
                 <button
                   onClick={handleExportPDF}
                   className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-teal-50 hover:text-teal-700 rounded-b-lg"
                 >
                   <FileText className="w-4 h-4 flex-shrink-0" />
-                  Export as PDF (.pdf)
+                  {t('exportPDF')}
                 </button>
               </div>
             )}
@@ -337,12 +337,12 @@ function HistoryContent() {
         {selectionMode ? (
           <div className="flex items-center justify-between no-print">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-700">{selectedIds.length} selected</span>
+              <span className="text-sm font-semibold text-gray-700">{t('selectedCount', { count: selectedIds.length })}</span>
               <button
                 onClick={selectAll}
                 className="text-xs text-teal-600 font-medium px-2 py-1 rounded-lg hover:bg-teal-50 transition-colors"
               >
-                Select All
+                {t('selectAll')}
               </button>
             </div>
             <div className="flex items-center gap-2">
@@ -352,14 +352,14 @@ function HistoryContent() {
                   className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-3 py-1.5 rounded-xl shadow-sm transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete {selectedIds.length}
+                  {t('deleteN', { count: selectedIds.length })}
                 </button>
               )}
               <button
                 onClick={exitSelectionMode}
                 className="text-sm font-medium text-gray-600 px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           </div>
@@ -451,7 +451,7 @@ function HistoryContent() {
             </Select>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">From</label>
+                <label className="text-xs text-gray-500 mb-1 block">{t('from')}</label>
                 <input
                   type="date"
                   value={fromDate}
@@ -460,7 +460,7 @@ function HistoryContent() {
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">To</label>
+                <label className="text-xs text-gray-500 mb-1 block">{t('to')}</label>
                 <input
                   type="date"
                   value={toDate}
@@ -473,14 +473,14 @@ function HistoryContent() {
               onClick={() => { applyDateFilter(); setFilterPanelOpen(false) }}
               className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors"
             >
-              Apply Filter
+              {t('applyFilter')}
             </button>
             {isFilterActive && (
               <button
                 onClick={() => { clearDateFilter(); setCategoryFilter('all'); setPage(1) }}
                 className="w-full text-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
-                Clear
+                {t('clear')}
               </button>
             )}
           </div>
@@ -534,7 +534,7 @@ function HistoryContent() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-800 text-sm truncate">{tx.note || tx.category}</p>
-                          <p className="text-xs text-gray-500">{formatIST(tx.created_at)}</p>
+                          <p className="text-xs text-gray-500">{formatIST(tx.created_at!)}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
                           <p className={cn("font-bold text-sm", tx.type === 'income' ? "text-green-600" : "text-rose-600")}>
@@ -564,9 +564,9 @@ function HistoryContent() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Transactions?</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteManyTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedIds.length} transaction{selectedIds.length !== 1 ? 's' : ''}? This cannot be undone.
+              {t('deleteManyMessage', { count: selectedIds.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex gap-2">
@@ -580,7 +580,7 @@ function HistoryContent() {
               onClick={handleDeleteSelected}
               className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 font-medium transition-colors"
             >
-              Yes, Delete {selectedIds.length}
+              {t('yesDeleteN', { count: selectedIds.length })}
             </button>
           </AlertDialogFooter>
         </AlertDialogContent>

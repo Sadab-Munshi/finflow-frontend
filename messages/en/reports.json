@@ -1,3 +1,8 @@
 {
-  "monthlyReports": "Monthly Reports"
+  "monthlyReports": "Monthly Reports",
+  "noReportsTitle": "No reports yet",
+  "firstReportHint": "Your first report will be automatically generated on 1st {month} {year}",
+  "download": "Download",
+  "reportDownloaded": "Report downloaded!",
+  "downloadFailed": "Download failed. Try again."
 }

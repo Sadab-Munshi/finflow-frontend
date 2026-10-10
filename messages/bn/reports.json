@@ -1,3 +1,8 @@
 {
-  "monthlyReports": "মাসিক রিপোর্ট"
+  "monthlyReports": "মাসিক রিপোর্ট",
+  "noReportsTitle": "এখনো কোনো রিপোর্ট নেই",
+  "firstReportHint": "আপনার প্রথম রিপোর্ট ১ {month} {year} তারিখে স্বয়ংক্রিয়ভাবে তৈরি হবে",
+  "download": "ডাউনলোড করুন",
+  "reportDownloaded": "রিপোর্ট ডাউনলোড হয়েছে!",
+  "downloadFailed": "ডাউনলোড ব্যর্থ। আবার চেষ্টা করুন।"
 }

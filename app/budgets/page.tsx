@@ -241,10 +241,10 @@ export default function BudgetsPage() {
         await saveBudget({ category, amount: parseFloat(amount), month })
       }
       await loadData()
-      toast.success(editingBudget ? 'Budget updated successfully!' : 'Budget created successfully!')
+      toast.success(editingBudget ? t('budgetUpdated') : t('budgetCreated'))
       closeModal()
     } catch {
-      toast.error('Something went wrong')
+      toast.error(t('somethingWrong'))
     }
     setSaving(false)
   }
@@ -266,7 +266,7 @@ export default function BudgetsPage() {
       await loadData()
       setDeletingId(null)
       setBudgetToDelete(null)
-      toast.success('Budget deleted')
+      toast.success(t('budgetDeleted'))
     }, 300)
   }
 
@@ -303,14 +303,14 @@ export default function BudgetsPage() {
 
         {/* ── Page Header ──────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">Budgets</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
           {filtered.length > 0 && (
             <button
               onClick={openCreate}
               className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-4 py-2 font-semibold text-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Create Budget
+              {t('createBudget')}
             </button>
           )}
         </div>
@@ -435,13 +435,13 @@ export default function BudgetsPage() {
               {/* Stat cells */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[10px] text-gray-400 mb-1">Total budget</p>
+                  <p className="text-[10px] text-gray-400 mb-1">{t('totalBudget')}</p>
                   <p className="text-sm font-semibold text-gray-800">
                     {formatIndianCurrency(totalBudget)}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[10px] text-gray-400 mb-1">Active budgets</p>
+                  <p className="text-[10px] text-gray-400 mb-1">{t('activeBudgets')}</p>
                   <p className={`text-sm font-semibold ${isOver ? 'text-red-600' : 'text-teal-600'}`}>
                     {filtered.length}
                   </p>
@@ -610,13 +610,13 @@ export default function BudgetsPage() {
                     {/* Stat Cells */}
                     <div className="grid grid-cols-3 gap-2 px-4 mb-3">
                       <div className="bg-gray-50 rounded-xl p-2">
-                        <p className="text-[10px] text-gray-400 mb-1">Budget</p>
+                        <p className="text-[10px] text-gray-400 mb-1">{t('budget')}</p>
                         <p className="text-xs font-semibold text-gray-800">
                           {formatIndianCurrency(budget.amount)}
                         </p>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-2">
-                        <p className="text-[10px] text-gray-400 mb-1">Spent</p>
+                        <p className="text-[10px] text-gray-400 mb-1">{t('spent')}</p>
                         <p
                           className="text-xs font-semibold"
                           style={{ color: progColor }}
@@ -681,10 +681,10 @@ export default function BudgetsPage() {
                       style={{ background: 'linear-gradient(135deg, #0D9488, #059669)' }}
                     >
                       <h2 className="text-white font-bold text-base">
-                        {editingBudget ? 'Edit Budget' : 'Create Budget'}
+                        {editingBudget ? t('editBudget') : t('createBudget')}
                       </h2>
                       {editingBudget && (
-                        <p className="text-white/80 text-sm mt-0.5">Update your spending limit</p>
+                        <p className="text-white/80 text-sm mt-0.5">{t('updateLimitHint')}</p>
                       )}
                       <button
                         onClick={closeModal}
@@ -696,7 +696,7 @@ export default function BudgetsPage() {
 
                     {/* Category Selector */}
                     <div className="mt-4 px-5">
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Category</label>
+                      <label className="text-sm font-semibold text-gray-700 mb-2 block">{t('category')}</label>
                       <div className="grid grid-cols-3 gap-1.5">
                         {cats.map(c => {
                           const CI  = categoryIconMap[c.name] || categoryIconMap['Other']
@@ -730,7 +730,7 @@ export default function BudgetsPage() {
 
                     {/* Amount Field */}
                     <div className="mt-4 px-5">
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Budget Amount</label>
+                      <label className="text-sm font-semibold text-gray-700 mb-2 block">{t('budgetAmount')}</label>
                       <div className="bg-gray-50 rounded-xl border border-gray-200 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100 flex items-center px-4 transition-all">
                         <span className="text-gray-500 font-semibold text-lg">₹</span>
                         <input
@@ -756,7 +756,7 @@ export default function BudgetsPage() {
 
                     {/* Month Selector */}
                     <div className="mt-4 px-5">
-                      <label className="text-sm font-semibold text-gray-700 mb-2 block">Month</label>
+                      <label className="text-sm font-semibold text-gray-700 mb-2 block">{t('month')}</label>
                       <div className="flex gap-2 pb-2">
                         <span className="rounded-full px-3 py-1.5 text-sm bg-teal-600 text-white font-semibold">
                           {formatMonthShort(editingBudget ? month : curMonth)}
@@ -770,7 +770,7 @@ export default function BudgetsPage() {
                         onClick={closeModal}
                         className="flex-1 border border-gray-200 rounded-xl py-2.5 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                       <button
                         onClick={handleSave}
@@ -788,7 +788,7 @@ export default function BudgetsPage() {
                             <Loader2 className="w-4 h-4 animate-spin" />
                             {editingBudget ? 'Saving...' : 'Creating...'}
                           </>
-                        ) : editingBudget ? 'Save Changes' : 'Create Budget'}
+                        ) : editingBudget ? t('saveChanges') : t('createBudget')}
                       </button>
                     </div>
                   </div>
@@ -821,23 +821,22 @@ export default function BudgetsPage() {
                     <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto">
                       <Trash2 className="w-6 h-6 text-red-500" />
                     </div>
-                    <p className="font-bold text-center mt-3">Delete Budget?</p>
+                    <p className="font-bold text-center mt-3">{t('deleteBudgetTitle')}</p>
                     <p className="text-sm text-gray-500 text-center mt-1">
-                      Delete {budgetToDelete.category} budget for{' '}
-                      {formatMonthLabel(budgetToDelete.month)}? This cannot be undone.
+                      {t('deleteBudgetMessage', { category: budgetToDelete.category, month: formatMonthLabel(budgetToDelete.month) })}
                     </p>
                     <div className="flex gap-3 mt-4">
                       <button
                         onClick={() => setDeleteOpen(false)}
                         className="flex-1 border border-gray-200 rounded-xl py-2.5 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                       <button
                         onClick={confirmDelete}
                         className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 font-semibold text-sm transition-colors"
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </div>
                   </div>

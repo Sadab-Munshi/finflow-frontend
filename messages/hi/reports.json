@@ -1,3 +1,8 @@
 {
-  "monthlyReports": "मासिक रिपोर्ट"
+  "monthlyReports": "मासिक रिपोर्ट",
+  "noReportsTitle": "अभी कोई रिपोर्ट नहीं",
+  "firstReportHint": "आपकी पहली रिपोर्ट 1 {month} {year} को स्वचालित रूप से बनेगी",
+  "download": "डाउनलोड करें",
+  "reportDownloaded": "रिपोर्ट डाउनलोड हुई!",
+  "downloadFailed": "डाउनलोड विफल। पुनः प्रयास करें।"
 }

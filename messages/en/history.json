@@ -8,5 +8,22 @@
   "cancel": "Cancel",
   "category": "Category",
   "expense": "Expense",
-  "income": "Income"
+  "income": "Income",
+  "download": "Download",
+  "exportCSV": "Export as CSV (.csv)",
+  "exportPDF": "Export as PDF (.pdf)",
+  "selectedCount": "{count} selected",
+  "selectAll": "Select All",
+  "deleteN": "Delete {count}",
+  "from": "From",
+  "to": "To",
+  "applyFilter": "Apply Filter",
+  "clear": "Clear",
+  "deleteManyTitle": "Delete Transactions?",
+  "deleteManyMessage": "Are you sure you want to delete {count, plural, one {# transaction} other {# transactions}}? This cannot be undone.",
+  "yesDeleteN": "Yes, Delete {count}",
+  "colDate": "Date",
+  "colType": "Type",
+  "colDescription": "Description",
+  "colAmount": "Amount"
 }

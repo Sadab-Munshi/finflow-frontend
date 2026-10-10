@@ -8,5 +8,22 @@
   "cancel": "বাতিল",
   "category": "বিভাগ",
   "expense": "ব্যয়",
-  "income": "আয়"
+  "income": "আয়",
+  "download": "ডাউনলোড করুন",
+  "exportCSV": "CSV হিসাবে এক্সপোর্ট করুন (.csv)",
+  "exportPDF": "PDF হিসাবে এক্সপোর্ট করুন (.pdf)",
+  "selectedCount": "{count}টি নির্বাচিত",
+  "selectAll": "সব নির্বাচন করুন",
+  "deleteN": "{count}টি মুছুন",
+  "from": "থেকে",
+  "to": "পর্যন্ত",
+  "applyFilter": "ফিল্টার প্রয়োগ করুন",
+  "clear": "সাফ করুন",
+  "deleteManyTitle": "লেনদেন মুছে ফেলবেন?",
+  "deleteManyMessage": "আপনি কি নিশ্চিতভাবে {count, plural, one {#টি লেনদেন} other {#টি লেনদেন}} মুছে ফেলতে চান? এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "yesDeleteN": "হ্যাঁ, {count}টি মুছুন",
+  "colDate": "তারিখ",
+  "colType": "ধরন",
+  "colDescription": "বিবরণ",
+  "colAmount": "পরিমাণ"
 }
