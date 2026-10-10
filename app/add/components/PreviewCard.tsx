@@ -1,9 +1,10 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import { Sparkles, Tag, Calendar, FileText, Pencil, Check, AlertTriangle } from 'lucide-react'
 import { MoreHorizontal } from 'lucide-react'
-import { TEAL, RED, FONT, categoryIconMap, formatDateDisplay, getTodayIST, resolveCategory, ParsedTransaction } from '../constants'
+import { TEAL, RED, FONT, categoryIconMap, formatDateOnly, isTodayIST, getTodayIST, resolveCategory, ParsedTransaction } from '../constants'
 
 interface PreviewCardProps {
   parsed: ParsedTransaction
@@ -18,10 +19,11 @@ interface PreviewCardProps {
 
 export function PreviewCard({
   parsed, onEdit, onConfirm, onDiscard, isSubmitting,
-  confirmLabel = 'Confirm Save',
+  confirmLabel,
   headerIcon,
-  headerText = 'AI understood this as:',
+  headerText,
 }: PreviewCardProps) {
+  const t = useTranslations('add')
   // Fix 1a: normalize confidence — if value is between 0 and 1, multiply by 100
   const rawConfidence = parsed.confidence ?? 0.9
   const confidence = rawConfidence > 0 && rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence)
@@ -29,7 +31,8 @@ export function PreviewCard({
   const filledBars = Math.round((confidence / 100) * 10)
   const Icon = categoryIconMap[parsed.category] || categoryIconMap[resolveCategory(parsed.category)] || MoreHorizontal
   const displayCategory = resolveCategory(parsed.category)
-  const displayDate = parsed.date ? formatDateDisplay(parsed.date) : formatDateDisplay(getTodayIST())
+  const dateStr = parsed.date || getTodayIST()
+  const displayDate = isTodayIST(dateStr) ? `${t('today')}, ${formatDateOnly(dateStr)}` : formatDateOnly(dateStr)
 
   return (
     <motion.div
@@ -47,7 +50,7 @@ export function PreviewCard({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {headerIcon || <Sparkles size={18} color={TEAL} />}
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>{headerText}</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>{headerText ?? t('aiUnderstood')}</span>
         </div>
         <button
           onClick={onEdit}
@@ -57,7 +60,7 @@ export function PreviewCard({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', flexShrink: 0,
           }}
-          title="Edit"
+          title={t('edit')}
         >
           <Pencil size={15} color="#6b7280" />
         </button>
@@ -113,7 +116,7 @@ export function PreviewCard({
         padding: '14px 16px', background: '#f9fafb', borderRadius: 12, marginBottom: 20,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>AI Confidence</span>
+          <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>{t('aiConfidence')}</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: confidenceColor }}>{confidence}%</span>
         </div>
         <div style={{ display: 'flex', gap: 3 }}>
@@ -131,7 +134,7 @@ export function PreviewCard({
         {confidence < 70 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
             <AlertTriangle size={14} color={RED} />
-            <span style={{ fontSize: 12, color: RED, fontWeight: 500 }}>Please verify details</span>
+            <span style={{ fontSize: 12, color: RED, fontWeight: 500 }}>{t('verifyDetails')}</span>
           </div>
         )}
       </div>
@@ -148,7 +151,7 @@ export function PreviewCard({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          Discard
+          {t('discard')}
         </button>
         <button
           onClick={onConfirm}
@@ -163,7 +166,7 @@ export function PreviewCard({
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
           }}
         >
-          <Check size={16} /> {confirmLabel}
+          <Check size={16} /> {confirmLabel ?? t('confirmSave')}
         </button>
       </div>
     </motion.div>
