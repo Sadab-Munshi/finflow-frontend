@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 type Common = typeof import('./messages/en/common.json')
 type Nav = typeof import('./messages/en/nav.json')
+type Dashboard = typeof import('./messages/en/dashboard.json')
 type History = typeof import('./messages/en/history.json')
 type Transaction = typeof import('./messages/en/transaction.json')
 type Budgets = typeof import('./messages/en/budgets.json')
@@ -13,6 +14,7 @@ declare global {
   interface IntlMessages {
     common: Common
     nav: Nav
+    dashboard: Dashboard
     history: History
     transaction: Transaction
     budgets: Budgets
