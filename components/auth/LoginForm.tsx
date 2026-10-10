@@ -18,7 +18,7 @@ import AuthField from './AuthField'
 import AuthModeSwitcher from './AuthModeSwitcher'
 import AuthPrimaryButton from './AuthPrimaryButton'
 import { getEmailSuggestion } from './emailSuggestion'
-import { authVerifyTurnstile, authWelcomeEmail } from '@/lib/api-client'
+import { authVerifyTurnstile } from '@/lib/api-client'
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -31,7 +31,7 @@ type SubmitState = 'idle' | 'loading' | 'success'
 export default function LoginForm() {
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [emailValue, setEmailValue] = useState('')
-  const { turnstileRef, acquireToken, reset: resetTurnstile, turnstileCallbacks, fallbackVisible: turnstileFallback } = useInvisibleTurnstile()
+  const { turnstileRef, warmUp, acquireToken, reset: resetTurnstile, turnstileCallbacks, fallbackVisible: turnstileFallback } = useInvisibleTurnstile()
   const router = useRouter()
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
@@ -77,37 +77,6 @@ export default function LoginForm() {
       const userEmail = user?.email
       track('login', { method: 'email' })
       if (user?.id) identifyUser(user.id, userEmail ?? undefined)
-      if (user?.email_confirmed_at && userEmail) {
-        try {
-          let { data: settingsData } = await supabase
-            .from('settings')
-            .select('welcome_email_sent')
-            .eq('user_id', user.id)
-            .single()
-
-          if (!settingsData) {
-            await supabase.from('settings').upsert({
-              user_id: user.id,
-              monthly_report: true,
-              budget_alerts: true,
-              need_help: true,
-              welcome_email_sent: false,
-            }, { onConflict: 'user_id' })
-            settingsData = { welcome_email_sent: false }
-          }
-
-          if (!settingsData.welcome_email_sent) {
-            const fullName = user.user_metadata?.full_name || userEmail
-            await authWelcomeEmail(fullName, userEmail)
-            await supabase
-              .from('settings')
-              .upsert({ user_id: user.id, welcome_email_sent: true }, { onConflict: 'user_id' })
-          }
-        } catch (e) {
-          console.error('Welcome email check failed:', e)
-        }
-      }
-
       toast.success('Welcome back!')
       setSubmitState('success')
       router.push('/dashboard')
@@ -127,7 +96,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }}>
+    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }} onFocusCapture={warmUp}>
       <AuthModeSwitcher mode="login" />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -4,21 +4,24 @@ import { useCallback, useRef, useState } from 'react'
 import type { TurnstileInstance } from './TurnstileWidget'
 
 /**
- * Turnstile driven by user intent with a self-healing fallback.
+ * Turnstile driven by user intent, kept FAST via pre-warming, with a
+ * self-healing visible fallback.
  *
- * Phase 1 — invisible: on form submit, `acquireToken()` calls `execute()` and
- * waits for the callback. Works silently for most users.
- *
- * Phase 2 — visible fallback: some site keys (e.g. Managed widgets that
- * decide an interaction is needed) cannot complete while invisible. If the
- * invisible attempt errors/times out, `fallbackVisible` flips true, the
- * widget is remounted in VISIBLE mode (auto-runs), and the SAME pending
- * submit keeps waiting for the user to pass the check — the sign-in/sign-up
- * then continues automatically with zero extra clicks.
+ * - `warmUp()` (called on first form focus): starts the silent challenge in
+ *   the background, so by the time the user hits submit the token is usually
+ *   already in hand → near-instant sign-in/sign-up.
+ * - `acquireToken()` (called on submit): returns the cached token, or awaits
+ *   the in-flight warm challenge, or starts a fresh one.
+ * - Fallback: with Managed site keys, an invisible challenge can't surface a
+ *   required interaction. If the silent attempt errors/times out (~4s), the
+ *   widget remounts VISIBLE and the *same* pending attempt keeps waiting —
+ *   the flow continues automatically once the check is passed.
  */
 export function useInvisibleTurnstile() {
   const ref = useRef<TurnstileInstance>(null)
   const pending = useRef<{ resolve: (token: string | null) => void; timers: ReturnType<typeof setTimeout>[] } | null>(null)
+  const tokenRef = useRef<string | null>(null)
+  const inflight = useRef<Promise<string | null> | null>(null)
   const [fallbackVisible, setFallbackVisible] = useState(false)
 
   const finish = useCallback((token: string | null) => {
@@ -32,31 +35,51 @@ export function useInvisibleTurnstile() {
   const enterFallback = useCallback(() => {
     if (!pending.current) return
     setFallbackVisible(true)
-    // The user may need a moment to notice and complete the visible check.
     pending.current.timers.push(setTimeout(() => finish(null), 120_000))
   }, [finish])
 
-  const acquireToken = useCallback(
-    () =>
-      new Promise<string | null>((resolve) => {
-        pending.current = { resolve, timers: [] }
-        pending.current.timers.push(setTimeout(enterFallback, 10_000))
-        try {
-          const instance = ref.current as (TurnstileInstance & { execute?: () => void }) | null
-          if (instance && typeof instance.execute === 'function') {
-            instance.execute()
-          } else {
-            // No programmatic execution available → straight to the visible widget.
-            enterFallback()
-          }
-        } catch {
+  const startChallenge = useCallback(() => {
+    inflight.current = new Promise<string | null>((resolve) => {
+      pending.current = { resolve, timers: [] }
+      pending.current.timers.push(setTimeout(enterFallback, 4_000))
+      try {
+        const instance = ref.current as (TurnstileInstance & { execute?: () => void }) | null
+        if (instance && typeof instance.execute === 'function') {
+          instance.execute()
+        } else {
           enterFallback()
         }
-      }),
-    [enterFallback]
-  )
+      } catch {
+        enterFallback()
+      }
+    }).finally(() => {
+      inflight.current = null
+    })
+    return inflight.current
+  }, [enterFallback])
+
+  /** Background warm-up — call on first interaction with the form. */
+  const warmUp = useCallback(() => {
+    if (tokenRef.current || inflight.current) return
+    startChallenge().then((token) => {
+      tokenRef.current = token
+    })
+  }, [startChallenge])
+
+  const acquireToken = useCallback(async () => {
+    if (tokenRef.current) {
+      const token = tokenRef.current
+      tokenRef.current = null
+      return token
+    }
+    if (inflight.current) {
+      return await inflight.current
+    }
+    return await startChallenge()
+  }, [startChallenge])
 
   const reset = useCallback(() => {
+    tokenRef.current = null
     try {
       ref.current?.reset()
     } catch {
@@ -65,10 +88,20 @@ export function useInvisibleTurnstile() {
   }, [])
 
   const callbacks = {
-    onSuccess: useCallback((token: string) => finish(token), [finish]),
+    onSuccess: useCallback(
+      (token: string) => {
+        // A warmed/auto-run challenge may finish outside an active attempt.
+        if (pending.current) finish(token)
+        else tokenRef.current = token
+      },
+      [finish]
+    ),
     onError: useCallback(() => enterFallback(), [enterFallback]),
-    onExpire: useCallback(() => enterFallback(), [enterFallback]),
+    onExpire: useCallback(() => {
+      tokenRef.current = null
+      enterFallback()
+    }, [enterFallback]),
   }
 
-  return { turnstileRef: ref, acquireToken, reset, turnstileCallbacks: callbacks, fallbackVisible }
+  return { turnstileRef: ref, warmUp, acquireToken, reset, turnstileCallbacks: callbacks, fallbackVisible }
 }

@@ -46,16 +46,22 @@ the email field while typing. An active form never shows a warning banner. API
 unreachable = allowed (the DB trigger on `auth.users` remains the hard gate;
 its `signup_limit_reached` race maps to the capacity card).
 
-**Post-verification onboarding:** the confirm-email callback
-(`type=signup`) keeps the fresh session and redirects to **/onboarding**
-(protected route; name field prefilled from the email local-part, Skip for now,
-writes `user_metadata.full_name` + `settings.name`). Users who already have a
-name (OAuth signups) bounce straight to /dashboard. Full name was removed from
-the signup form itself (2-field signup: email + password).
+**First-sign-in name popup (`components/auth/OnboardingModal.tsx`):** mounted
+globally in the root layout. After email confirmation the callback
+(`type=signup`) keeps the session and lands on /dashboard — where the modal
+collects the display name (prefilled from the email local-part; Skip for now,
+persisted in localStorage). Writes `user_metadata.full_name` + `settings.name`
+and **sends the welcome email here** (greeting now uses the real name).
+Covers social signups too: OAuth users keep the same dashboard path, and users
+whose provider already supplied `full_name` never see the modal. Full name was
+removed from the signup form itself (2-field signup: email + password).
 
-**Invisible Turnstile:** the visible widget box was removed from both login and
-signup; tokens are acquired on button click via `useInvisibleTurnstile()`
-(`size: 'invisible'`, `execution: 'execute'`) and verified server-side as before.
+**Invisible Turnstile with pre-warm + visible fallback:** `useInvisibleTurnstile()`
+starts the silent challenge in the background on **first form focus**
+(`onFocusCapture`), acquires the ready token on submit (near-instant), and if
+the invisible pass can't complete (e.g. Managed site keys flagging risky
+traffic) it remounts the widget **visible** within ~4s while the same attempt
+keeps waiting — the flow continues automatically once the check passes.
 
 ## Feature flags — `lib/api-client.ts → myFeatureFlags()`
 
