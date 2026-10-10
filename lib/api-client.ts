@@ -166,6 +166,29 @@ export async function myFeatureFlags(): Promise<{ ok: boolean; flags: Record<str
 
 // ============ Auth Endpoints ============
 
+export interface WaitlistJoinResult {
+  success: boolean
+  error?: string
+}
+
+export async function authWaitlistJoin(
+  email: string,
+  reason: 'closed' | 'invite_only' | 'capacity'
+): Promise<WaitlistJoinResult> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/waitlist-join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, reason }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) return { success: false, error: data.error || 'Could not join the waitlist' }
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Something went wrong. Please try again.' }
+  }
+}
+
 export async function authVerifyTurnstile(token: string) {
   return request('/api/auth/verify-turnstile', {
     method: 'POST',

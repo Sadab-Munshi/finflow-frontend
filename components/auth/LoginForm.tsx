@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,7 +10,8 @@ import { identifyUser, track } from '@/lib/posthog'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import TurnstileWidget, { TurnstileInstance } from './TurnstileWidget'
+import TurnstileWidget from './TurnstileWidget'
+import { useInvisibleTurnstile } from './useInvisibleTurnstile'
 import GoogleButton from './GoogleButton'
 import MicrosoftButton from './MicrosoftButton'
 import AuthField from './AuthField'
@@ -28,11 +29,9 @@ type FormData = z.infer<typeof schema>
 type SubmitState = 'idle' | 'loading' | 'success'
 
 export default function LoginForm() {
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
-  const [turnstileError, setTurnstileError] = useState(false)
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [emailValue, setEmailValue] = useState('')
-  const turnstileRef = useRef<TurnstileInstance>(null)
+  const { turnstileRef, acquireToken, reset: resetTurnstile, turnstileCallbacks } = useInvisibleTurnstile()
   const router = useRouter()
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
@@ -43,22 +42,20 @@ export default function LoginForm() {
   const emailLooksValid = z.string().email().safeParse(emailValue).success
 
   const onSubmit = async (data: FormData) => {
-    setTurnstileError(false)
-
-    if (!turnstileToken) {
-      setTurnstileError(true)
-      toast.error('Please complete the security verification')
-      return
-    }
-
     setSubmitState('loading')
     try {
-      const { success } = await authVerifyTurnstile(turnstileToken)
+      // Invisible Turnstile — the challenge fires now, on "Sign in" click.
+      const token = await acquireToken()
+      if (!token) {
+        toast.error('Security check failed. Please try again.')
+        resetTurnstile()
+        setSubmitState('idle')
+        return
+      }
+      const { success } = await authVerifyTurnstile(token)
       if (!success) {
         toast.error('Security check failed. Please try again.')
-        setTurnstileError(true)
-        turnstileRef.current?.reset()
-        setTurnstileToken(null)
+        resetTurnstile()
         setSubmitState('idle')
         return
       }
@@ -71,8 +68,7 @@ export default function LoginForm() {
 
       if (error) {
         toast.error(error.message)
-        turnstileRef.current?.reset()
-        setTurnstileToken(null)
+        resetTurnstile()
         setSubmitState('idle')
         return
       }
@@ -119,27 +115,9 @@ export default function LoginForm() {
     } catch (err) {
       console.error('Login error:', err)
       toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
-      turnstileRef.current?.reset()
-      setTurnstileToken(null)
+      resetTurnstile()
       setSubmitState('idle')
     }
-  }
-
-  const handleTurnstileSuccess = (token: string) => {
-    setTurnstileToken(token)
-    setTurnstileError(false)
-    toast.success('Security verified', { duration: 2000 })
-  }
-
-  const handleTurnstileError = () => {
-    setTurnstileToken(null)
-    setTurnstileError(true)
-  }
-
-  const handleTurnstileExpire = () => {
-    setTurnstileToken(null)
-    setTurnstileError(false)
-    turnstileRef.current?.reset()
   }
 
   const handleDemoCredentials = () => {
@@ -212,29 +190,6 @@ export default function LoginForm() {
             </Link>
           )}
         />
-        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-            <span className="inline-flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-teal-600" />
-              Verify you are human
-            </span>
-            <span className={turnstileToken ? 'text-teal-600' : 'text-slate-400'}>
-              {turnstileToken ? 'Success' : 'Security check'}
-            </span>
-          </div>
-          <TurnstileWidget
-            ref={turnstileRef}
-            theme="light"
-            className="mt-2"
-            onSuccess={handleTurnstileSuccess}
-            onError={handleTurnstileError}
-            onExpire={handleTurnstileExpire}
-          />
-          {turnstileError && (
-            <p className="mt-2 text-xs font-medium text-amber-600">Please wait for verification to finish.</p>
-          )}
-        </div>
-
         <AuthPrimaryButton
           type="submit"
           status={submitState}
@@ -255,6 +210,9 @@ export default function LoginForm() {
           Create a free account
         </Link>
       </p>
+
+      {/* Invisible Turnstile — nothing renders until "Sign in" is clicked. */}
+      <TurnstileWidget ref={turnstileRef} invisible theme="light" {...turnstileCallbacks} />
     </div>
   )
 }
