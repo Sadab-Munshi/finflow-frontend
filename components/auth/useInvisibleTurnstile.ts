@@ -1,56 +1,74 @@
 'use client'
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { TurnstileInstance } from './TurnstileWidget'
 
 /**
- * Invisible Turnstile driven by user intent: the widget renders nothing, and
- * a token is requested only when the user clicks the primary button
- * (acquireToken() → ref.execute()). Resolves null on any failure/timeout so
- * callers can toast and reset deterministically.
+ * Turnstile driven by user intent with a self-healing fallback.
+ *
+ * Phase 1 — invisible: on form submit, `acquireToken()` calls `execute()` and
+ * waits for the callback. Works silently for most users.
+ *
+ * Phase 2 — visible fallback: some site keys (e.g. Managed widgets that
+ * decide an interaction is needed) cannot complete while invisible. If the
+ * invisible attempt errors/times out, `fallbackVisible` flips true, the
+ * widget is remounted in VISIBLE mode (auto-runs), and the SAME pending
+ * submit keeps waiting for the user to pass the check — the sign-in/sign-up
+ * then continues automatically with zero extra clicks.
  */
-export function useInvisibleTurnstile(timeoutMs = 15000) {
+export function useInvisibleTurnstile() {
   const ref = useRef<TurnstileInstance>(null)
-  const resolverRef = useRef<((token: string | null) => void) | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pending = useRef<{ resolve: (token: string | null) => void; timers: ReturnType<typeof setTimeout>[] } | null>(null)
+  const [fallbackVisible, setFallbackVisible] = useState(false)
 
-  const settle = useCallback((token: string | null) => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-    resolverRef.current?.(token)
-    resolverRef.current = null
+  const finish = useCallback((token: string | null) => {
+    if (!pending.current) return
+    pending.current.timers.forEach(clearTimeout)
+    const resolve = pending.current.resolve
+    pending.current = null
+    resolve(token)
   }, [])
+
+  const enterFallback = useCallback(() => {
+    if (!pending.current) return
+    setFallbackVisible(true)
+    // The user may need a moment to notice and complete the visible check.
+    pending.current.timers.push(setTimeout(() => finish(null), 120_000))
+  }, [finish])
 
   const acquireToken = useCallback(
     () =>
       new Promise<string | null>((resolve) => {
-        const instance = ref.current
-        if (!instance) {
-          resolve(null)
-          return
-        }
-        resolverRef.current = resolve
-        timerRef.current = setTimeout(() => settle(null), timeoutMs)
+        pending.current = { resolve, timers: [] }
+        pending.current.timers.push(setTimeout(enterFallback, 10_000))
         try {
-          instance.execute()
+          const instance = ref.current as (TurnstileInstance & { execute?: () => void }) | null
+          if (instance && typeof instance.execute === 'function') {
+            instance.execute()
+          } else {
+            // No programmatic execution available → straight to the visible widget.
+            enterFallback()
+          }
         } catch {
-          settle(null)
+          enterFallback()
         }
       }),
-    [settle, timeoutMs]
+    [enterFallback]
   )
 
   const reset = useCallback(() => {
-    ref.current?.reset()
+    try {
+      ref.current?.reset()
+    } catch {
+      /* widget not mounted yet */
+    }
   }, [])
 
   const callbacks = {
-    onSuccess: useCallback((token: string) => settle(token), [settle]),
-    onError: useCallback(() => settle(null), [settle]),
-    onExpire: useCallback(() => settle(null), [settle]),
+    onSuccess: useCallback((token: string) => finish(token), [finish]),
+    onError: useCallback(() => enterFallback(), [enterFallback]),
+    onExpire: useCallback(() => enterFallback(), [enterFallback]),
   }
 
-  return { turnstileRef: ref, acquireToken, reset, turnstileCallbacks: callbacks }
+  return { turnstileRef: ref, acquireToken, reset, turnstileCallbacks: callbacks, fallbackVisible }
 }

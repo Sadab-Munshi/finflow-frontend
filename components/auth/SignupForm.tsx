@@ -60,7 +60,7 @@ export default function SignupForm() {
   const [blockKind, setBlockKind] = useState<SignupBlockKind | null>(null)
   // Domain block → inline error under the email field.
   const [domainError, setDomainError] = useState<string | null>(null)
-  const { turnstileRef, acquireToken, reset: resetTurnstile, turnstileCallbacks } = useInvisibleTurnstile()
+  const { turnstileRef, acquireToken, reset: resetTurnstile, turnstileCallbacks, fallbackVisible: turnstileFallback } = useInvisibleTurnstile()
 
   // Prefetch the admin-set registration controls; on any block the form is
   // swapped for the waitlist card. Failed fetch = allowed (DB trigger is the
@@ -276,8 +276,20 @@ export default function SignupForm() {
         </Link>
       </p>
 
-      {/* Invisible Turnstile — nothing renders until "Create account" is clicked. */}
-      <TurnstileWidget ref={turnstileRef} invisible theme="light" {...turnstileCallbacks} />
+      {/* Invisible Turnstile — fires on "Create account"; a visible check appears only if the silent pass is not possible (e.g. Managed site key). */}
+      <TurnstileWidget
+        key={turnstileFallback ? 'visible' : 'invisible'}
+        ref={turnstileRef}
+        invisible={!turnstileFallback}
+        theme="light"
+        className={turnstileFallback ? 'mt-1 flex justify-center' : 'mt-2'}
+        {...turnstileCallbacks}
+      />
+      {turnstileFallback && submitState === 'loading' && (
+        <p className="text-center text-xs font-medium text-slate-500">
+          Complete the quick check above — we&apos;ll continue automatically.
+        </p>
+      )}
     </div>
   )
 }
