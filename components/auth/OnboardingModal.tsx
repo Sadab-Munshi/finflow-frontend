@@ -36,9 +36,6 @@ export default function OnboardingModal() {
       const user = data.user
       if (!user) return
 
-      const skipped = typeof window !== 'undefined' && localStorage.getItem(`ff-onboarding-skipped:${user.id}`) === '1'
-      if (skipped) return
-
       // Gate on `welcome_email_sent`, NOT on name presence: social signups get
       // a full_name from the provider, but they still must pass through this
       // step (it is what triggers the welcome email). New social signups have
@@ -70,11 +67,6 @@ export default function OnboardingModal() {
     })
   }, [])
 
-  const close = () => {
-    if (userId) localStorage.setItem(`ff-onboarding-skipped:${userId}`, '1')
-    setOpen(false)
-  }
-
   const onSave = async () => {
     const trimmed = name.trim()
     if (trimmed.length < 2) {
@@ -101,11 +93,6 @@ export default function OnboardingModal() {
     } finally {
       setSaving(false)
     }
-  }
-
-  const onSkip = () => {
-    track('onboarding_completed', { skipped: true })
-    close()
   }
 
   if (!open) return null
@@ -145,14 +132,6 @@ export default function OnboardingModal() {
             {saving ? 'Saving…' : 'Continue'}
           </button>
 
-          <button
-            type="button"
-            onClick={onSkip}
-            disabled={saving}
-            className="mt-3 block w-full text-center text-sm font-semibold text-slate-400 underline decoration-slate-200 underline-offset-4 transition-colors hover:text-slate-600"
-          >
-            Skip for now
-          </button>
         </div>
       </div>
     </div>

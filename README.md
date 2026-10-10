@@ -75,6 +75,7 @@ Production: `npm run build && npm start`. Deploy is Vercel (see `docs/DEPLOYMENT
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) / [docs/PWA.md](docs/PWA.md) / [docs/SEO.md](docs/SEO.md) | Ship it / install it / rank it |
 | [docs/ANALYTICS.md](docs/ANALYTICS.md) / [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) / [docs/SCHEMA.md](docs/SCHEMA.md) | Telemetry + /analytics / Tailwind & ui/ / RLS tables |
 | [docs/PLATFORM_CONTROLS.md](docs/PLATFORM_CONTROLS.md) | Maintenance gate, signup gating, feature flags, instrumented events |
+| [docs/I18N_PLAN.md](docs/I18N_PLAN.md) | Proposal: full app i18n with next-intl (awaiting approval) |
 | [docs/DEBT.md](docs/DEBT.md) / [docs/DECISIONS.md](docs/DECISIONS.md) / [docs/MIGRATION_NOTES.md](docs/MIGRATION_NOTES.md) | Known issues / ADRs / split history |
 | [CONTRIBUTING.md](CONTRIBUTING.md) · [llms.txt](llms.txt) · [skills/](skills/) | PR rules · agent discovery · task checklists |
 
