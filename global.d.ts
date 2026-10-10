@@ -11,6 +11,7 @@ type Budgets = typeof import('./messages/en/budgets.json')
 type Insights = typeof import('./messages/en/insights.json')
 type Reports = typeof import('./messages/en/reports.json')
 type Settings = typeof import('./messages/en/settings.json')
+type Profile = typeof import('./messages/en/profile.json')
 
 declare global {
   interface IntlMessages {
@@ -24,6 +25,7 @@ declare global {
     insights: Insights
     reports: Reports
     settings: Settings
+    profile: Profile
   }
 }
 
