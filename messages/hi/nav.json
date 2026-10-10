@@ -2,5 +2,18 @@
   "dashboard": "डैशबोर्ड",
   "history": "इतिहास",
   "insights": "अंतर्दृष्टि",
-  "profile": "प्रोफ़ाइल"
+  "profile": "प्रोफ़ाइल",
+  "budgets": "बजट",
+  "analytics": "एनालिटिक्स",
+  "reports": "रिपोर्ट",
+  "settings": "सेटिंग्स",
+  "add": "जोड़ें",
+  "fabAuto": "ऑटो",
+  "fabType": "टाइप",
+  "fabVoice": "वॉइस",
+  "fabScan": "स्कैन",
+  "fabPdf": "PDF",
+  "viewProfile": "प्रोफ़ाइल देखें",
+  "editProfile": "प्रोफ़ाइल संपादित करें",
+  "signOut": "साइन आउट"
 }
