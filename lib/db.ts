@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { Transaction, Budget, Settings } from '@/lib/types'
 import { getCategoryById, categories } from '@/lib/categories'
+import { botNotifyTransaction } from '@/lib/api-client'
 
 const supabase = createClient()
 
@@ -51,6 +52,17 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'crea
     console.error('Supabase insert error:', JSON.stringify(error))
     return null
   }
+
+  // Ping unified bot (fire-and-forget): localized confirmation + budget alerts
+  // arrive on linked Telegram/WhatsApp. Errors must never affect the app flow.
+  botNotifyTransaction({
+    amount: data.amount,
+    type: data.type,
+    category: data.category,
+    date: data.date,
+    note: data.note,
+  }).catch(() => {})
+
   return data
 }
 

@@ -306,6 +306,25 @@ export async function sendHeartbeat() {
   return request('/api/track-login/heartbeat', { method: 'POST' })
 }
 
+// ============ Unified Bot Notify ============
+
+// Fire-and-forget: tell the unified finflow-bot a transaction was added via the
+// app so it can push a localized confirmation + budget alerts on linked
+// Telegram/WhatsApp. Never awaited by callers — failures are irrelevant to UX.
+export async function botNotifyTransaction(txn: {
+  amount: number
+  type: 'income' | 'expense'
+  category: string
+  date: string
+  note?: string
+}) {
+  return request('/api/bot-notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(txn),
+  })
+}
+
 // ============ Telegram Endpoints ============
 
 export async function telegramNotify(chatId: string, type: 'connected' | 'disconnected') {
