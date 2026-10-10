@@ -88,9 +88,9 @@ export default function ReportsPage() {
       a.click()
 
       URL.revokeObjectURL(url)
-      toast.success('Report downloaded!')
+      toast.success(t('reportDownloaded'))
     } catch {
-      toast.error('Download failed. Try again.')
+      toast.error(t('downloadFailed'))
     } finally {
       setDownloadingId(null)
     }
@@ -117,9 +117,9 @@ export default function ReportsPage() {
             <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8 text-teal-600" />
             </div>
-            <h3 className="font-semibold text-gray-800 mb-2">No reports yet</h3>
+            <h3 className="font-semibold text-gray-800 mb-2">{t('noReportsTitle')}</h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Your first report will be automatically generated on 1st {nextMonthName} {nextYear}
+              {t('firstReportHint', { month: nextMonthName, year: nextYear })}
             </p>
           </div>
         ) : (
@@ -158,7 +158,7 @@ export default function ReportsPage() {
                   ) : (
                     <Download className="w-4 h-4" />
                   )}
-                  Download
+                  {t('download')}
                 </button>
               </div>
             ))}

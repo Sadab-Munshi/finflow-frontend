@@ -99,7 +99,7 @@ function HistoryContent() {
       if (appliedToDate && txDate > appliedToDate) return false
     }
     return true
-  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }).sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime())
 
   const applyDateFilter = () => {
     setAppliedFromDate(fromDate)
@@ -534,7 +534,7 @@ function HistoryContent() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-800 text-sm truncate">{tx.note || tx.category}</p>
-                          <p className="text-xs text-gray-500">{formatIST(tx.created_at)}</p>
+                          <p className="text-xs text-gray-500">{formatIST(tx.created_at!)}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
                           <p className={cn("font-bold text-sm", tx.type === 'income' ? "text-green-600" : "text-rose-600")}>

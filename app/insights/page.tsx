@@ -42,11 +42,11 @@ export default function InsightsPage() {
   const [analysisStage, setAnalysisStage] = useState(0)
 
   const analysisStages = [
-    { message: 'Reading your transactions...', icon: 'FileText' },
-    { message: 'Identifying spending patterns...', icon: 'Search' },
-    { message: 'Comparing categories...', icon: 'BarChart2' },
-    { message: 'Writing your insights...', icon: 'PenLine' },
-    { message: 'Almost done...', icon: 'Sparkles' },
+    { messageKey: 'stage0' as const, icon: 'FileText' },
+    { messageKey: 'stage1' as const, icon: 'Search' },
+    { messageKey: 'stage2' as const, icon: 'BarChart2' },
+    { messageKey: 'stage3' as const, icon: 'PenLine' },
+    { messageKey: 'stage4' as const, icon: 'Sparkles' },
   ]
 
   useEffect(() => {
@@ -138,11 +138,11 @@ export default function InsightsPage() {
       )}
     >
       {dataLoading ? (
-        <><Loader2 className="w-4 h-4 animate-spin" />Analysing...</>
+        <><Loader2 className="w-4 h-4 animate-spin" />{t('analysing')}</>
       ) : insights.length > 0 ? (
-        <><RefreshCw className="w-4 h-4" />Refresh</>
+        <><RefreshCw className="w-4 h-4" />{t('refresh')}</>
       ) : (
-        <><Sparkles className="w-4 h-4" />Generate Insights</>
+        <><Sparkles className="w-4 h-4" />{t('generate')}</>
       )}
     </button>
   )
@@ -183,14 +183,14 @@ export default function InsightsPage() {
         {/* Page Header */}
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-[#0F172A]">Insights</h1>
+            <h1 className="text-2xl font-bold text-[#0F172A]">{t('title')}</h1>
             <Sparkles className="w-6 h-6 text-[#0A7B7B]" />
           </div>
-          <p className="text-sm mt-1 text-[#6B7280]">AI-powered analysis of your last 30 days</p>
+          <p className="text-sm mt-1 text-[#6B7280]">{t('subtitle')}</p>
           {last30DaysTx.length > 0 && (
             <span className="inline-flex items-center gap-1.5 bg-[#F0FDF9] text-[#0A7B7B] text-xs font-medium px-3 py-1 rounded-full mt-2">
               <FileText className="w-3.5 h-3.5" />
-              {last30DaysTx.length} transactions analysed
+              {t('txAnalysed', { count: last30DaysTx.length })}
             </span>
           )}
         </div>
@@ -228,7 +228,7 @@ export default function InsightsPage() {
                 className="text-sm font-medium text-[#0F172A] text-center"
                 style={{ animation: 'slideUp 0.4s ease forwards' }}
               >
-                {analysisStages[analysisStage].message}
+                {t(analysisStages[analysisStage].messageKey)}
               </p>
 
               {/* Stage dots indicator */}
@@ -297,9 +297,9 @@ export default function InsightsPage() {
                 <div className="w-20 h-20 rounded-full bg-[#F0FDF9] flex items-center justify-center mx-auto">
                   <BarChart2 className="w-10 h-10 text-[#0A7B7B]" />
                 </div>
-                <h3 className="text-lg font-semibold text-[#0F172A] mt-4">No insights yet</h3>
+                <h3 className="text-lg font-semibold text-[#0F172A] mt-4">{t('noInsightsTitle')}</h3>
                 <p className="text-sm text-[#475569] mt-1 max-w-xs mx-auto leading-relaxed">
-                  Generate AI insights to understand your spending patterns
+                  {t('noInsightsBody')}
                 </p>
                 <div className="mt-6">
                   {generateButton}

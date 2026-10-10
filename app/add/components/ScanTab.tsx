@@ -19,10 +19,11 @@ const SCAN_STEPS = [
   { label: 'readingImage' },
   { label: 'extractingText' },
   { label: 'parsingDetails' },
-  { label: 'Done!' },
+  { label: 'scanDone' },
 ]
 
 function ScanProgress({ currentStep }: { currentStep: number }) {
+  const t = useTranslations('add')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '24px 0', fontFamily: FONT }}>
       {/* Progress bar */}
@@ -48,7 +49,7 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
         animate={{ opacity: 1, y: 0 }}
         style={{ color: TEAL, fontWeight: 600, fontSize: 16 }}
       >
-        {currentStep < SCAN_STEPS.length ? SCAN_STEPS[currentStep].label : 'Done!'}
+        {currentStep < SCAN_STEPS.length ? t(SCAN_STEPS[currentStep].label as 'readingImage' | 'extractingText' | 'parsingDetails' | 'scanDone') : t('scanDone')}
       </motion.p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 4 }}>
@@ -77,7 +78,7 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
                 color: done ? TEAL : active ? '#374151' : '#9ca3af',
                 transition: 'all 0.3s',
               }}>
-                {t(step.label as 'readingImage' | 'extractingText' | 'parsingDetails')}
+                {t(step.label as 'readingImage' | 'extractingText' | 'parsingDetails' | 'scanDone')}
               </span>
             </div>
           )

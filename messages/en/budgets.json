@@ -1,3 +1,23 @@
 {
-  "budgetExists": "Budget already exists"
+  "budgetExists": "Budget already exists",
+  "title": "Budgets",
+  "createBudget": "Create Budget",
+  "totalBudget": "Total budget",
+  "activeBudgets": "Active budgets",
+  "editBudget": "Edit Budget",
+  "updateLimitHint": "Update your spending limit",
+  "category": "Category",
+  "budgetAmount": "Budget Amount",
+  "month": "Month",
+  "cancel": "Cancel",
+  "saveChanges": "Save Changes",
+  "deleteBudgetTitle": "Delete Budget?",
+  "deleteBudgetMessage": "Delete {category} budget for {month}? This cannot be undone.",
+  "delete": "Delete",
+  "budgetUpdated": "Budget updated successfully!",
+  "budgetCreated": "Budget created successfully!",
+  "somethingWrong": "Something went wrong",
+  "budgetDeleted": "Budget deleted",
+  "budget": "Budget",
+  "spent": "Spent"
 }

@@ -41,5 +41,6 @@
   "confirmSave": "Confirm Save",
   "edit": "Edit",
   "saveFailed": "Save failed",
-  "saveRetry": "Failed, retry?"
+  "saveRetry": "Failed, retry?",
+  "scanDone": "Done!"
 }

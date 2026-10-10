@@ -1,3 +1,16 @@
 {
-  "errorOccurred": "An error occurred"
+  "errorOccurred": "An error occurred",
+  "title": "Insights",
+  "subtitle": "AI-powered analysis of your last 30 days",
+  "txAnalysed": "{count, plural, one {# transaction analysed} other {# transactions analysed}}",
+  "generate": "Generate Insights",
+  "refresh": "Refresh",
+  "analysing": "Analysing...",
+  "stage0": "Reading your transactions...",
+  "stage1": "Identifying spending patterns...",
+  "stage2": "Comparing categories...",
+  "stage3": "Writing your insights...",
+  "stage4": "Almost done...",
+  "noInsightsTitle": "No insights yet",
+  "noInsightsBody": "Generate AI insights to understand your spending patterns"
 }

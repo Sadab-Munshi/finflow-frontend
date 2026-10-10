@@ -1,3 +1,23 @@
 {
-  "budgetExists": "बजट पहले से है"
+  "budgetExists": "बजट पहले से है",
+  "title": "बजट",
+  "createBudget": "बजट बनाएं",
+  "totalBudget": "कुल बजट",
+  "activeBudgets": "सक्रिय बजट",
+  "editBudget": "बजट संपादित करें",
+  "updateLimitHint": "अपनी खर्च सीमा अपडेट करें",
+  "category": "श्रेणी",
+  "budgetAmount": "बजट राशि",
+  "month": "माह",
+  "cancel": "रद्द करें",
+  "saveChanges": "परिवर्तन सहेजें",
+  "deleteBudgetTitle": "बजट हटाएं?",
+  "deleteBudgetMessage": "{month} के लिए {category} बजट हटाएँ? इसे पूर्ववत नहीं किया जा सकता।",
+  "delete": "हटाएं",
+  "budgetUpdated": "बजट सफलतापूर्वक अपडेट हुआ!",
+  "budgetCreated": "बजट सफलतापूर्वक बनाया गया!",
+  "somethingWrong": "कुछ गलत हो गया",
+  "budgetDeleted": "बजट हटाया गया",
+  "budget": "बजट",
+  "spent": "खर्च"
 }

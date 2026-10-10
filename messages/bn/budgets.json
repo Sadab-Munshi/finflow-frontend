@@ -1,3 +1,23 @@
 {
-  "budgetExists": "বাজেট আছে"
+  "budgetExists": "বাজেট আছে",
+  "title": "বাজেট",
+  "createBudget": "বাজেট তৈরি করুন",
+  "totalBudget": "মোট বাজেট",
+  "activeBudgets": "সক্রিয় বাজেট",
+  "editBudget": "বাজেট সম্পাদনা করুন",
+  "updateLimitHint": "আপনার খরচের সীমা আপডেট করুন",
+  "category": "বিভাগ",
+  "budgetAmount": "বাজেটের পরিমাণ",
+  "month": "মাস",
+  "cancel": "বাতিল করুন",
+  "saveChanges": "পরিবর্তনগুলো সংরক্ষণ করুন",
+  "deleteBudgetTitle": "বাজেট মুছে ফেলবেন?",
+  "deleteBudgetMessage": "{month}-এর জন্য {category} বাজেট মুছবেন? এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "delete": "মুছুন",
+  "budgetUpdated": "বাজেট সফলভাবে আপডেট হয়েছে!",
+  "budgetCreated": "বাজেট সফলভাবে তৈরি হয়েছে!",
+  "somethingWrong": "কিছু ভুল হয়েছে",
+  "budgetDeleted": "বাজেট মোছা হয়েছে",
+  "budget": "বাজেট",
+  "spent": "খরচ"
 }
