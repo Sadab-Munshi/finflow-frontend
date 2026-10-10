@@ -12,6 +12,7 @@ const PostHogProvider = dynamic(() => import('@/components/PostHogProvider'))
 const InstallPrompt = dynamic(() => import('@/components/ui/InstallPrompt'))
 const UpdateNotification = dynamic(() => import('@/components/UpdateNotification'))
 const PlatformGate = dynamic(() => import('@/components/PlatformGate'))
+const OnboardingModal = dynamic(() => import('@/components/auth/OnboardingModal'))
 
 export const viewport: Viewport = {
   themeColor: '#0d9488',
@@ -131,6 +132,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <UpdateNotification />
               <PlatformGate />
               <InstallPrompt />
+              <OnboardingModal />
               {children}
               <Toaster
                 position="top-right"

@@ -11,12 +11,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Email confirmation (signup): keep the fresh session and land the user
-      // on post-verification onboarding (name collection). The confirm link
-      // is only usable by whoever owns the inbox, so staying signed in is
-      // safe — and it removes a full log-in roundtrip from the first-run flow.
+      // Email confirmation (signup): keep the fresh session and land on the
+      // dashboard, where the name-collection popup (OnboardingModal) appears.
       if (type === 'signup') {
-        return NextResponse.redirect(`${origin}/onboarding`)
+        return NextResponse.redirect(`${origin}/dashboard`)
       }
       return NextResponse.redirect(`${origin}${next}`)
     }

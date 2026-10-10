@@ -60,7 +60,7 @@ export default function SignupForm() {
   const [blockKind, setBlockKind] = useState<SignupBlockKind | null>(null)
   // Domain block → inline error under the email field.
   const [domainError, setDomainError] = useState<string | null>(null)
-  const { turnstileRef, acquireToken, reset: resetTurnstile, turnstileCallbacks, fallbackVisible: turnstileFallback } = useInvisibleTurnstile()
+  const { turnstileRef, warmUp, acquireToken, reset: resetTurnstile, turnstileCallbacks, fallbackVisible: turnstileFallback } = useInvisibleTurnstile()
 
   // Prefetch the admin-set registration controls; on any block the form is
   // swapped for the waitlist card. Failed fetch = allowed (DB trigger is the
@@ -194,7 +194,7 @@ export default function SignupForm() {
   }
 
   return (
-    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }}>
+    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }} onFocusCapture={warmUp}>
       <AuthModeSwitcher mode="signup" />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
