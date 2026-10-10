@@ -10,6 +10,7 @@ import { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE, type Locale } from './config'
 const NAMESPACES = [
   'common',
   'nav',
+  'add',
   'dashboard',
   'history',
   'transaction',

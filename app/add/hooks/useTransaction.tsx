@@ -1,4 +1,5 @@
 'use client'
+import { useTranslations } from 'next-intl'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -10,6 +11,7 @@ import { useUser } from '@/context/UserContext'
 import { budgetAlertCheck } from '@/lib/api-client'
 
 export function useTransaction() {
+  const t = useTranslations('add')
   const router = useRouter()
   const { user: currentUser } = useUser()
   const [isSubmitting, setIsSubmitting] = useState(false)

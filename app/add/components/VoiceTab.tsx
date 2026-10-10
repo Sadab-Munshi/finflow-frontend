@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect, useRef } from 'react'
 import { Loader2, Mic } from 'lucide-react'
 import { getCategoriesByType } from '@/lib/categories'
@@ -15,6 +16,7 @@ const VOICE_ERROR_PROCESSING = 'error'
 const VOICE_ERROR_MIC = 'mic'
 
 export default function VoiceTab() {
+  const t = useTranslations('add')
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
@@ -236,7 +238,7 @@ export default function VoiceTab() {
               color: '#9ca3af', fontSize: 13, fontFamily: FONT,
             }}
           >
-            Discard all
+            {t('discardAll')}
           </button>
         </div>
         {parsedList.map((p, i) => (
@@ -262,7 +264,7 @@ export default function VoiceTab() {
             fontFamily: FONT,
           }}
         >
-          {isSubmitting ? 'Saving...' : `Save All (${parsedList.length})`}
+          {isSubmitting ? t('saving') : t('saveAll', { count: parsedList.length })}
         </button>
       </div>
     )
@@ -325,15 +327,15 @@ export default function VoiceTab() {
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: TEAL, justifyContent: 'center' }}>
             <Loader2 size={16} className="animate-spin" />
-            <span style={{ fontSize: 16, fontWeight: 500 }}>Processing...</span>
+            <span style={{ fontSize: 16, fontWeight: 500 }}>{t('processing')}</span>
           </div>
         ) : isListening ? (
           <p style={{ color: '#0d9488', fontSize: 14, fontWeight: 500 }}>
-            Listening...
+            {t('listening')}
           </p>
         ) : (
           <p style={{ color: '#737373', fontSize: 14 }}>
-            Tap to speak
+            {t('tapToSpeak')}
           </p>
         )}
         <p style={{ color: '#a3a3a3', fontSize: 12, marginTop: 6 }}>
@@ -348,7 +350,7 @@ export default function VoiceTab() {
           maxWidth: 260, lineHeight: 1.6,
         }}>
           {parseError === VOICE_ERROR_MIC
-            ? 'Microphone access denied. Please allow access and try again.'
+            ? t('micDenied')
             : "Couldn\u2019t catch that. Please tap and try again."}
         </p>
       )}
@@ -359,7 +361,7 @@ export default function VoiceTab() {
           width: '100%', padding: 16, background: '#f0fdf4',
           borderRadius: 12,
         }}>
-          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Transcript:</p>
+          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>{t('transcript')}</p>
           <p style={{ fontWeight: 500 }}>{transcript}</p>
         </div>
       )}

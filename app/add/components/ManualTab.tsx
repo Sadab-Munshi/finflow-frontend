@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import { MoreHorizontal, X } from 'lucide-react'
 import { getCategoriesByType, categories } from '@/lib/categories'
 import { Category } from '@/lib/types'
@@ -49,6 +50,7 @@ function CategorySheet({
   selected: string
   onSelect: (name: string) => void
 }) {
+  const t = useTranslations('add')
   const all = categories.filter(c => c.type === type || c.type === 'both')
 
   return (
@@ -82,7 +84,7 @@ function CategorySheet({
           >
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <span style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>All Categories</span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>{t('allCategories')}</span>
               <button
                 onClick={onClose}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
@@ -126,11 +128,13 @@ function CategorySheet({
 
 /* ─── Manual Form (shared by Manual, NLP confirm, Voice confirm, Scan confirm) ─── */
 export function ManualForm({
+
   amount, setAmount, type, setType, category, setCategory,
   note, setNote, date, setDate, amountError, setAmountError,
   categoryError, setCategoryError, availableCategories,
   isSubmitting, onSave, onDiscard, confirmMode,
 }: ManualFormProps) {
+  const t = useTranslations('add')
   const dateInputRef = useRef<HTMLInputElement>(null)
   const [showSheet, setShowSheet] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
@@ -202,21 +206,21 @@ export function ManualForm({
           }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         />
-        {(['expense', 'income'] as const).map((t) => (
+        {(['expense', 'income'] as const).map((item) => (
           <button
-            key={t}
+            key={item}
             onClick={() => {
-              if (t !== type) { setType(t); setCategory(''); setAmount('') }
+              if (item !== type) { setType(item); setCategory(''); setAmount('') }
             }}
             style={{
               flex: 1, padding: '10px 0', background: 'none', border: 'none',
-              color: type === t ? '#fff' : '#6b7280',
+              color: type === item ? '#fff' : '#6b7280',
               fontWeight: 600, fontSize: 15, cursor: 'pointer',
               position: 'relative', zIndex: 1, fontFamily: FONT,
-              transition: 'color 0.2s', textTransform: 'capitalize',
+              transition: 'color 0.2s',
             }}
           >
-            {t}
+            {t(item)}
           </button>
         ))}
       </div>
@@ -268,7 +272,7 @@ export function ManualForm({
               fontFamily: FONT,
             }}
           >
-            More +
+            {t('more')}
           </button>
         </div>
         {categoryError && (
@@ -278,7 +282,7 @@ export function ManualForm({
 
       {/* Description (optional) */}
       <input
-        placeholder="What was this for? (optional)"
+        placeholder={t('notePlaceholder')}
         value={note}
         onChange={(e) => setNote(e.target.value)}
         style={{
@@ -302,7 +306,7 @@ export function ManualForm({
             cursor: 'pointer', textAlign: 'left', fontFamily: FONT,
           }}
         >
-          {formatDateDisplay(date)}
+          {isTodayIST(date) ? `${t('today')}, ${formatDateOnly(date)}` : formatDateOnly(date)}
         </button>
         <input
           ref={dateInputRef}
@@ -350,9 +354,9 @@ export function ManualForm({
                 borderTopColor: 'transparent', borderRadius: '50%',
                 animation: 'spin 0.7s linear infinite',
               }} />
-              Saving...
+              {t('saving')}
             </>
-          : 'Save Transaction'
+          : t('saveTransaction')
         }
       </button>
 
@@ -388,6 +392,7 @@ export function ManualForm({
 
 /* ─── Manual Tab ─── */
 export default function ManualTab() {
+  const t = useTranslations('add')
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
   const [amount, setAmount] = useState('')
   const [type, setType] = useState<'income' | 'expense'>('expense')
@@ -405,11 +410,11 @@ export default function ManualTab() {
     setCategoryError('')
     const parsed = parseFloat(amount)
     if (!amount || isNaN(parsed) || parsed <= 0) {
-      setAmountError('Please enter an amount')
+      setAmountError(t('amountError'))
       valid = false
     }
     if (!category) {
-      setCategoryError('Please select a category')
+      setCategoryError(t('categoryError'))
       valid = false
     }
     if (!valid) return
