@@ -11,7 +11,7 @@ import {
   Briefcase, Gift, CircleDot, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownLeft,
 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
+import { useTranslations } from 'next-intl'
 import { getTransactions, getBudgets, saveBudget, updateBudget, deleteBudget } from '@/lib/db'
 import { getExpenseCategories, getCategoryByName } from '@/lib/categories'
 import { formatIndianCurrency, normalizeDateToYMD } from '@/lib/utils'
@@ -103,7 +103,7 @@ function iconBg(hex: string) {
 /* ── Component ─────────────────────────────────────────────────────── */
 
 export default function BudgetsPage() {
-  const { t } = useLanguage()
+  const t = useTranslations('budgets')
 
   /* data state */
   const [mounted, setMounted]           = useState(false)

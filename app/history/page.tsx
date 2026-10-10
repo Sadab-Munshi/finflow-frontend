@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
+import { useTranslations } from 'next-intl'
 import { getTransactions, deleteTransactions } from '@/lib/db'
 import { categories, getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD } from '@/lib/utils'
@@ -41,7 +41,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
 function HistoryContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { t } = useLanguage()
+  const t = useTranslations('history')
   const [mounted, setMounted] = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)

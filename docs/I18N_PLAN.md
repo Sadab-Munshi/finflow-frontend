@@ -8,7 +8,20 @@ related: [platform-controls, routes]
 
 # i18n Implementation Plan (next-intl)
 
-**Status: proposal — awaiting approval. No implementation written yet.**
+**Status: Phases 0–1 shipped on `feat/i18n-foundation` (2026-10-10).**
+Approved decisions: cookie-based · app pages only in v1 · legal pages EN ·
+LLM-drafted hi/bn · cookie-only (NEXT_LOCALE, max-age 1y).
+
+Shipped: `i18n/config.ts` + `i18n/request.ts` (cookie → Accept-Language → en,
+per-namespace en-fallback merge) · `messages/{en,hi,bn}/{common,nav,history,
+transaction,budgets,insights,reports}.json` seeded from LanguageContext (140×3
+keys parsed, real hi/bn translations carried over) · next-intl 4.14 plugin in
+`next.config.ts` · root layout: `NextIntlClientProvider` + `<html lang>` (root
+layout now dynamic — cookie read) · `global.d.ts` typed `IntlMessages` ·
+`lib/i18n-cookie.ts` (`setLocaleCookie` + `router.refresh()` in profile) · all 8
+`useLanguage` consumers migrated to `useTranslations` · `LanguageContext` deleted.
+Note: `settings.language` DB column is no longer written (cookie-only v1) —
+its value may be stale; ignore until a future sync phase.
 
 ## 1. Current state (audited)
 

@@ -18,7 +18,6 @@ import {
 import { TooltipProps } from 'recharts'
 import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
 import { getTransactions } from '@/lib/db'
 import { getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD, getISTDateOffset } from '@/lib/utils'
@@ -84,7 +83,6 @@ const CustomTooltip = ({
 export default function DashboardPage() {
   const router = useRouter()
   // Fix #4: removed unused `t` destructure
-  useLanguage()
 
   const [mounted, setMounted]           = useState(false)
   const [transactions, setTransactions] = useState<Transaction[]>([])
