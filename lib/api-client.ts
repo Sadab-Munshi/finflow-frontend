@@ -247,11 +247,13 @@ export async function sendNotification(data: {
 // (finflow-api src/routes/notifications.ts:161) so the existing Bearer branch,
 // which reads req.user.id, actually works. Today a JWT call returns 401 and the
 // caller (app/add/hooks/useTransaction.tsx:19) swallows the failure via .catch().
-export async function budgetAlertCheck(userId: string) {
+export async function budgetAlertCheck(userId: string, category?: string) {
   return request('/api/notifications/budget-alert', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId }),
+    // Category-scoped when known: the email/in-app alert mentions only the
+    // category that just crossed (omitted → API evaluates all budgets).
+    body: JSON.stringify({ user_id: userId, ...(category ? { category } : {}) }),
   })
 }
 
