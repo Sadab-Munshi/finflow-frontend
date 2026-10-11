@@ -353,13 +353,16 @@ export default function ProfilePage() {
       const currentPhone = settingsTyped?.whatsapp_phone
       const settingsName = settingsTyped?.name || user.email || 'User'
 
+      // Notify BEFORE clearing: the unified bot resolves the user AND their
+      // stored language by this phone — unlinking first raced the message to
+      // silence. (awaited, not fire-and-forget, so the row still exists.)
+      if (currentPhone) {
+        await whatsappNotify(currentPhone, 'disconnected', settingsName).catch(() => {})
+      }
+
       await supabase.from('settings')
         .update({ whatsapp_phone: null, whatsapp_connect_code: null })
         .eq('user_id', user.id)
-
-      if (currentPhone) {
-        whatsappNotify(currentPhone, 'disconnected', settingsName).catch(() => {})
-      }
       setWhatsappConnected(false)
       setShowWhatsappDisconnectDialog(false)
       toast.success(t('toastWaDisconnected'))
