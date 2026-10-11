@@ -100,6 +100,8 @@ export default function ProfilePage() {
   const [whatsappPolling, setWhatsappPolling] = useState(false)
   const [showWhatsappDisconnectDialog, setShowWhatsappDisconnectDialog] = useState(false)
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const tgPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [telegramPolling, setTelegramPolling] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -232,23 +234,68 @@ export default function ProfilePage() {
     router.refresh()
   }
 
+  // New unified-bot flow: generate a code, deep-link into the bot, poll for link.
+  // The bot sends the localized "linked" message itself on success — no client
+  // notify needed (mirrors the WhatsApp connect flow below).
   const connectTelegram = async () => {
-    if (!telegramChatId.trim()) return
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      setTelegramPolling(true)
+      const array = new Uint8Array(5)
+      crypto.getRandomValues(array)
+      const code = Array.from(array, b => b.toString(36)).join('').slice(0, 8).toUpperCase()
 
-    const { error } = await supabase.from('settings').upsert(
-      { user_id: user.id, telegram_chat_id: telegramChatId.trim(), telegram_id: telegramChatId.trim() },
-      { onConflict: 'user_id' }
-    )
-    if (!error) {
-      setTelegramConnected(true)
-      setTelegramToggle(true)
-      telegramNotify(telegramChatId.trim(), 'connected').catch(() => {})
-    } else {
-      toast.error(t('toastFailedConnect'))
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setTelegramPolling(false); return }
+
+      const { error } = await supabase
+        .from('settings')
+        .update({ telegram_connect_code: code })
+        .eq('user_id', user.id)
+
+      if (error) {
+        toast.error(t('toastGenCodeFailed'))
+        setTelegramPolling(false)
+        return
+      }
+
+      window.open(`https://t.me/FinFlowIndiaBot?start=${code}`, '_blank')
+      startTgPolling()
+    } catch {
+      toast.error(t('toastSomethingWrong'))
+      setTelegramPolling(false)
     }
+  }
+
+  const startTgPolling = () => {
+    let attempts = 0
+    const maxAttempts = 12
+    tgPollRef.current = setInterval(async () => {
+      attempts++
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        if (tgPollRef.current) clearInterval(tgPollRef.current)
+        return
+      }
+      const { data } = await supabase.from('settings').select('telegram_chat_id').eq('user_id', user.id).single()
+      const pollData = data as { telegram_chat_id?: string } | null
+      if (pollData?.telegram_chat_id) {
+        if (tgPollRef.current) clearInterval(tgPollRef.current)
+        setTelegramConnected(true)
+        setTelegramPolling(false)
+        toast.success(t('toastTgConnected'))
+      } else if (attempts >= maxAttempts) {
+        if (tgPollRef.current) clearInterval(tgPollRef.current)
+        setTelegramPolling(false)
+        toast.error(t('toastTgTimeout'))
+      }
+    }, 5000)
+  }
+
+  const cancelTgPolling = () => {
+    if (tgPollRef.current) clearInterval(tgPollRef.current)
+    setTelegramPolling(false)
   }
 
   const disconnectTelegram = async () => {
@@ -268,7 +315,7 @@ export default function ProfilePage() {
     }
 
     await supabase.from('settings').upsert(
-      { user_id: user.id, telegram_chat_id: null, telegram_id: null },
+      { user_id: user.id, telegram_chat_id: null, telegram_id: null, telegram_connect_code: null },
       { onConflict: 'user_id' }
     )
     setTelegramChatId('')
@@ -638,62 +685,73 @@ export default function ProfilePage() {
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('integrations')}</p>
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-4">
 
-              {/* Telegram */}
+              {/* Telegram — unified-bot deep-link connect (mirrors WhatsApp) */}
               <div>
-                <div className="flex items-center gap-3 flex-nowrap">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
-                    <Image
-                      src="/assets/telegram-icon.webp"
-                      alt="Telegram"
-                      width={40}
-                      height={40}
-                      className="w-full h-full object-cover"
-                      draggable={false}
-                      onContextMenu={(e) => e.preventDefault()}
-                      style={{ pointerEvents: 'none', userSelect: 'none' }}
-                    />
+                {telegramPolling ? (
+                  <div className="flex items-center gap-3 flex-nowrap">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                      <Image
+                        src="/assets/telegram-icon.webp"
+                        alt="Telegram"
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{ pointerEvents: 'none', userSelect: 'none' }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#0F172A] truncate">{t('tgConnecting')}</p>
+                      <p className="text-xs text-[#64748B] truncate">{t('tgWaiting')}</p>
+                    </div>
+                    <div className="flex-shrink-0 ml-auto flex items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-teal-600" />
+                      <button onClick={cancelTgPolling} className="text-xs text-gray-400 hover:text-gray-600">
+                        {t('cancel')}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[#0F172A] truncate">
-                      {telegramConnected ? t('telegramConnectedTitle') : t('connectTelegram')}
-                    </p>
-                    <p className="text-xs text-[#64748B] truncate">{t('telegramDesc')}</p>
-                  </div>
-                  <div className="flex-shrink-0 ml-auto">
-                    <Toggle
-                      checked={telegramConnected || telegramToggle}
-                      onChange={() => {
-                        if (telegramConnected) {
-                          setShowTelegramDisconnectDialog(true)
-                        } else {
-                          setTelegramToggle(prev => !prev)
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                {/* Inline expand when toggle ON but not yet connected */}
-                {!telegramConnected && telegramToggle && (
-                  <div className="mt-3 space-y-2 pl-12">
-                    <ol className="text-xs text-gray-500 space-y-1 list-decimal list-inside">
-                      <li>{t('tgStep1')}</li>
-                      <li>{t('tgStep2')}</li>
-                      <li>{t('tgStep3')}</li>
-                    </ol>
-                    <input
-                      type="text"
-                      placeholder={t('tgChatIdPlaceholder')}
-                      value={telegramChatId}
-                      onChange={e => setTelegramChatId(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                    <button
-                      onClick={connectTelegram}
-                      className="w-full py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                      style={{ background: '#0d9488' }}
-                    >
-                      {t('connect')}
-                    </button>
+                ) : (
+                  <div className="flex items-center gap-3 flex-nowrap">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                      <Image
+                        src="/assets/telegram-icon.webp"
+                        alt="Telegram"
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{ pointerEvents: 'none', userSelect: 'none' }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#0F172A] truncate">
+                        {telegramConnected ? t('telegramConnectedTitle') : t('connectTelegram')}
+                      </p>
+                      <p className="text-xs text-[#64748B] truncate">{t('telegramDesc')}</p>
+                    </div>
+                    <div className="flex-shrink-0 ml-auto flex items-center gap-2">
+                      {!telegramConnected && (
+                        <button
+                          onClick={connectTelegram}
+                          className="text-xs font-semibold text-teal-600 flex items-center gap-0.5"
+                        >
+                          Open <ExternalLink size={11} />
+                        </button>
+                      )}
+                      <Toggle
+                        checked={telegramConnected}
+                        onChange={() => {
+                          if (telegramConnected) {
+                            setShowTelegramDisconnectDialog(true)
+                          } else {
+                            connectTelegram()
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

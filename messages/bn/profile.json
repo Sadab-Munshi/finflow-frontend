@@ -72,5 +72,9 @@
   "toastWaConnected": "হোয়াটসঅ্যাপ সফলভাবে সংযুক্ত!",
   "toastWaTimeout": "সংযোগ সময়সীমা শেষ। আবার চেষ্টা করুন।",
   "toastWaDisconnected": "হোয়াটসঅ্যাপ বিচ্ছিন্ন",
-  "toastWaDisconnectFailed": "বিচ্ছিন্ন ব্যর্থ। আবার চেষ্টা করুন।"
+  "toastWaDisconnectFailed": "বিচ্ছিন্ন ব্যর্থ। আবার চেষ্টা করুন।",
+  "tgConnecting": "সংযোগ হচ্ছে…",
+  "tgWaiting": "টেলিগ্রাম নিশ্চিতকরণের অপেক্ষায়",
+  "toastTgConnected": "টেলিগ্রাম সফলভাবে সংযুক্ত!",
+  "toastTgTimeout": "সংযোগের সময় শেষ। আবার চেষ্টা করুন।"
 }

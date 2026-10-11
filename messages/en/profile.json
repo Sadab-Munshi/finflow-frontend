@@ -72,5 +72,9 @@
   "toastWaConnected": "WhatsApp connected successfully!",
   "toastWaTimeout": "Connection timed out. Please try again.",
   "toastWaDisconnected": "WhatsApp disconnected",
-  "toastWaDisconnectFailed": "Failed to disconnect. Please try again."
+  "toastWaDisconnectFailed": "Failed to disconnect. Please try again.",
+  "tgConnecting": "Connecting...",
+  "tgWaiting": "Waiting for Telegram confirmation",
+  "toastTgConnected": "Telegram connected successfully!",
+  "toastTgTimeout": "Connection timed out. Please try again."
 }
