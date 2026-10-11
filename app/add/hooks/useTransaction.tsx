@@ -16,9 +16,9 @@ export function useTransaction() {
   const { user: currentUser } = useUser()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const checkBudgetAlert = async () => {
+  const checkBudgetAlert = async (category?: string) => {
     try {
-      await budgetAlertCheck(currentUser?.userId || '')
+      await budgetAlertCheck(currentUser?.userId || '', category)
     } catch (e) {
       console.error('[checkBudgetAlert] Failed:', e)
     }
@@ -41,7 +41,12 @@ export function useTransaction() {
           })
         }
         toast.success('Saved', { id: toastId })
-        try { await checkBudgetAlert() } catch (e) { console.error('[checkBudgetAlert]', e) }
+        // Scope the budget check to the categories just saved (expense only —
+        // incomes never cross expense budgets).
+        const expenseCats = [...new Set(transactions.filter(tx => tx.type === 'expense').map(tx => tx.category))]
+        for (const cat of expenseCats) {
+          try { await checkBudgetAlert(cat) } catch (e) { console.error('[checkBudgetAlert]', e) }
+        }
       } catch {
         toast.error('Failed, retry?', { id: toastId, duration: 5000 })
       }
