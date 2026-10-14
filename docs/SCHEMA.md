@@ -45,6 +45,35 @@ through finflow-api with the service-role key (RLS bypassed there).
   `reports`, `analytics_cache`) — see the API repo's SCHEMA doc; do not query
   them from the browser (no policies → denied, correct).
 
+## Migrations 002–012 (all service-role-only — browser never touches)
+
+| # | File | Contents |
+|---|---|---|
+| 002 | `002_signup_cap_and_streaks.sql` | Signup cap counter + user streak fields |
+| 004 | `004_admin_audit_and_presence.sql` | `admin_audit` (Vertex's Activity page) + presence |
+| 005 | `005_user_events.sql` | Event timeline (UserDrawer activity, product events) |
+| 006 | `006_feedback_workflow.sql` | Feedback inbox with status |
+| 007 | `007_notification_campaigns.sql` | `notification_templates` + `notification_campaigns` + `notifications.campaign_id` (open-rate joins) |
+| 008 | `008_ai_daily_usage.sql` | `ai_usage_daily` — per-user daily AI cap |
+| 009 | `009_segments_and_feature_flags.sql` | Segments, feature flags, campaign segment columns |
+| 010 | `010_signup_waitlist.sql` | `signup_waitlist` (email, reason, unique) — closed-signup card capture |
+| 011 | `011_waitlist_invite_tracking.sql` | `signup_waitlist.invite_sent_at` + `invites` |
+| 012 | `012_email_templates.sql` | `email_templates` (admin-editable outbound wrappers, seeded `admin_notification`) |
+
+All are RLS-enabled with **no public policies**: every browser request is
+denied by design; finflow-api does everything with the service role
+(admin panel reads → `GET /api/admin/*` relays by JWT-matched role).
+Migration 003 has no in-repo file (reserved number — see
+`docs/MIGRATION_NOTES.md`).
+
+## Dashboard auth email templates
+
+`supabase/email-templates/` holds **paste-in** HTML bodies for Supabase →
+Authentication → Emails (invite, magic link/OTP, confirm signup, reset
+password) — self-contained branded wrappers using `{{ .ConfirmationURL }}`
+and `{{ .Token }}`. They're not auto-applied; the `README.md` next to them
+lists tab → file → subject.
+
 ## Storage buckets
 
 | Bucket | Used for | Access |
