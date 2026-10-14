@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { CircleHelp, Home, ShieldCheck } from 'lucide-react'
 
-type AuthMode = 'login' | 'signup'
+type AuthMode = 'login' | 'signup' | 'set-password'
 
 interface AuthShellProps {
   mode: AuthMode
@@ -19,6 +19,11 @@ const copy = {
     eyebrow: '',
     heading: 'Create your account',
     subtitle: 'Set up your personal finance workspace in just a few calm minutes.',
+  },
+  'set-password': {
+    eyebrow: 'One last step',
+    heading: 'Create your password',
+    subtitle: 'Choose a password for your new FinFlow account — you will use your email and this password to sign in from now on.',
   },
 }
 

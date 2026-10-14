@@ -46,6 +46,13 @@ export default function AuthCompletePage() {
         }
         // Tokens are now in the session store — scrub them from the address bar.
         window.history.replaceState(null, '', '/auth/complete')
+        // Invited users arrive with a session but NO password (inviteUserByEmail
+        // never sets one), and this app is password-based — send them through
+        // the mandatory set-password step before the dashboard.
+        if (params.get('type') === 'invite') {
+          router.replace('/auth/set-password')
+          return
+        }
         const next = new URLSearchParams(window.location.search).get('next')
         router.replace(next && next.startsWith('/') ? next : '/dashboard')
       } catch {
@@ -61,6 +68,13 @@ export default function AuthCompletePage() {
         <div className="rounded-2xl border border-rose-200 bg-white/80 p-6 text-center shadow-sm backdrop-blur">
           <p className="text-sm font-semibold text-rose-600">Couldn&apos;t sign you in</p>
           <p className="mt-1 text-sm text-slate-600">{error}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Links are single-use. If you already accepted this invite, open{' '}
+            <Link href="/forgot-password" className="font-semibold text-teal-700 hover:underline">
+              Forgot password
+            </Link>{' '}
+            to create your password.
+          </p>
           <Link
             href="/login"
             className="mt-4 inline-flex items-center justify-center rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-700"
