@@ -1,0 +1,17 @@
+{
+  "transactionDetails": "লেনদেন বিবরণ",
+  "amount": "পরিমাণ",
+  "type": "প্রকার",
+  "category": "বিভাগ",
+  "description": "বিবরণ",
+  "date": "তারিখ",
+  "save": "সংরক্ষণ",
+  "edit": "সম্পাদনা",
+  "delete": "মুছুন",
+  "cancel": "বাতিল",
+  "deleteConfirmTitle": "লেনদেন মুছুন",
+  "deleteConfirmMessage": "আপনি কি নিশ্চিত?",
+  "expense": "ব্যয়",
+  "income": "আয়",
+  "noResults": "কোন লেনদেন নেই"
+}

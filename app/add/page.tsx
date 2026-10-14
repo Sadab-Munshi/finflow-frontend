@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Layout from '@/components/layout/Layout'
@@ -12,6 +13,7 @@ import VoiceTab from './components/VoiceTab'
 import ScanTab from './components/ScanTab'
 
 function AddTransactionContent() {
+  const t = useTranslations('add')
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState(() => {
     const tab = searchParams.get('tab') || 'manual'
@@ -45,7 +47,7 @@ function AddTransactionContent() {
                   }}
                 >
                   <tab.Icon size={18} />
-                  {tab.label}
+                  {t(tab.labelKey as 'tabManual' | 'tabNlp' | 'tabVoice' | 'tabScan')}
                   {isActive && (
                     <motion.div
                       layoutId="activeTabUnderline"

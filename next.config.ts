@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
   eslint: {
@@ -98,7 +101,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co",
               "frame-src 'self' https://challenges.cloudflare.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://app.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://api.mistral.ai https://api.groq.com https://api.sarvam.ai https://generativelanguage.googleapis.com https://api.brevo.com https://challenges.cloudflare.com https://finflow-api.sadabmunshi.me",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://app.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://api.groq.com https://api.sarvam.ai https://generativelanguage.googleapis.com https://api.brevo.com https://challenges.cloudflare.com https://finflow-api.sadabmunshi.me",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
               "base-uri 'self'",
@@ -176,4 +179,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

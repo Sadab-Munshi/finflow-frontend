@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Loader2, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getCategoriesByType } from '@/lib/categories'
@@ -12,6 +13,7 @@ import { ManualForm } from './ManualTab'
 import { aiParseText } from '@/lib/api-client'
 
 export default function NLPTab() {
+  const t = useTranslations('add')
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
   const [textInput, setTextInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -50,7 +52,7 @@ export default function NLPTab() {
       txs.forEach(tx => { tx.date = validateTransactionDate(tx.date) })
       setParsedList(txs)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to parse. Please try again.')
+      toast.error(err instanceof Error ? err.message : t('parseFailure'))
     } finally {
       setLoading(false)
     }
@@ -180,7 +182,7 @@ export default function NLPTab() {
               color: '#9ca3af', fontSize: 13, fontFamily: FONT,
             }}
           >
-            Discard all
+            {t('discardAll')}
           </button>
         </div>
         {parsedList.map((p, i) => (
@@ -205,7 +207,7 @@ export default function NLPTab() {
             fontFamily: FONT,
           }}
         >
-          {isSubmitting ? 'Saving...' : `Save All (${parsedList.length})`}
+          {isSubmitting ? t('saving') : t('saveAll', { count: parsedList.length })}
         </button>
       </div>
     )
@@ -217,7 +219,7 @@ export default function NLPTab() {
       <div style={{ position: 'relative' }}>
         <textarea
           rows={4}
-          placeholder='e.g. "Spent 2000 on food and 290 on transport"'
+          placeholder={t('nlpPlaceholder')}
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
           style={{
@@ -249,8 +251,8 @@ export default function NLPTab() {
         }}
       >
         {loading
-          ? <><Loader2 size={18} className="animate-spin" /> Parsing...</>
-          : <><Sparkles size={18} /> Parse with AI</>
+          ? <><Loader2 size={18} className="animate-spin" /> {t('parsing')}</>
+          : <><Sparkles size={18} /> {t('parseWithAI')}</>
         }
       </button>
     </div>

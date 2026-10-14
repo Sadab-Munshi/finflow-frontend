@@ -2,17 +2,18 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import dynamic from 'next/dynamic'
 import { Toaster } from 'react-hot-toast'
-import { LanguageProvider } from '@/context/LanguageContext'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 import { UserProvider } from '@/context/UserContext'
 import AuthListener from '@/components/auth/AuthListener'
 import { WebsiteJsonLd, OrganizationJsonLd } from '@/components/JsonLd'
-import { cookies } from 'next/headers'
-import { v4 as uuidv4 } from 'uuid'
 import './globals.css'
 
 const PostHogProvider = dynamic(() => import('@/components/PostHogProvider'))
 const InstallPrompt = dynamic(() => import('@/components/ui/InstallPrompt'))
 const UpdateNotification = dynamic(() => import('@/components/UpdateNotification'))
+const PlatformGate = dynamic(() => import('@/components/PlatformGate'))
+const OnboardingModal = dynamic(() => import('@/components/auth/OnboardingModal'))
 
 export const viewport: Viewport = {
   themeColor: '#0d9488',
@@ -103,14 +104,12 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies()
-  let cookieId = cookieStore.get('finflow_visitor')?.value
-  if (!cookieId) {
-    cookieId = uuidv4()
-  }
+  const locale = await getLocale()
+  const messages = await getMessages()
+
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <WebsiteJsonLd />
         <OrganizationJsonLd />
@@ -131,11 +130,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={inter.className}>
         <PostHogProvider>
-          <LanguageProvider>
+          <NextIntlClientProvider locale={locale} messages={messages}>
             <UserProvider>
               <AuthListener />
               <UpdateNotification />
+              <PlatformGate />
               <InstallPrompt />
+              <OnboardingModal />
               {children}
               <Toaster
                 position="top-right"
@@ -146,7 +147,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 }}
               />
             </UserProvider>
-          </LanguageProvider>
+          </NextIntlClientProvider>
         </PostHogProvider>
       </body>
     </html>

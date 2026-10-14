@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import Layout from '@/components/layout/Layout'
-import { useLanguage } from '@/context/LanguageContext'
+import { useTranslations } from 'next-intl'
 import { getTransactionById, updateTransaction, deleteTransaction } from '@/lib/db'
 import { getCategoriesByType, getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, getTodayIndianDate } from '@/lib/utils'
@@ -81,7 +81,7 @@ function formatTimeDisplay(isoStr: string | undefined): string {
 export default function TransactionDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const { t } = useLanguage()
+  const t = useTranslations('transaction')
   const id = params.id as string
 
   const [transaction, setTransaction] = useState<Transaction | null>(null)

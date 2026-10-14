@@ -1,22 +1,24 @@
 'use client'
 
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { FlaskConical, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { identifyUser, track } from '@/lib/posthog'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import TurnstileWidget, { TurnstileInstance } from './TurnstileWidget'
+import TurnstileWidget from './TurnstileWidget'
+import { useInvisibleTurnstile } from './useInvisibleTurnstile'
 import GoogleButton from './GoogleButton'
 import MicrosoftButton from './MicrosoftButton'
 import AuthField from './AuthField'
 import AuthModeSwitcher from './AuthModeSwitcher'
 import AuthPrimaryButton from './AuthPrimaryButton'
 import { getEmailSuggestion } from './emailSuggestion'
-import { authVerifyTurnstile, authWelcomeEmail } from '@/lib/api-client'
+import { authVerifyTurnstile } from '@/lib/api-client'
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -27,11 +29,9 @@ type FormData = z.infer<typeof schema>
 type SubmitState = 'idle' | 'loading' | 'success'
 
 export default function LoginForm() {
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
-  const [turnstileError, setTurnstileError] = useState(false)
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [emailValue, setEmailValue] = useState('')
-  const turnstileRef = useRef<TurnstileInstance>(null)
+  const { turnstileRef, warmUp, acquireToken, reset: resetTurnstile, turnstileCallbacks, fallbackVisible: turnstileFallback } = useInvisibleTurnstile()
   const router = useRouter()
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
@@ -42,22 +42,20 @@ export default function LoginForm() {
   const emailLooksValid = z.string().email().safeParse(emailValue).success
 
   const onSubmit = async (data: FormData) => {
-    setTurnstileError(false)
-
-    if (!turnstileToken) {
-      setTurnstileError(true)
-      toast.error('Please complete the security verification')
-      return
-    }
-
     setSubmitState('loading')
     try {
-      const { success } = await authVerifyTurnstile(turnstileToken)
+      // Invisible Turnstile — the challenge fires now, on "Sign in" click.
+      const token = await acquireToken()
+      if (!token) {
+        toast.error('Security check failed. Please try again.')
+        resetTurnstile()
+        setSubmitState('idle')
+        return
+      }
+      const { success } = await authVerifyTurnstile(token)
       if (!success) {
         toast.error('Security check failed. Please try again.')
-        setTurnstileError(true)
-        turnstileRef.current?.reset()
-        setTurnstileToken(null)
+        resetTurnstile()
         setSubmitState('idle')
         return
       }
@@ -70,45 +68,15 @@ export default function LoginForm() {
 
       if (error) {
         toast.error(error.message)
-        turnstileRef.current?.reset()
-        setTurnstileToken(null)
+        resetTurnstile()
         setSubmitState('idle')
         return
       }
 
       const user = signInData?.user
       const userEmail = user?.email
-      if (user?.email_confirmed_at && userEmail) {
-        try {
-          let { data: settingsData } = await supabase
-            .from('settings')
-            .select('welcome_email_sent')
-            .eq('user_id', user.id)
-            .single()
-
-          if (!settingsData) {
-            await supabase.from('settings').upsert({
-              user_id: user.id,
-              monthly_report: true,
-              budget_alerts: true,
-              need_help: true,
-              welcome_email_sent: false,
-            }, { onConflict: 'user_id' })
-            settingsData = { welcome_email_sent: false }
-          }
-
-          if (!settingsData.welcome_email_sent) {
-            const fullName = user.user_metadata?.full_name || userEmail
-            await authWelcomeEmail(fullName, userEmail)
-            await supabase
-              .from('settings')
-              .upsert({ user_id: user.id, welcome_email_sent: true }, { onConflict: 'user_id' })
-          }
-        } catch (e) {
-          console.error('Welcome email check failed:', e)
-        }
-      }
-
+      track('login', { method: 'email' })
+      if (user?.id) identifyUser(user.id, userEmail ?? undefined)
       toast.success('Welcome back!')
       setSubmitState('success')
       router.push('/dashboard')
@@ -116,27 +84,9 @@ export default function LoginForm() {
     } catch (err) {
       console.error('Login error:', err)
       toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
-      turnstileRef.current?.reset()
-      setTurnstileToken(null)
+      resetTurnstile()
       setSubmitState('idle')
     }
-  }
-
-  const handleTurnstileSuccess = (token: string) => {
-    setTurnstileToken(token)
-    setTurnstileError(false)
-    toast.success('Security verified', { duration: 2000 })
-  }
-
-  const handleTurnstileError = () => {
-    setTurnstileToken(null)
-    setTurnstileError(true)
-  }
-
-  const handleTurnstileExpire = () => {
-    setTurnstileToken(null)
-    setTurnstileError(false)
-    turnstileRef.current?.reset()
   }
 
   const handleDemoCredentials = () => {
@@ -146,7 +96,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }}>
+    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }} onFocusCapture={warmUp}>
       <AuthModeSwitcher mode="login" />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -209,29 +159,6 @@ export default function LoginForm() {
             </Link>
           )}
         />
-        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-            <span className="inline-flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-teal-600" />
-              Verify you are human
-            </span>
-            <span className={turnstileToken ? 'text-teal-600' : 'text-slate-400'}>
-              {turnstileToken ? 'Success' : 'Security check'}
-            </span>
-          </div>
-          <TurnstileWidget
-            ref={turnstileRef}
-            theme="light"
-            className="mt-2"
-            onSuccess={handleTurnstileSuccess}
-            onError={handleTurnstileError}
-            onExpire={handleTurnstileExpire}
-          />
-          {turnstileError && (
-            <p className="mt-2 text-xs font-medium text-amber-600">Please wait for verification to finish.</p>
-          )}
-        </div>
-
         <AuthPrimaryButton
           type="submit"
           status={submitState}
@@ -252,6 +179,21 @@ export default function LoginForm() {
           Create a free account
         </Link>
       </p>
+
+      {/* Invisible Turnstile — fires on "Sign in"; a visible check appears only if the silent pass is not possible. */}
+      <TurnstileWidget
+        key={turnstileFallback ? 'visible' : 'invisible'}
+        ref={turnstileRef}
+        invisible={!turnstileFallback}
+        theme="light"
+        className={turnstileFallback ? 'mt-1 flex justify-center' : 'mt-2'}
+        {...turnstileCallbacks}
+      />
+      {turnstileFallback && submitState === 'loading' && (
+        <p className="text-center text-xs font-medium text-slate-500">
+          Complete the quick check above — we&apos;ll continue automatically.
+        </p>
+      )}
     </div>
   )
 }

@@ -11,12 +11,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Email confirmation (signup) - sign out and redirect to login
-      // Note: type param is standard Supabase callback param; even if manipulated,
-      // worst case is user is signed out and redirected to login (safe outcome)
+      // Email confirmation (signup): keep the fresh session and land on the
+      // dashboard, where the name-collection popup (OnboardingModal) appears.
       if (type === 'signup') {
-        await supabase.auth.signOut({ scope: 'local' })
-        return NextResponse.redirect(`${origin}/login?confirmed=true`)
+        return NextResponse.redirect(`${origin}/dashboard`)
       }
       return NextResponse.redirect(`${origin}${next}`)
     }

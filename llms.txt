@@ -1,0 +1,40 @@
+# finflow-frontend
+
+> Next.js 15 (App Router) + Supabase PWA for the FinFlow personal finance app.
+> Client pages fetch via Supabase (RLS) or the separate finflow-api backend.
+> Code is the source of truth; every doc cites file:line.
+
+## Entry
+
+- [AGENTS.md](docs/AGENTS.md): start here — commands, server/client rules, boundaries (audience: agents)
+- [README.md](README.md): what it is, quickstart, env setup, doc links
+- [CONTRIBUTING.md](CONTRIBUTING.md): setup, scripts, PR checklist
+
+## Architecture
+
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md): request flow, route groups, feature map, key flows, invariants
+- [ROUTES.md](docs/ROUTES.md): every path — auth level, rendering mode, loading map, /auth/callback
+- [AUTH.md](docs/AUTH.md): three Supabase clients, middleware, OAuth, Turnstile, listener, callback
+- [STATE.md](docs/STATE.md): UserContext, LanguageContext, fetch map, persistence map
+- [CONVENTIONS.md](docs/CONVENTIONS.md): naming, imports, use-client, data lanes, UX, i18n, forbidden
+- [DECISIONS.md](docs/DECISIONS.md): 8 reverse-engineered ADRs with evidence
+- [MIGRATION_NOTES.md](docs/MIGRATION_NOTES.md): monolith → frontend+API split, leftovers, conventions
+
+## Reference
+
+- [CONFIG.md](docs/CONFIG.md): every env var — public?, purpose, default, consumer
+- [SECRETS_MAP.md](docs/SECRETS_MAP.md): env exposure levels + rotation paths (names only)
+- [SCHEMA.md](docs/SCHEMA.md): the 7 RLS tables this app touches + API-only pointer
+- [ANALYTICS.md](docs/ANALYTICS.md): PostHog telemetry vs /analytics feature suite
+- [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md): Tailwind v4 tokens, shadcn/ui, teal accents
+- [DEBT.md](docs/DEBT.md): debt register with severities and fixes
+
+## Workflows
+
+- [DEPLOYMENT.md](docs/DEPLOYMENT.md): Vercel, env groups, verification files, SW versioning, rollback
+- [PWA.md](docs/PWA.md): manifest, service worker strategies, push wiring, update flow
+- [SEO.md](docs/SEO.md): metadata, sitemap/robots, JSON-LD, canonical host
+- [skills/add-page.md](skills/add-page.md): checklist — add a route/page
+- [skills/add-component.md](skills/add-component.md): checklist — add a component
+- [skills/add-api-call.md](skills/add-api-call.md): checklist — call finflow-api
+- [skills/add-translation.md](skills/add-translation.md): checklist — add an i18n string

@@ -20,5 +20,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 0.8,
     },
+    ...['/terms', '/privacy', '/disclaimer', '/support', '/user-guide'].map(
+      (path) => ({
+        url: `https://www.app.sadabmunshi.me${path}`,
+        lastModified: new Date(),
+        changeFrequency: 'yearly' as const,
+        priority: 0.3,
+      })
+    ),
   ]
 }

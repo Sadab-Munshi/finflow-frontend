@@ -1,6 +1,7 @@
 import { createClient } from './supabase/client'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { track } from './posthog'
 
 let supabaseClient: ReturnType<typeof createClient> | null = null
 
@@ -65,61 +66,78 @@ async function requestMultipart(path: string, formData: FormData) {
   return res.json()
 }
 
-async function internalRequest(path: string, options: RequestInit = {}) {
-  const internalSecret = process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || ''
-  const headers: Record<string, string> = {
-    'x-internal-secret': internalSecret,
-  }
-
-  if (options.headers) {
-    Object.assign(headers, options.headers)
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  })
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    throw new Error(error.error || `API error: ${res.status}`)
-  }
-
-  return res.json()
-}
-
 // ============ AI Endpoints ============
 
 export async function aiParseText(text: string) {
-  return request('/api/ai/parse-text', {
+  const result = await request('/api/ai/parse-text', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   })
+  track('ai_used', { feature: 'nlp' })
+  return result
 }
 
 export async function aiParseReceipt(base64: string, mimeType: string) {
-  return request('/api/ai/parse-receipt', {
+  const result = await request('/api/ai/parse-receipt', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ base64, mimeType }),
   })
+  track('ai_used', { feature: 'receipt' })
+  return result
 }
 
 export async function aiSpeechToText(formData: FormData) {
-  return requestMultipart('/api/ai/speech-to-text', formData)
+  const result = await requestMultipart('/api/ai/speech-to-text', formData)
+  track('ai_used', { feature: 'voice' })
+  return result
 }
 
 export async function aiInsights(transactions: unknown[]) {
-  return request('/api/ai/insights', {
+  const result = await request('/api/ai/insights', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transactions }),
   })
+  track('ai_used', { feature: 'insights' })
+  return result
 }
 
 export async function aiUsage() {
   return request('/api/ai/usage')
+}
+
+// Pre-signup check for the admin-set signup cap (finflow-api
+// src/routes/auth.ts). The DB trigger is the real enforcement; this only
+// drives the friendly UI. Callers must tolerate a failed call = "allowed".
+export interface SignupStatus {
+  allowed: boolean
+  limit: number | null
+  count: number | null
+  remaining?: number
+  mode?: 'open' | 'invite_only' | 'closed'
+  allowed_domains?: string[] | null
+  reason?: 'closed' | 'invite_only' | 'domain' | null
+}
+
+// Pass `email` to also evaluate the admin's allowed-domain list for that
+// specific address (domain extracted server-side).
+export async function authSignupStatus(email?: string): Promise<SignupStatus> {
+  const qs = email ? `?email=${encodeURIComponent(email)}` : ''
+  return request(`/api/auth/signup-status${qs}`)
+}
+
+// Public platform flags (maintenance / read-only / announcement). Never
+// throws semantically — callers fail open (treat an unreachable API as
+// "no maintenance") so the app never locks itself out on a network blip.
+export async function authAppStatus(): Promise<{
+  ok: boolean
+  maintenance: boolean
+  read_only: boolean
+  announcement: string | null
+}> {
+  return request('/api/auth/app-status')
 }
 
 export async function aiReportSummary(data: {
@@ -137,7 +155,39 @@ export async function aiReportSummary(data: {
   })
 }
 
+// ============ Feature Flags (PRD §8.4) ============
+
+// Evaluated per-user by the API (/api/flags/me) — enabled + environment +
+// percentage rollout + segment targeting already resolved server-side.
+// Treat a missing key as OFF (fail closed when flags are added/removed).
+export async function myFeatureFlags(): Promise<{ ok: boolean; flags: Record<string, boolean> }> {
+  return request('/api/flags/me')
+}
+
 // ============ Auth Endpoints ============
+
+export interface WaitlistJoinResult {
+  success: boolean
+  error?: string
+}
+
+export async function authWaitlistJoin(
+  email: string,
+  reason: 'closed' | 'invite_only' | 'capacity'
+): Promise<WaitlistJoinResult> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/waitlist-join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, reason }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) return { success: false, error: data.error || 'Could not join the waitlist' }
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Something went wrong. Please try again.' }
+  }
+}
 
 export async function authVerifyTurnstile(token: string) {
   return request('/api/auth/verify-turnstile', {
@@ -153,16 +203,6 @@ export async function authWelcomeEmail(fullName: string, email: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fullName, email }),
   })
-}
-
-// ============ Test Auth Endpoints ============
-
-export async function testAuth() {
-  return request('/api/test-auth')
-}
-
-export async function testAuthAdmin() {
-  return request('/api/test-auth/admin')
 }
 
 // ============ Notifications Endpoints ============
@@ -202,21 +242,19 @@ export async function sendNotification(data: {
   })
 }
 
-export async function budgetAlertCheck(userId: string) {
-  const botSecret = process.env.NEXT_PUBLIC_BOT_SECRET || ''
-  const res = await fetch(`${API_BASE}/api/notifications/budget-alert`, {
+// BLOCKED until finflow-api accepts JWT auth on this endpoint.
+// Required API change: mount authMiddleware on POST /api/notifications/budget-alert
+// (finflow-api src/routes/notifications.ts:161) so the existing Bearer branch,
+// which reads req.user.id, actually works. Today a JWT call returns 401 and the
+// caller (app/add/hooks/useTransaction.tsx:19) swallows the failure via .catch().
+export async function budgetAlertCheck(userId: string, category?: string) {
+  return request('/api/notifications/budget-alert', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-bot-secret': botSecret,
-    },
-    body: JSON.stringify({ user_id: userId }),
+    headers: { 'Content-Type': 'application/json' },
+    // Category-scoped when known: the email/in-app alert mentions only the
+    // category that just crossed (omitted → API evaluates all budgets).
+    body: JSON.stringify({ user_id: userId, ...(category ? { category } : {}) }),
   })
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    throw new Error(error.error || `API error: ${res.status}`)
-  }
-  return res.json()
 }
 
 // ============ Feedback Endpoints ============
@@ -235,68 +273,20 @@ export async function getReports() {
   return request('/api/reports')
 }
 
-// ============ Admin Endpoints ============
-
-export async function adminBan(data: {
-  userId?: string
-  action: 'ban' | 'unban' | 'ip_ban'
-  reason?: string
-  ipAddress?: string
-}) {
-  return request('/api/admin/ban', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-}
-
-export async function adminClearTestNotifications() {
-  return request('/api/admin/clear-test-notifications', { method: 'POST' })
-}
-
-export async function adminGetFeedback() {
-  return request('/api/admin/feedback')
-}
-
-export async function adminGetUsers() {
-  return request('/api/admin/users')
-}
-
-export async function adminSendNotification(data: {
-  type: string
-  title: string
-  message: string
-  icon?: string
-  link?: string
-  sendPush?: boolean
-  sendInApp?: boolean
-  sendEmail?: boolean
-  targetType: 'all' | 'specific'
-  userIds?: string[]
-}) {
-  return request('/api/admin/send-notification', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-}
-
-export async function adminVerify(password: string) {
-  return request('/api/admin/verify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
-  })
-}
-
 // ============ Ban Check Endpoints ============
+// BLOCKED until finflow-api accepts JWT auth on these endpoints.
+// Required API change (finflow-api src/routes/ban.ts:22,50): accept
+// Authorization: Bearer <user JWT> as an alternative to x-internal-secret —
+// verify via authMiddleware and restrict check-ban to userId === req.user.id
+// (self-service only). Until then both calls return 401; callers fail-open
+// (context/UserContext.tsx catch blocks treat errors as "not banned").
 
 export async function checkBan(userId: string) {
-  return internalRequest(`/api/check-ban?userId=${encodeURIComponent(userId)}`)
+  return request(`/api/check-ban?userId=${encodeURIComponent(userId)}`)
 }
 
 export async function checkIpBan(ipAddress: string) {
-  return internalRequest('/api/check-ip-ban', {
+  return request('/api/check-ip-ban', {
     headers: { 'x-forwarded-for': ipAddress },
   })
 }
@@ -308,6 +298,32 @@ export async function trackLogin(userId: string, email: string, ipAddress?: stri
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, email, ipAddress }),
+  })
+}
+
+// Presence ping. Goes THROUGH THE API (service role) rather than writing
+// user_heartbeat with the anon key — direct client upserts were being
+// silently RLS-rejected in prod, which is why "Online now" was always 0.
+export async function sendHeartbeat() {
+  return request('/api/track-login/heartbeat', { method: 'POST' })
+}
+
+// ============ Unified Bot Notify ============
+
+// Fire-and-forget: tell the unified finflow-bot a transaction was added via the
+// app so it can push a localized confirmation + budget alerts on linked
+// Telegram/WhatsApp. Never awaited by callers — failures are irrelevant to UX.
+export async function botNotifyTransaction(txn: {
+  amount: number
+  type: 'income' | 'expense'
+  category: string
+  date: string
+  note?: string
+}) {
+  return request('/api/bot-notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(txn),
   })
 }
 

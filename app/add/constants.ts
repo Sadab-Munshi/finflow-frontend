@@ -47,12 +47,20 @@ export function getTodayIST(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
 }
 
-export function formatDateDisplay(dateStr: string): string {
-  const today = getTodayIST()
+export function formatDateOnly(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  const formatted = `${d} ${months[m - 1]} ${y}`
-  return dateStr === today ? `Today, ${formatted}` : formatted
+  return `${d} ${months[m - 1]} ${y}`
+}
+
+export function isTodayIST(dateStr: string): boolean {
+  return dateStr === getTodayIST()
+}
+
+// Localized variant lives in the component (needs t()): isTodayIST ? t('today') + ', ' + formatDateOnly(date) : formatDateOnly(date)
+export function formatDateDisplay(dateStr: string): string {
+  const formatted = formatDateOnly(dateStr)
+  return isTodayIST(dateStr) ? `Today, ${formatted}` : formatted
 }
 
 export function resolveCategory(aiCategory: string): string {
@@ -68,10 +76,10 @@ export function resolveCategory(aiCategory: string): string {
 }
 
 export const tabsConfig = [
-  { id: 'manual', label: 'Manual', Icon: PenLine },
-  { id: 'nlp',    label: 'NLP',    Icon: Sparkles },
-  { id: 'voice',  label: 'Voice',  Icon: Mic },
-  { id: 'scan',   label: 'Scan',   Icon: ScanLine },
+  { id: 'manual', labelKey: 'tabManual', Icon: PenLine },
+  { id: 'nlp',    labelKey: 'tabNlp',    Icon: Sparkles },
+  { id: 'voice',  labelKey: 'tabVoice',  Icon: Mic },
+  { id: 'scan',   labelKey: 'tabScan',   Icon: ScanLine },
 ]
 
 export const WAVEFORM_BARS = Array.from({ length: 20 }).map((_, i) => ({
