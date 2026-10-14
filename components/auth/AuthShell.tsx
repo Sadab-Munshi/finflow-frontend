@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ArrowLeft, CircleHelp, ShieldCheck } from 'lucide-react'
 import AuthBrandPanel from './AuthBrandPanel'
 
-type AuthMode = 'login' | 'signup'
+type AuthMode = 'login' | 'signup' | 'set-password'
 
 interface AuthShellProps {
   mode: AuthMode
@@ -20,6 +20,11 @@ const copy = {
     eyebrow: '',
     heading: 'Create your account',
     subtitle: 'Set up your personal finance workspace in just a few calm minutes.',
+  },
+  'set-password': {
+    eyebrow: 'One last step',
+    heading: 'Create your password',
+    subtitle: 'Choose a password for your new FinFlow account — you will use your email and this password to sign in from now on.',
   },
 }
 
@@ -38,7 +43,7 @@ export default function AuthShell({ mode, children }: AuthShellProps) {
 
   return (
     <main className="min-h-[100dvh] bg-slate-50 text-slate-950 lg:grid lg:grid-cols-[48%_52%]">
-      <AuthBrandPanel mode={mode} />
+      <AuthBrandPanel mode={mode === 'set-password' ? 'login' : mode} />
 
       <section className="auth-dot-grid relative flex min-h-[100dvh] flex-col overflow-hidden px-5 py-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-8 lg:px-12">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-56 lg:hidden" aria-hidden="true">
