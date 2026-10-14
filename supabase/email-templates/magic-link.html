@@ -1,0 +1,102 @@
+<!-- Supabase Dashboard → Authentication → Emails → "Magic link or OTP"
+     Subject: 🔐 Your FinFlow sign-in link -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your FinFlow sign-in link</title>
+  <style>
+    @media (max-width:600px) {
+      .outer-wrap  { padding:12px 8px !important; }
+      .heading     { font-size:20px !important; }
+      .cta-btn     { display:block !important; width:100% !important; box-sizing:border-box !important; text-align:center !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" class="outer-wrap" style="background:#f9fafb;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.07);overflow:hidden;">
+
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding:36px 28px 8px;">
+              <img src="https://app.sadabmunshi.online/images/finflow-logo.png" alt="FinFlow" height="52" style="height:52px;width:auto;display:block;" />
+            </td>
+          </tr>
+
+          <!-- Heading -->
+          <tr>
+            <td align="center" style="padding:20px 32px 4px;">
+              <p class="heading" style="margin:0;font-size:22px;font-weight:700;color:#111827;">
+                Your <span style="color:#10b981;">sign-in</span> link &#128274;
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:16px 32px 8px;">
+              <p style="margin:0;font-size:15px;line-height:1.7;color:#4b5563;">
+                Tap the button below to sign in to FinFlow — no password needed.
+                This link only works once and expires shortly.
+              </p>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td align="center" style="padding:24px 32px 8px;">
+              <a class="cta-btn" href="{{ .ConfirmationURL }}"
+                 style="display:inline-block;background:#10b981;color:#ffffff;font-size:16px;font-weight:700;padding:15px 42px;border-radius:10px;text-decoration:none;">
+                Sign in to FinFlow &#8594;
+              </a>
+            </td>
+          </tr>
+
+          <!-- OTP fallback -->
+          <tr>
+            <td align="center" style="padding:20px 32px 0;">
+              <p style="margin:0 0 6px;font-size:12px;color:#9ca3af;">Prefer a code? Enter this on the sign-in screen:</p>
+              <p style="margin:0;font-family:'Courier New',Courier,monospace;font-size:26px;font-weight:700;letter-spacing:8px;color:#111827;">{{ .Token }}</p>
+            </td>
+          </tr>
+
+          <!-- Fallback link -->
+          <tr>
+            <td style="padding:22px 32px 0;">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;">
+                Button not working? Copy and paste this link into your browser:<br>
+                <a href="{{ .ConfirmationURL }}" style="color:#14b8a6;word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:24px 32px 0;">
+              <hr style="border:none;border-top:1px solid #f0fdf4;margin:0;">
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 32px 28px;">
+              <p style="margin:0 0 8px;font-size:12px;line-height:1.7;color:#9ca3af;">
+                If you didn&#39;t request this sign-in link, someone may have mistyped their email
+                address. You can safely ignore this message.
+              </p>
+              <p style="margin:0;font-size:11px;color:#d1d5db;">
+                &#169; FinFlow · <a href="https://app.sadabmunshi.online" style="color:#14b8a6;text-decoration:none;">app.sadabmunshi.online</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
