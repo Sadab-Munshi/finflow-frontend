@@ -44,7 +44,9 @@ out. **Rendering**: RSC = server component, CC = `'use client'` page.
 
 | Path | File | Auth | Notes |
 |---|---|---|---|
-| `/auth/callback` | `app/auth/callback/route.ts` | Public | GET only. `code` → `exchangeCodeForSession`; `type=signup` → sign-out + `/login?confirmed=true`; `next` param (default `/dashboard`); failure → `/login?error=auth_callback_error` |
+| `/auth/callback` | `app/auth/callback/route.ts` | Public | GET only. `code` → `exchangeCodeForSession`; `type=signup` → dashboard + onboarding modal; `next` param (default `/dashboard`); failure → `/login?error=auth_callback_error` |
+| `/auth/complete` | `app/auth/complete/page.tsx` | Public (CC) | Fragment-token landing for **admin-issued waitlist invites** (`type=invite`): GoTrue `/verify` has no PKCE code — only `#access_token=…&refresh_token=…`. Parses the hash, `setSession` on the SSR browser client, scrubs the hash, `type=invite` → `/auth/set-password`, else `next` or `/dashboard`. Hash-error cards show single-use / forgot-password escape hatches |
+| `/auth/set-password` | `app/auth/set-password/page.tsx` | Session-gated (CC) | Mandatory password creation for invited users (inviteUserByEmail makes accounts with **no password**; the app is password-only). `updateUser({ password })` on ≥8-char + match → `/dashboard`. No-session → expired-link card with forgot-password hint |
 | `/sitemap.xml` | `app/sitemap.ts` | Public | 8 URLs: `/`, `/login`, `/signup` + `/terms`, `/privacy`, `/disclaimer`, `/support`, `/user-guide` (`:23`) — see `docs/SEO.md` |
 | `/robots.txt` | `public/robots.txt` | Public | static; sitemap URL host differs from `metadataBase` (`docs/SEO.md`) |
 | `/site.webmanifest` · `/sw.js` · icons | `public/` | Public | PWA surface — `docs/PWA.md`; `/sw.js` served `must-revalidate` (`next.config.ts:166-173`) |
@@ -83,6 +85,21 @@ Email confirm link (type=signup) ──▶ /auth/callback?code=…&type=signup
 (the comment at `route.ts:14-16` documents the deliberate sign-out so new signups
 start unauthenticated).
 
+## Waitlist invite continuation (type=invite)
+
+```
+Supabase admin invite email ──▶ GoTrue /auth/v1/verify (user created server-side)
+                                    │ 302 with fragment tokens only — NO ?code=
+                                    ▼
+                    /auth/complete#access_token=…&refresh_token=…&type=invite
+                                    │
+              setSession (client page — server routes never see fragments)
+                                    ├─ type=invite → /auth/set-password (mandatory)
+                                    │                  └─ updateUser({ password }) → /dashboard
+                                    └─ otherwise → /{next|/dashboard}
+```
+The redirect target is set server-side in finflow-api (`$APP_URL/auth/complete`);
+the URL must be in Supabase → Authentication → URL Configuration → Redirect URLs.
 ## Middleware matcher coverage
 
 `middleware.ts:9-11` runs on all paths **except** `_next/static`, `_next/image`,

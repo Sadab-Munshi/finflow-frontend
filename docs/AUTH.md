@@ -1,7 +1,7 @@
 ---
 name: auth
-description: Authentication — middleware rules, the three Supabase clients, OAuth, email+Turnstile, listener, callback
-last_updated: 2026-10-06
+description: Authentication — middleware rules, the three Supabase clients, OAuth, email+Turnstile, waitlist + admin invites, listener, callback
+last_updated: 2026-10-14
 audience: [human, agent]
 related: [architecture, routes, state, agents]
 ---
@@ -103,3 +103,36 @@ There is no manual refresh code and no client-side refresh endpoints: `ssr`
 clients auto-rotate on `getUser()`; the middleware path is the refresh engine
 (invariant #1, `docs/ARCHITECTURE.md`). finflow-api calls just take
 `session?.access_token` per request (`lib/api-client.ts:14-18`).
+
+
+---
+
+## October 2026 overhaul (current behavior)
+
+- **Single-column auth shell** (`components/auth/AuthShell.tsx`, AuthMode
+  `login` | `signup` | `set-password`): calm-brand card, dot-grid backdrop,
+  logo + heading, no hero panel.
+- **2-field signup** (email + password) with **invisible Cloudflare
+  Turnstile** pre-warmed on mount; a visible fallback check auto-appears if
+  the silent pass can't complete (Managed keys). Signup confirm keeps the
+  session and lands on `/dashboard` where **OnboardingModal** collects the
+  display name — required, no skip; welcome email fires on save.
+- **Reason-aware signup gating** via platform controls: open / invite-only /
+  closed / capacity. Any blocked mode renders **SignupClosedCard** with an
+  email capture → `POST /api/auth/waitlist-join` (`signup_waitlist` table,
+  duplicate-safe; never reveals if the email already registered).
+- **Admin waitlist invites**: the Vertex panel sends Supabase
+  `inviteUserByEmail` links. Those return **fragment tokens**
+  (`#access_token=…`), not `?code=`, so the `/auth/callback` route handler
+  can't see them — `/auth/complete` (client page) restores the session via
+  `setSession`, then routes `type=invite` to the **mandatory
+  `/auth/set-password` screen** (invited accounts have no password and the
+  app is password-only). One-time links: a consumed/expired token renders a
+  branded error card pointing at Forgot-password as the recovery hatch.
+- Branded auth email templates (invite / magic-link / confirm-signup /
+  reset-password) live in `supabase/email-templates/` with paste-in
+  instructions — the dashboard templates don't auto-sync.
+
+Ban enforcement continues in middleware (`user_management.is_banned`);
+`docs/DECISIONS.md` keeps the aal2 rule for admin-only surfaces (Vertex now
+serves that role — the in-app admin pages were removed 2026-10-06).
