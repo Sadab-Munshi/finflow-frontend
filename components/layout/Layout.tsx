@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, History, PiggyBank, BarChart2, FileText, Settings,
-  User, PenLine, LogOut, PanelLeftClose, Menu, Plus, Mic, Camera, Sparkles, TrendingUp
+  User, PenLine, LogOut, PanelLeftClose, Menu, Plus, Mic, Camera, Sparkles, TrendingUp, Crown
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
@@ -22,6 +22,7 @@ const sidebarNavItems = [
   { path: '/insights', icon: BarChart2, labelKey: 'insights' },
   { path: '/analytics', icon: TrendingUp, labelKey: 'analytics' },
   { path: '/reports', icon: FileText, labelKey: 'reports' },
+  { path: '/subscription', icon: Crown, labelKey: 'subscription' },
   { path: '/settings', icon: Settings, labelKey: 'settings' },
 ]
 

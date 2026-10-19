@@ -34,6 +34,7 @@ export async function updateSession(request: NextRequest) {
     '/budgets',
     '/insights',
     '/reports',
+    '/subscription',
     '/settings',
     '/transaction',
     '/profile',

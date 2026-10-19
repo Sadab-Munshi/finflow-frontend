@@ -852,6 +852,14 @@ export default function ProfilePage() {
                       />
                     </div>
                     <p className="text-xs text-[#64748B]">{t('aiReset')}</p>
+                    <div className="pt-2">
+                      <Link
+                        href="/subscription"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A7B7B] hover:bg-[#086464] text-white text-xs font-semibold transition-colors shadow-sm"
+                      >
+                        Upgrade AI Limits · Pro & ₹1 Test Pass →
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-[#64748B]">{t('loadingUsage')}</p>

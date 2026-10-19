@@ -59,13 +59,15 @@ Production: `npm run build && npm start`. Deploy is Vercel (see `docs/DEPLOYMENT
   with forgot-password recovery)
 - Platform control surfaces from Vertex: **maintenance lockout screen**,
   read-only + announcement banners, per-user evaluated **feature flags**
+- **YOUPI PG Subscription & Pro Plans (`/subscription`)**: Zero-fee UPI QR & Intent
+  checkout modal (`lib/youpi-checkout.ts`) connected to `https://pay.sadabmunshi.me`,
+  with 4 plans (`Free`, `₹1 Live Test Pass`, `Pro Monthly ₹99`, `Pro Yearly ₹999`),
+  live AI quota meters (`1x`, `2x`, `5x`, `Unlimited`), and real-time order verification
+  (migration `013_subscriptions_and_payments.sql`)
 - en/hi/bn i18n · installable PWA with offline shell + push
 - PostHog product analytics incl. instrumented events
   (`signup_completed`, `login`, `transaction_added`, `ai_used`) that power the
   admin funnels/cohorts ([docs/PLATFORM_CONTROLS.md](docs/PLATFORM_CONTROLS.md))
-=======
-- Auth: email + Cloudflare Turnstile, Google/Microsoft OAuth, ban enforcement
-- en/hi/bn i18n · installable PWA with offline shell + push · PostHog analyti
 
 ## Documentation
 
@@ -86,6 +88,10 @@ Production: `npm run build && npm start`. Deploy is Vercel (see `docs/DEPLOYMENT
 
 Legacy agent context: [CLAUDE.md](CLAUDE.md) — where it conflicts with `docs/`,
 **docs/ and the code win**.
+
+## Acknowledgments
+
+The **YOUPI PG** production hardening and end-to-end FinFlow subscription gateway integration were engineered with **Arena.ai Agent Mode** — a helpful agentic assistant on [Arena.ai](https://arena.ai) (Arena.ai's Agent Mode uses many different frontier models, including Claude, ChatGPT, Gemini, Grok, Qwen, and Kimi).
 
 ## License
 
