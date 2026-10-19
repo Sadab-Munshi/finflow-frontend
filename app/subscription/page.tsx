@@ -150,22 +150,23 @@ export default function SubscriptionPage() {
   const fetchStatus = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     try {
-      const res = await getSubscriptionStatus()
-      if (res.ok && res.data) {
-        if (Array.isArray(res.data.plans) && res.data.plans.length > 0) {
-          setPlans(res.data.plans)
+      const raw = await getSubscriptionStatus()
+      const payload = raw?.data ? raw.data : raw
+      if (payload) {
+        if (Array.isArray(payload.plans) && payload.plans.length > 0) {
+          setPlans(payload.plans)
         }
-        if (res.data.subscription) {
-          setSubscription(res.data.subscription)
+        if (payload.subscription) {
+          setSubscription(payload.subscription)
         }
-        if (res.data.usage) {
-          setUsage(res.data.usage)
+        if (payload.usage) {
+          setUsage(payload.usage)
         }
-        if (Array.isArray(res.data.orders)) {
-          setOrders(res.data.orders)
+        if (Array.isArray(payload.orders)) {
+          setOrders(payload.orders)
         }
-        if (res.data.sdkUrl) {
-          setSdkUrl(res.data.sdkUrl)
+        if (payload.sdkUrl) {
+          setSdkUrl(payload.sdkUrl)
         }
       }
     } catch (err) {
@@ -183,11 +184,12 @@ export default function SubscriptionPage() {
     async (orderId: string, paymentId?: string, utr?: string) => {
       setVerifyingOrderId(orderId)
       try {
-        const res = await verifySubscriptionPayment({ orderId, paymentId, utr })
-        if (res.ok && res.data?.verified) {
+        const raw = await verifySubscriptionPayment({ orderId, paymentId, utr })
+        const payload = raw?.data ? raw.data : raw
+        if (payload?.verified) {
           setNotice({
             type: "success",
-            title: `Subscription Activated: ${res.data.subscription?.planName || "FinFlow Pro"}!`,
+            title: `Subscription Activated: ${payload.subscription?.planName || "FinFlow Pro"}!`,
             description: "Your AI quotas have been upgraded immediately.",
           })
           await fetchStatus(true)
@@ -195,18 +197,27 @@ export default function SubscriptionPage() {
         } else {
           setNotice({
             type: "info",
-            title: res.data?.error || "Payment is still being verified by YOUPI PG.",
+            title: payload?.error || "Payment is still being verified by YOUPI PG.",
             description:
               "Once your bank email alert arrives (~5–15 seconds), your plan will activate automatically.",
           })
           await fetchStatus(true)
           return false
         }
-      } catch {
+      } catch (err: any) {
+        const msg = err?.message || "Payment is still being verified by YOUPI PG."
+        const isPendingMsg =
+          msg.toLowerCase().includes("not yet completed") ||
+          msg.toLowerCase().includes("initiated") ||
+          msg.toLowerCase().includes("pending")
         setNotice({
-          type: "error",
-          title: "Could not verify payment status right now.",
+          type: isPendingMsg ? "info" : "error",
+          title: msg,
+          description: isPendingMsg
+            ? "Once your bank email alert arrives (~5–15 seconds), click Verify Status or Refresh Status."
+            : undefined,
         })
+        await fetchStatus(true)
         return false
       } finally {
         setVerifyingOrderId(null)
@@ -221,11 +232,12 @@ export default function SubscriptionPage() {
     setNotice(null)
 
     try {
-      const orderRes = await createSubscriptionOrder(plan.id)
-      if (!orderRes.ok || !orderRes.data?.checkoutUrl) {
+      const raw = await createSubscriptionOrder(plan.id)
+      const orderData = raw?.data ? raw.data : raw
+      if (!orderData?.checkoutUrl && !orderData?.paymentId) {
         setNotice({
           type: "error",
-          title: orderRes.data?.error || "Failed to initiate YOUPI PG payment session",
+          title: orderData?.error || "Failed to initiate YOUPI PG payment session",
         })
         setProcessingPlan(null)
         return
@@ -238,14 +250,14 @@ export default function SubscriptionPage() {
         amount,
         sdkUrl: orderSdkUrl,
         customer,
-      } = orderRes.data
+      } = orderData
 
       await openYoupiCheckout({
         sdkUrl: orderSdkUrl || sdkUrl,
         checkoutUrl,
         paymentId,
         orderId,
-        amount,
+        amount: amount || plan.priceInr.toFixed(2),
         currency: "INR",
         name: "FinFlow Pro",
         description: `${plan.name} (${plan.durationDays} Days)`,
@@ -566,7 +578,7 @@ export default function SubscriptionPage() {
                         {plan.id === "free"
                           ? "/ forever"
                           : plan.id === "test_1inr"
-                          ? "/ 24 hours"
+                          ? `/ ${plan.durationDays || 1} day${(plan.durationDays || 1) > 1 ? "s" : ""}`
                           : plan.id === "pro_monthly"
                           ? "/ month"
                           : "/ year"}

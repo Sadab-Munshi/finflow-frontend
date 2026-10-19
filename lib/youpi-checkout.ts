@@ -51,14 +51,45 @@ declare global {
 
 let sdkLoadPromise: Promise<boolean> | null = null
 
+export function resolvePortalOrigin(sdkUrl?: string): string {
+  const configured = (
+    process.env.NEXT_PUBLIC_YOUPI_CHECKOUT_URL || 'https://pay.sadabmunshi.me'
+  ).replace(/\/+$/, '')
+  if (sdkUrl) {
+    try {
+      return new URL(sdkUrl).origin
+    } catch {
+      // ignore invalid URL
+    }
+  }
+  return configured
+}
+
+export function normalizeCheckoutUrl(
+  rawCheckoutUrl: string | undefined,
+  paymentId: string,
+  sdkUrl?: string
+): string {
+  const portalOrigin = resolvePortalOrigin(sdkUrl)
+  if (!rawCheckoutUrl) {
+    return `${portalOrigin}/checkout/${encodeURIComponent(paymentId)}`
+  }
+  if (
+    rawCheckoutUrl.includes('localhost') ||
+    rawCheckoutUrl.includes('127.0.0.1') ||
+    rawCheckoutUrl.includes('gauravtesting.online')
+  ) {
+    return `${portalOrigin}/checkout/${encodeURIComponent(paymentId)}`
+  }
+  return rawCheckoutUrl
+}
+
 export function loadYoupiSdk(sdkUrl?: string): Promise<boolean> {
   if (typeof window === 'undefined') return Promise.resolve(false)
   if (window.YoupiCheckout) return Promise.resolve(true)
   if (sdkLoadPromise) return sdkLoadPromise
 
-  const resolvedUrl =
-    sdkUrl ||
-    `${(process.env.NEXT_PUBLIC_YOUPI_CHECKOUT_URL || 'https://pay.sadabmunshi.me').replace(/\/+$/, '')}/youpi.js`
+  const resolvedUrl = sdkUrl || `${resolvePortalOrigin()}/youpi.js`
 
   sdkLoadPromise = new Promise<boolean>((resolve) => {
     const existing = document.querySelector<HTMLScriptElement>(
@@ -159,8 +190,9 @@ function ensureFallbackStyles() {
 function openFallbackModal(options: OpenYoupiCheckoutOptions) {
   ensureFallbackStyles()
 
-  const sep = options.checkoutUrl.includes('?') ? '&' : '?'
-  let targetUrl = `${options.checkoutUrl}${sep}embedded=1`
+  const normalizedUrl = normalizeCheckoutUrl(options.checkoutUrl, options.paymentId, options.sdkUrl)
+  const sep = normalizedUrl.includes('?') ? '&' : '?'
+  let targetUrl = `${normalizedUrl}${sep}embedded=1`
   if (options.amount) {
     targetUrl += `&customAmount=${encodeURIComponent(String(options.amount))}`
   }
@@ -259,6 +291,12 @@ function openFallbackModal(options: OpenYoupiCheckoutOptions) {
 }
 
 export async function openYoupiCheckout(options: OpenYoupiCheckoutOptions): Promise<void> {
+  const normalizedCheckoutUrl = normalizeCheckoutUrl(
+    options.checkoutUrl,
+    options.paymentId,
+    options.sdkUrl
+  )
+  const portalUrl = resolvePortalOrigin(options.sdkUrl)
   const loaded = await loadYoupiSdk(options.sdkUrl)
 
   if (loaded && typeof window !== 'undefined' && window.YoupiCheckout) {
@@ -266,7 +304,8 @@ export async function openYoupiCheckout(options: OpenYoupiCheckoutOptions): Prom
       orderId: options.orderId,
       order_id: options.orderId,
       paymentId: options.paymentId,
-      checkoutUrl: options.checkoutUrl,
+      checkoutUrl: normalizedCheckoutUrl,
+      portalUrl,
       amount: options.amount,
       currency: options.currency || 'INR',
       name: options.name || 'FinFlow Pro',
@@ -282,5 +321,8 @@ export async function openYoupiCheckout(options: OpenYoupiCheckoutOptions): Prom
     return
   }
 
-  openFallbackModal(options)
+  openFallbackModal({
+    ...options,
+    checkoutUrl: normalizedCheckoutUrl,
+  })
 }
