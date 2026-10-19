@@ -388,3 +388,77 @@ export async function pushGetVapidPublicKey() {
 export async function healthCheck() {
   return request('/api/health')
 }
+
+// ============ Subscriptions & YOUPI PG Payments ============
+
+export type PlanId = 'free' | 'test_1inr' | 'pro_monthly' | 'pro_yearly'
+
+export interface SubscriptionPlan {
+  id: PlanId
+  name: string
+  tagline: string
+  priceInr: number
+  pricePaise: number
+  durationDays: number
+  aiMultiplier: number
+  unlimitedAi: boolean
+  badge?: string
+  features: string[]
+}
+
+export interface UserSubscriptionStatus {
+  userId: string
+  planId: PlanId
+  planName: string
+  status: 'active' | 'expired' | 'cancelled'
+  currentPeriodStart: string
+  currentPeriodEnd: string | null
+  aiMultiplier: number
+  unlimitedAi: boolean
+  lastOrderId?: string | null
+  lastPaymentId?: string | null
+  lastUtr?: string | null
+}
+
+export interface PaymentOrderRecord {
+  order_id: string
+  payment_id: string
+  user_id: string
+  plan_id: PlanId
+  amount_inr: number
+  currency: string
+  status: 'INITIATED' | 'PENDING' | 'SUCCESS' | 'FAILED' | 'EXPIRED' | 'CANCELLED' | 'SUSPICIOUS'
+  utr?: string | null
+  payment_method?: string | null
+  checkout_url?: string | null
+  created_at?: string
+  paid_at?: string | null
+}
+
+export async function getSubscriptionPlans() {
+  return request('/api/payments/plans')
+}
+
+export async function getSubscriptionStatus() {
+  return request('/api/payments/subscription')
+}
+
+export async function createSubscriptionOrder(planId: Exclude<PlanId, 'free'>) {
+  return request('/api/payments/create-order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ planId }),
+  })
+}
+
+export async function verifySubscriptionPayment(data: {
+  orderId: string
+  paymentId?: string
+  utr?: string
+}) {
+  return request('/api/payments/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
