@@ -5,13 +5,11 @@ import Link from 'next/link'
 import {
   Sparkles,
   Calendar,
-  CheckCircle2,
   ArrowUpRight,
   ReceiptText,
   Clock,
   ShieldCheck,
   Crown,
-  Zap,
 } from 'lucide-react'
 import { BorderBeam } from 'border-beam'
 import {
@@ -45,17 +43,21 @@ export function CurrentPlanCard({
   const isExpiringSoon =
     daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 5
 
-  const multiplier = Math.max(1, Number(subscription?.aiMultiplier) || (subscription?.planId === 'pro_monthly' ? 5 : subscription?.planId === 'test_1inr' ? 2 : 1))
+  const multiplier = Math.max(
+    1,
+    Number(subscription?.aiMultiplier) ||
+      (subscription?.planId === 'pro_monthly'
+        ? 5
+        : subscription?.planId === 'test_1inr'
+        ? 2
+        : 1)
+  )
 
   const quotaHeadline = subscription?.unlimitedAi
-    ? 'High-Capacity Quota (9,999/mo)'
+    ? 'High-Capacity 9,999/mo'
     : multiplier > 1
-    ? `${multiplier}× Monthly AI Boost Active`
-    : 'Standard Monthly AI Allowance'
-
-  const tierQuotaSummary = subscription?.unlimitedAi
-    ? '9,999 Smart · 9,999 Scans · 9,999 Voice · 9,999 Insights / mo'
-    : `${60 * multiplier} Smart · ${30 * multiplier} Scans · ${50 * multiplier} Voice · ${10 * multiplier} Insights / mo`
+    ? `${multiplier}× AI Allowance`
+    : 'Standard AI Allowance'
 
   if (isPaidActive) {
     return (
@@ -67,104 +69,89 @@ export function CurrentPlanCard({
           theme="dark"
           borderRadius={20}
         >
-          <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-[#042F2E] via-[#0F172A] to-[#134E4A] text-white border border-amber-400/30 shadow-xl">
-            {/* Ambient radial highlights */}
+          <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-[#042F2E] via-[#0F172A] to-[#115E59] text-white border border-amber-400/30 shadow-lg">
+            {/* Subtle ambient glow */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-amber-400/15 blur-3xl"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-teal-400/15 blur-3xl"
+              className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full bg-amber-400/15 blur-3xl"
             />
 
-            <div className="relative z-10 p-5 sm:p-7">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                {/* Left: Pro Identity & Validity */}
-                <div className="space-y-3.5 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 shadow-md">
-                      <Crown className="w-3.5 h-3.5 fill-slate-950 shrink-0" />
-                      <span>{isExpiringSoon ? 'Pro Expiring Soon' : 'Active Pro Pass'}</span>
-                    </span>
-
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-200 border border-teal-400/30 backdrop-blur-xs">
-                      <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300 shrink-0" />
-                      <span>{quotaHeadline}</span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-400/25 via-teal-400/20 to-amber-500/25 border border-amber-300/40 flex items-center justify-center shadow-inner shrink-0">
-                      <Crown className="w-6 h-6 sm:w-7 sm:h-7 text-amber-300 fill-amber-300/30" />
+            <div className="relative z-10 p-4 sm:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-5">
+                {/* Left: Compact Pro Header + Validity */}
+                <div className="space-y-3 min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-amber-400/25 to-teal-400/20 border border-amber-300/40 flex items-center justify-center shrink-0">
+                        <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 fill-amber-300/30" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-400 text-slate-950">
+                            {isExpiringSoon ? 'Expiring Soon' : 'Active Pro'}
+                          </span>
+                          <span className="text-xs font-semibold text-teal-200">
+                            · {quotaHeadline}
+                          </span>
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight truncate mt-0.5">
+                          {planName}
+                        </h2>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-amber-300/90">
-                        FinFlow Pro Membership
-                      </p>
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-0.5">
-                        {planName}
-                      </h2>
-                    </div>
-                  </div>
 
-                  {/* Unlocked Allowance Pill */}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs sm:text-sm font-medium text-teal-100">
-                    <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
-                    <span>Unlocked Allowance: <strong className="text-white font-semibold">{tierQuotaSummary}</strong></span>
-                  </div>
-
-                  {/* Validity & renewal explanation */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-slate-200 pt-0.5">
-                    {subscription?.currentPeriodEnd && (
-                      <span className="inline-flex items-center gap-1.5 font-semibold text-white">
-                        <Calendar className="w-4 h-4 text-amber-300 shrink-0" />
-                        Valid until {formatLocalizedDate(subscription.currentPeriodEnd)}
-                      </span>
-                    )}
                     {daysRemaining !== null && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-bold text-xs">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-bold text-[11px] whitespace-nowrap shrink-0">
                         {daysRemaining === 0
                           ? 'Expires today'
                           : daysRemaining === 1
-                          ? '1 day remaining'
-                          : `${daysRemaining} days remaining`}
+                          ? '1 day left'
+                          : `${daysRemaining} days left`}
                       </span>
                     )}
-                    <span className="text-slate-300/80 text-xs">
-                      · Prepaid pass (no automatic renewal)
+                  </div>
+
+                  {/* Single clean validity bar */}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-200 bg-white/8 border border-white/10 rounded-xl px-3 py-2">
+                    {subscription?.currentPeriodEnd && (
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-white">
+                        <Calendar className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                        Valid until {formatLocalizedDate(subscription.currentPeriodEnd)}
+                      </span>
+                    )}
+                    <span className="text-slate-300/80">
+                      · Prepaid pass (no auto-debit)
                     </span>
                   </div>
                 </div>
 
-                {/* Right: Primary & Secondary Actions */}
-                <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-center gap-3 shrink-0">
+                {/* Right: Side-by-side compact buttons on mobile */}
+                <div className="grid grid-cols-2 sm:flex sm:flex-row items-center gap-2.5 shrink-0">
                   <button
                     type="button"
                     onClick={onUpgradeClick}
-                    className="inline-flex items-center justify-center gap-2 min-h-[46px] px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 text-sm font-extrabold shadow-lg shadow-amber-500/20 transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                    className="inline-flex items-center justify-center gap-1.5 min-h-[42px] px-3.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-[0.99] whitespace-nowrap"
                   >
-                    <span>Extend or Switch Pass</span>
-                    <ArrowUpRight className="w-4 h-4 shrink-0" />
+                    <span>Extend Pass</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                   </button>
 
                   {latestPaidOrder && onViewLatestReceipt ? (
                     <button
                       type="button"
                       onClick={() => onViewLatestReceipt(latestPaidOrder)}
-                      className="inline-flex items-center justify-center gap-1.5 min-h-[46px] px-4 py-2.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white text-sm font-semibold backdrop-blur-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[42px] px-3.5 sm:px-4 py-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap"
                     >
-                      <ReceiptText className="w-4 h-4 text-amber-300 shrink-0" />
-                      <span>Latest Receipt</span>
+                      <ReceiptText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0" />
+                      <span>Receipt</span>
                     </button>
                   ) : (
                     <Link
                       href="/subscription/payments"
-                      className="inline-flex items-center justify-center gap-1.5 min-h-[46px] px-4 py-2.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white text-sm font-semibold backdrop-blur-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[42px] px-3.5 sm:px-4 py-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap"
                     >
-                      <ReceiptText className="w-4 h-4 text-amber-300 shrink-0" />
-                      <span>Payment History</span>
+                      <ReceiptText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0" />
+                      <span>History</span>
                     </Link>
                   )}
                 </div>
@@ -181,78 +168,67 @@ export function CurrentPlanCard({
       <BorderBeam
         size="md"
         colorVariant="ocean"
-        strength={0.65}
+        strength={0.6}
         theme="light"
         borderRadius={20}
       >
-        <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-white via-[#F0FDFA] to-[#CCFBF1]/40 border border-[#99F6E4] shadow-md">
-          <div className="p-5 sm:p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-              {/* Plan identity & validity */}
-              <div className="space-y-3 min-w-0">
+        <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-white via-[#F0FDFA] to-[#CCFBF1]/35 border border-[#99F6E4] shadow-sm">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="space-y-2 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   {isExpired ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
                       <Clock className="w-3.5 h-3.5 shrink-0" />
-                      Pass Ended · Free Starter Active
+                      Pass Ended · Free Starter
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#0F766E] text-white shadow-xs">
-                      <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#0F766E] text-white">
+                      <Sparkles className="w-3 h-3 shrink-0" />
                       Free Plan
                     </span>
                   )}
-
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white text-[#0F766E] border border-[#99F6E4]">
-                    {quotaHeadline}
+                  <span className="text-xs font-semibold text-[#0F766E]">
+                    · {quotaHeadline}
                   </span>
                 </div>
 
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#0F766E]">
-                    Current Plan
-                  </p>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight mt-0.5">
-                    {planName}
-                  </h2>
-                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
+                  {planName}
+                </h2>
 
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-[#334155]">
-                  <span className="inline-flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-[#0F766E] shrink-0" />
-                    Includes monthly starter AI quota ({tierQuotaSummary}) · Upgrade anytime for 5× or unlimited-feel AI power
-                  </span>
-                </div>
+                <p className="text-xs sm:text-sm text-[#334155] flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#0F766E] shrink-0" />
+                  <span>Starter monthly AI quota active · Upgrade anytime with a prepaid UPI pass</span>
+                </p>
               </div>
 
-              {/* Primary & Secondary Actions */}
-              <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+              <div className="grid grid-cols-2 sm:flex sm:flex-row items-center gap-2.5 shrink-0">
                 <button
                   type="button"
                   onClick={onUpgradeClick}
-                  className="inline-flex items-center justify-center gap-2 min-h-[46px] px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0F766E] via-[#0D9488] to-[#059669] hover:from-[#115E59] hover:to-[#047857] text-white text-sm font-bold shadow-md shadow-teal-600/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2"
+                  className="inline-flex items-center justify-center gap-1.5 min-h-[42px] px-4 py-2 rounded-xl bg-gradient-to-r from-[#0F766E] to-[#059669] hover:from-[#115E59] hover:to-[#047857] text-white text-xs sm:text-sm font-bold shadow-xs transition-all whitespace-nowrap"
                 >
-                  <Crown className="w-4 h-4 text-amber-300 fill-amber-300 shrink-0" />
-                  <span>Upgrade to Pro</span>
-                  <ArrowUpRight className="w-4 h-4 shrink-0" />
+                  <Crown className="w-3.5 h-3.5 text-amber-300 fill-amber-300 shrink-0" />
+                  <span>Upgrade Pro</span>
                 </button>
 
                 {latestPaidOrder && onViewLatestReceipt ? (
                   <button
                     type="button"
                     onClick={() => onViewLatestReceipt(latestPaidOrder)}
-                    className="inline-flex items-center justify-center gap-1.5 min-h-[46px] px-4 py-2.5 rounded-xl border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-sm font-semibold transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 min-h-[42px] px-3.5 py-2 rounded-xl border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap"
                   >
-                    <ReceiptText className="w-4 h-4 text-[#0F766E] shrink-0" />
-                    <span>Latest Receipt</span>
+                    <ReceiptText className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+                    <span>Receipt</span>
                   </button>
                 ) : (
                   <Link
                     href="/subscription/payments"
-                    className="inline-flex items-center justify-center gap-1.5 min-h-[46px] px-4 py-2.5 rounded-xl border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-sm font-semibold transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 min-h-[42px] px-3.5 py-2 rounded-xl border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap"
                   >
-                    <ReceiptText className="w-4 h-4 text-[#0F766E] shrink-0" />
-                    <span>Payment History</span>
+                    <ReceiptText className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+                    <span>History</span>
                   </Link>
                 )}
               </div>
