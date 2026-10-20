@@ -857,7 +857,7 @@ export default function ProfilePage() {
                         href="/subscription"
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A7B7B] hover:bg-[#086464] text-white text-xs font-semibold transition-colors shadow-sm"
                       >
-                        Upgrade AI Limits · Pro & ₹1 Test Pass →
+                        Manage Subscription & Upgrade to Pro →
                       </Link>
                     </div>
                   </div>
