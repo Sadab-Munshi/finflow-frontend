@@ -110,23 +110,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </div>
   )
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50/40 via-white to-amber-50/30">
-      {/* Fixed Notification Bell */}
-      <div className="fixed top-4 right-4 z-[51] no-print">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-600/25">
-          <NotificationBell />
-        </div>
-      </div>
+  const isSubscriptionRoute = pathname?.startsWith('/subscription')
 
-      {/* Mobile Hamburger Button */}
-      <button
-        onClick={() => setSidebarOpen(true)}
-        aria-label="Open sidebar panel"
-        className="md:hidden fixed top-4 left-4 z-40 w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center text-white shadow-lg shadow-teal-600/25 no-print"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+  return (
+    <div
+      className={cn(
+        'min-h-screen',
+        isSubscriptionRoute
+          ? 'bg-[#F8FAFC]'
+          : 'bg-gradient-to-br from-teal-50/40 via-white to-amber-50/30'
+      )}
+    >
+      {/* Fixed Notification Bell — hidden on subscription/payment screens per UX spec */}
+      {!isSubscriptionRoute && (
+        <div className="fixed top-4 right-4 z-[51] no-print">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-600/25">
+            <NotificationBell />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Hamburger Button — hidden on subscription/payment screens where top app bar has Back navigation */}
+      {!isSubscriptionRoute && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open sidebar panel"
+          className="md:hidden fixed top-4 left-4 z-40 w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center text-white shadow-lg shadow-teal-600/25 no-print"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Portrait Sidebar (Mobile Drawer) */}
       <AnimatePresence>
@@ -220,6 +233,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* ======================================================= */}
       {/* EXACT DEMO FAB - FAST ANIMATION & THUMB-FRIENDLY ORDER */}
       {/* ======================================================= */}
+      {!isSubscriptionRoute && (
       <div className="fixed bottom-20 md:bottom-6 right-6 z-50 no-print">
         {/* Input Method Options */}
         <div
@@ -268,6 +282,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Plus className="h-6 w-6" />
         </button>
       </div>
+      )}
       {/* ======================================================= */}
 
       {/* Mobile Bottom Nav */}
@@ -388,13 +403,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className={cn('pt-14 pb-20 md:pt-0 md:pb-0', 'md:ml-64', 'min-h-screen')}>
+      <main
+        className={cn(
+          isSubscriptionRoute
+            ? 'pt-0 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8'
+            : 'pt-14 pb-20 md:pt-0 md:pb-0',
+          'md:ml-64',
+          'min-h-screen'
+        )}
+      >
         <motion.div
           key={pathname}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.15 }}
-          className="p-4 md:p-6 lg:p-8"
+          className={cn(isSubscriptionRoute ? 'p-0' : 'p-4 md:p-6 lg:p-8')}
         >
           {children}
         </motion.div>

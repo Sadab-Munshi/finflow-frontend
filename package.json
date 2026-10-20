@@ -6,7 +6,8 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test __tests__/*.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
