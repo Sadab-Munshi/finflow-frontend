@@ -907,11 +907,9 @@ export default function ProfilePage() {
                       <div className="pt-2">
                         <Link
                           href="/subscription"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A7B7B] hover:bg-[#086464] text-white text-xs font-semibold transition-colors shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#0F766E] to-[#059669] hover:from-[#115E59] hover:to-[#047857] text-white text-xs font-bold transition-all shadow-sm whitespace-nowrap"
                         >
-                          {isProMember
-                            ? 'Manage Pro Subscription & Receipts →'
-                            : 'Manage Subscription & Upgrade to Pro →'}
+                          {isProMember ? 'Manage Subscription →' : 'Upgrade to Pro →'}
                         </Link>
                       </div>
                     </div>
