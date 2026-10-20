@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl'
 import { useUser } from '@/context/UserContext'
 import { createClient } from '@/lib/supabase/client'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import { BorderBeam } from 'border-beam'
 
 const sidebarNavItems = [
   { path: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
@@ -81,21 +82,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const userName = user?.userName || ''
   const avatarUrl = user?.avatarUrl || ''
+  const isPro = Boolean(user?.isPro)
   const initial = userName ? userName.charAt(0).toUpperCase() : ''
 
   const AvatarCircle = ({ size = 40, className = '' }: { size?: number; className?: string }) => (
-    <div
-      className={cn(
-        'rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center flex-shrink-0 overflow-hidden relative',
-        className
-      )}
-      style={{ width: size, height: size }}
-    >
-      {avatarUrl ? (
-        <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes={`${size}px}`} />
-      ) : (
-        <span className="text-white font-bold" style={{ fontSize: size * 0.35 }}>
-          {initial}
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <div
+        className={cn(
+          'rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center overflow-hidden relative w-full h-full',
+          isPro && 'ring-2 ring-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.65)]',
+          className
+        )}
+      >
+        {avatarUrl ? (
+          <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes={`${size}px}`} />
+        ) : (
+          <span className="text-white font-bold" style={{ fontSize: size * 0.35 }}>
+            {initial}
+          </span>
+        )}
+      </div>
+      {isPro && (
+        <span
+          title="FinFlow Pro Member"
+          className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 border border-teal-900 flex items-center justify-center shadow-sm"
+        >
+          <Crown className="w-2.5 h-2.5 text-slate-950 fill-slate-950" />
         </span>
       )}
     </div>
@@ -161,25 +173,48 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className="fixed left-0 top-0 h-screen w-[72vw] max-w-[260px] bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
             >
               <div className="px-4 pt-4 flex-shrink-0">
-                <div className="flex items-center justify-between rounded-xl px-3 py-2" style={{ backgroundColor: '#D9FAF7' }}>
-                  <Image
-                    src="/images/finflow-logo.png"
-                    alt="FinFlow"
-                    width={120}
-                    height={40}
-                    sizes="120px"
-                    style={{ objectFit: 'contain', pointerEvents: 'none' }}
-                    draggable={false}
-                    onContextMenu={(e) => e.preventDefault()}
-                  />
-                  <button
-                    onClick={() => setSidebarOpen(false)}
-                    className="text-teal-700 hover:text-teal-900 transition-colors flex-shrink-0"
-                    aria-label="Close sidebar panel"
+                <BorderBeam
+                  size="sm"
+                  colorVariant={isPro ? 'colorful' : 'ocean'}
+                  strength={isPro ? 0.9 : 0.4}
+                  active={isPro}
+                  theme="dark"
+                  borderRadius={12}
+                >
+                  <div
+                    className={cn(
+                      'flex items-center justify-between rounded-xl px-3 py-2',
+                      isPro && 'ring-1 ring-amber-300/60 shadow-[0_0_18px_rgba(251,191,36,0.25)]'
+                    )}
+                    style={{ backgroundColor: '#D9FAF7' }}
                   >
-                    <PanelLeftClose className="w-5 h-5" />
-                  </button>
-                </div>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Image
+                        src="/images/finflow-logo.png"
+                        alt="FinFlow"
+                        width={110}
+                        height={36}
+                        sizes="110px"
+                        style={{ objectFit: 'contain', pointerEvents: 'none' }}
+                        draggable={false}
+                        onContextMenu={(e) => e.preventDefault()}
+                      />
+                      {isPro && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-extrabold tracking-wider uppercase shadow-xs shrink-0">
+                          <Crown className="w-2.5 h-2.5 fill-white" />
+                          PRO
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setSidebarOpen(false)}
+                      className="text-teal-700 hover:text-teal-900 transition-colors flex-shrink-0"
+                      aria-label="Close sidebar panel"
+                    >
+                      <PanelLeftClose className="w-5 h-5" />
+                    </button>
+                  </div>
+                </BorderBeam>
               </div>
               <div className="mx-4 mt-3 border-t border-teal-600/50" />
               <nav className="flex-1 p-3 space-y-1 mt-1">
@@ -205,8 +240,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 ) : (
                   <div className="flex items-center gap-3">
                     <AvatarCircle size={36} />
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 flex items-center gap-1.5">
                       <p className="text-sm font-semibold text-white truncate">{userName}</p>
+                      {isPro && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[9px] font-extrabold uppercase tracking-wider shrink-0">
+                          PRO
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -308,18 +348,39 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Landscape Sidebar (Desktop) */}
       <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-teal-700 to-teal-800 z-40 overflow-y-auto no-print shadow-xl">
         <div className="px-4 pt-4 flex-shrink-0">
-          <div className="flex items-center justify-between rounded-xl px-3 py-2" style={{ backgroundColor: '#D9FAF7' }}>
-            <Image
-              src="/images/finflow-logo.png"
-              alt="FinFlow"
-              width={120}
-              height={40}
-              sizes="120px"
-              style={{ objectFit: 'contain', pointerEvents: 'none' }}
-              draggable={false}
-              onContextMenu={(e) => e.preventDefault()}
-            />
-          </div>
+          <BorderBeam
+            size="sm"
+            colorVariant={isPro ? 'colorful' : 'ocean'}
+            strength={isPro ? 0.9 : 0.4}
+            active={isPro}
+            theme="dark"
+            borderRadius={12}
+          >
+            <div
+              className={cn(
+                'flex items-center justify-between rounded-xl px-3 py-2',
+                isPro && 'ring-1 ring-amber-300/60 shadow-[0_0_20px_rgba(251,191,36,0.28)]'
+              )}
+              style={{ backgroundColor: '#D9FAF7' }}
+            >
+              <Image
+                src="/images/finflow-logo.png"
+                alt="FinFlow"
+                width={120}
+                height={40}
+                sizes="120px"
+                style={{ objectFit: 'contain', pointerEvents: 'none' }}
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+              {isPro && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white text-[10px] font-extrabold tracking-wider uppercase shadow-sm shrink-0">
+                  <Crown className="w-3 h-3 fill-white" />
+                  PRO
+                </span>
+              )}
+            </div>
+          </BorderBeam>
         </div>
         <div className="px-3 pt-3 pb-3">
           <button
@@ -395,7 +456,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             ) : (
               <>
                 <AvatarCircle size={40} />
-                <span className="text-white font-medium text-sm truncate flex-1">{userName}</span>
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  <span className="text-white font-medium text-sm truncate">{userName}</span>
+                  {isPro && (
+                    <span className="px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[9px] font-extrabold uppercase tracking-wider shrink-0">
+                      PRO
+                    </span>
+                  )}
+                </div>
               </>
             )}
           </button>

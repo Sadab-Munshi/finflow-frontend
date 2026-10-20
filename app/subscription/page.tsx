@@ -46,7 +46,7 @@ import {
 
 function SubscriptionContent() {
   const searchParams = useSearchParams()
-  const { user } = useUser()
+  const { user, refreshProfile } = useUser()
 
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscription, setSubscription] = useState<UserSubscriptionState | null>(null)
@@ -79,7 +79,7 @@ function SubscriptionContent() {
       if (payload && (payload.plans || payload.subscription)) {
         setPlans(payload.plans || [])
         setSubscription(payload.subscription || null)
-        setQuotas(payload.quotas || null)
+        setQuotas(payload.usage || payload.quotas || null)
         setOrders(payload.orders || [])
         setLoadError(null)
       } else {
@@ -112,12 +112,12 @@ function SubscriptionContent() {
         })
         const payload = (res as any)?.data ? (res as any).data : (res as any)
 
-        if (payload?.verified && payload?.status === 'SUCCESS') {
+        if (payload?.verified && (payload?.status === 'SUCCESS' || payload?.subscription?.status === 'active')) {
           if (payload.subscription) {
             setSubscription(payload.subscription)
           }
-          if (payload.quotas) {
-            setQuotas(payload.quotas)
+          if (payload.usage || payload.quotas) {
+            setQuotas(payload.usage || payload.quotas)
           }
           const activatedName = getPlanDisplayName(
             payload.subscription?.planId,
@@ -129,6 +129,7 @@ function SubscriptionContent() {
             message: `Your UPI payment has been confirmed and your ${activatedName} allowance is now active.`,
           })
           await fetchSubscriptionState(true)
+          await refreshProfile().catch(() => {})
           return true
         } else if (showPendingNotice) {
           setNotice({
@@ -295,15 +296,35 @@ function SubscriptionContent() {
     orders.find((o) => normalizePaymentStatus(o.status).status === 'paid') || null
   const recentOrders = orders.slice(0, 3)
 
+  const isPaidActive =
+    subscription?.status === 'active' && subscription.planId !== 'free'
+  const effectiveMultiplier = Math.max(
+    1,
+    Number(subscription?.aiMultiplier) ||
+      (subscription?.planId === 'pro_monthly'
+        ? 5
+        : subscription?.planId === 'test_1inr'
+        ? 2
+        : 1)
+  )
+
   return (
     <Layout>
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-gradient-to-b from-[#F0FDFA]/70 via-[#F8FAFC] to-amber-50/30">
         <SubscriptionPageHeader
           title="Subscription & Billing"
           subtitle="Manage your FinFlow AI allowance, prepaid passes, and payment receipts"
           backHref="/dashboard"
           backLabel="Back to Dashboard"
           showHistoryLink={true}
+          isPro={isPaidActive}
+          planBadgeText={
+            subscription?.planId === 'pro_yearly'
+              ? 'PRO YEARLY VIP'
+              : subscription?.planId === 'pro_monthly'
+              ? 'PRO MONTHLY'
+              : 'PRO PASS'
+          }
           onRefresh={() => fetchSubscriptionState(true)}
           refreshing={refreshing}
         />
@@ -336,6 +357,7 @@ function SubscriptionContent() {
               <UsageOverview
                 quotas={quotas}
                 unlimitedAi={Boolean(subscription?.unlimitedAi)}
+                aiMultiplier={effectiveMultiplier}
               />
 
               {/* 3. Plan Comparison & Upgrade Cards */}

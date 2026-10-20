@@ -6,8 +6,9 @@ import {
   Camera, Pencil, Check, Bell, Lock, Database, HelpCircle,
   ChevronRight, LogOut, Send, MessageCircle, ExternalLink, Loader2, Star,
   ClipboardList, Flame, TrendingDown, MessageSquarePlus, CheckCircle, XCircle, AlertTriangle,
-  Mail, Globe, User,
+  Mail, Globe, User, Crown,
 } from 'lucide-react'
+import { BorderBeam } from 'border-beam'
 import Image from 'next/image'
 import Link from 'next/link'
 import Layout from '@/components/layout/Layout'
@@ -86,8 +87,22 @@ export default function ProfilePage() {
   const [thisMonthSpending, setThisMonthSpending] = useState(0)
 
   // AI Usage
-  const [aiUsage, setAiUsage] = useState<{ nlp?: { used: number }; voice?: { used: number }; receipt?: { used: number }; insights?: { used: number } } | null>(null)
-  const totalAiLimit = 150
+  const [aiUsage, setAiUsage] = useState<{
+    nlp?: { used: number; limit?: number }
+    voice?: { used: number; limit?: number }
+    receipt?: { used: number; limit?: number }
+    insights?: { used: number; limit?: number }
+    plan?: { id?: string; name?: string; status?: string; multiplier?: number; unlimited?: boolean }
+  } | null>(null)
+  const totalAiLimit = aiUsage
+    ? (aiUsage.nlp?.limit || 60) +
+      (aiUsage.voice?.limit || 50) +
+      (aiUsage.receipt?.limit || 30) +
+      (aiUsage.insights?.limit || 10)
+    : 150
+  const isProMember = Boolean(
+    aiUsage?.plan && aiUsage.plan.status === 'active' && aiUsage.plan.id !== 'free'
+  )
 
   // Telegram
   const [telegramChatId, setTelegramChatId] = useState('')
@@ -522,7 +537,11 @@ export default function ProfilePage() {
             <div className="relative flex-shrink-0">
               <div
                 className="w-16 h-16 sm:w-24 sm:h-24 relative rounded-full overflow-hidden bg-teal-700 flex-shrink-0"
-                style={{ boxShadow: '0 0 0 3px white, 0 0 20px rgba(255,255,255,0.3)' }}
+                style={{
+                  boxShadow: isProMember
+                    ? '0 0 0 3px #fbbf24, 0 0 24px rgba(251,191,36,0.65)'
+                    : '0 0 0 3px white, 0 0 20px rgba(255,255,255,0.3)',
+                }}
               >
                 {avatarUrl ? (
                   <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes="96px" />
@@ -532,6 +551,14 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+              {isProMember && (
+                <span
+                  title="FinFlow Pro Member"
+                  className="absolute -top-1 -left-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 border-2 border-white flex items-center justify-center shadow-md"
+                >
+                  <Crown className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
+                </span>
+              )}
               <label className="absolute bottom-0 right-0 bg-white text-teal-600 rounded-full p-1 sm:p-1.5 cursor-pointer shadow-md hover:bg-teal-50 transition-colors">
                 <Camera size={12} className="sm:w-3.5 sm:h-3.5" />
                 <input
@@ -545,7 +572,15 @@ export default function ProfilePage() {
 
             {/* Name + badge */}
             <div className="flex flex-col gap-1.5">
-              <h2 className="text-base sm:text-xl font-bold text-white leading-tight">{name}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base sm:text-xl font-bold text-white leading-tight">{name}</h2>
+                {isProMember && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 text-[10px] sm:text-xs font-extrabold uppercase tracking-wider shadow-sm">
+                    <Crown className="w-3 h-3 fill-slate-950 shrink-0" />
+                    <span>{aiUsage?.plan?.name || 'PRO'}</span>
+                  </span>
+                )}
+              </div>
               {uploading && <p className="text-xs text-white/70 animate-pulse">{t('uploading')}</p>}
               {memberSince && (
                 <div
@@ -836,50 +871,70 @@ export default function ProfilePage() {
           {/* SECTION 5 — AI USAGE */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('usage')}</p>
-            <div
-              className="rounded-2xl border border-[#C6F0E8] overflow-hidden relative"
-              style={{ background: 'linear-gradient(135deg, #F0FDF9 0%, #E8FAF4 100%)' }}
+            <BorderBeam
+              size="md"
+              colorVariant={isProMember ? 'colorful' : 'ocean'}
+              strength={isProMember ? 0.8 : 0.5}
+              theme="light"
+              borderRadius={16}
             >
-              <div className="p-4 pr-32 sm:pr-36">
-                <p className="text-sm font-bold text-[#0F172A] mb-2">{t('aiUsageTitle')}</p>
-                {aiUsage ? (
-                  <div className="space-y-1.5">
-                    <p className="text-sm font-bold" style={{ color: aiBarColor }}>{t('aiUsed', { pct: aiPct })}</p>
-                    <div className="bg-white/60 rounded-full h-3 overflow-hidden">
-                      <div
-                        className="h-3 rounded-full transition-all duration-700"
-                        style={{ width: `${Math.min(aiPct, 100)}%`, background: aiBarColor }}
-                      />
-                    </div>
-                    <p className="text-xs text-[#64748B]">{t('aiReset')}</p>
-                    <div className="pt-2">
-                      <Link
-                        href="/subscription"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A7B7B] hover:bg-[#086464] text-white text-xs font-semibold transition-colors shadow-sm"
-                      >
-                        Manage Subscription & Upgrade to Pro →
-                      </Link>
-                    </div>
+              <div
+                className="rounded-2xl border border-[#C6F0E8] overflow-hidden relative"
+                style={{ background: 'linear-gradient(135deg, #F0FDF9 0%, #E8FAF4 100%)' }}
+              >
+                <div className="p-4 pr-32 sm:pr-36">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <p className="text-sm font-bold text-[#0F172A]">{t('aiUsageTitle')}</p>
+                    {isProMember && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold uppercase">
+                        <Crown className="w-3 h-3 text-amber-600 fill-amber-500" />
+                        <span>{aiUsage?.plan?.multiplier || 5}× Pro Allowance</span>
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-sm text-[#64748B]">{t('loadingUsage')}</p>
-                )}
-              </div>
+                  {aiUsage ? (
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-bold" style={{ color: aiBarColor }}>
+                        {t('aiUsed', { pct: aiPct })} ({totalAiUsed.toLocaleString('en-IN')} / {totalAiLimit.toLocaleString('en-IN')})
+                      </p>
+                      <div className="bg-white/60 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="h-3 rounded-full transition-all duration-700"
+                          style={{ width: `${Math.min(aiPct, 100)}%`, background: aiBarColor }}
+                        />
+                      </div>
+                      <p className="text-xs text-[#64748B]">{t('aiReset')}</p>
+                      <div className="pt-2">
+                        <Link
+                          href="/subscription"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A7B7B] hover:bg-[#086464] text-white text-xs font-semibold transition-colors shadow-sm"
+                        >
+                          {isProMember
+                            ? 'Manage Pro Subscription & Receipts →'
+                            : 'Manage Subscription & Upgrade to Pro →'}
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#64748B]">{t('loadingUsage')}</p>
+                  )}
+                </div>
 
-              {/* Robot illustration */}
-              <div className="absolute right-0 bottom-0 w-28 h-28 sm:w-32 sm:h-32 pointer-events-none select-none">
-                <Image
-                  src="/assets/ai-robot.webp"
-                  alt=""
-                  fill
-                  className="object-contain object-bottom-right"
-                  sizes="128px"
-                  draggable={false}
-                  onContextMenu={(e) => e.preventDefault()}
-                  style={{ pointerEvents: 'none', userSelect: 'none' }}
-                />
+                {/* Robot illustration */}
+                <div className="absolute right-0 bottom-0 w-28 h-28 sm:w-32 sm:h-32 pointer-events-none select-none">
+                  <Image
+                    src="/assets/ai-robot.webp"
+                    alt=""
+                    fill
+                    className="object-contain object-bottom-right"
+                    sizes="128px"
+                    draggable={false}
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{ pointerEvents: 'none', userSelect: 'none' }}
+                  />
+                </div>
               </div>
-            </div>
+            </BorderBeam>
           </div>
 
           {/* SECTION 6 — SETTINGS LIST */}
