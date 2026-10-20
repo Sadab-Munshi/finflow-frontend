@@ -7,49 +7,71 @@ import { DM_Sans } from 'next/font/google'
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], display: 'swap' })
 
 const SLIDES = [
-  { src: '/screen-dashboard.png', alt: 'Dashboard screen' },
-  { src: '/screen-history.png',   alt: 'History screen'   },
-  { src: '/screen-insights.png',  alt: 'Insights screen'  },
-  { src: '/screen-budgets.png',   alt: 'Budgets screen'   },
+  {
+    src: '/screen-dashboard.png',
+    alt: 'FinFlow Dashboard screen showing ₹2,58,750 balance',
+    label: '01 · Live Dashboard',
+    caption: 'Real-time net cashflow, savings rate, and recent rupee transactions at a glance.',
+  },
+  {
+    src: '/screen-history.png',
+    alt: 'FinFlow Transaction History screen',
+    label: '02 · Ledger History',
+    caption: 'Every voice, photo, and Telegram entry organized with instant search and category filters.',
+  },
+  {
+    src: '/screen-insights.png',
+    alt: 'FinFlow AI Insights screen',
+    label: '03 · AI Insights',
+    caption: 'Actionable spending intelligence that spots recurring leaks before month-end.',
+  },
+  {
+    src: '/screen-budgets.png',
+    alt: 'FinFlow Budgets screen',
+    label: '04 · Smart Budgets',
+    caption: 'Category guardrails with proactive pacing alerts at 80% utilization.',
+  },
 ]
 
-const INTERVAL_MS = 3000
+const INTERVAL_MS = 3600
 
 export default function PhoneSlider() {
-  const [current, setCurrent]           = useState(0)
-  const [offset, setOffset]             = useState(0)   // 0 = visible, -100 = slide out left
-  const [nextIndex, setNextIndex]       = useState<number | null>(null)
-  const [nextOffset, setNextOffset]     = useState(100) // incoming slide starts from right
-  const [animating, setAnimating]       = useState(false)
-  const [arrowLeft, setArrowLeft]       = useState(false)
-  const [arrowRight, setArrowRight]     = useState(false)
+  const [current, setCurrent] = useState(0)
+  const [offset, setOffset] = useState(0)
+  const [nextIndex, setNextIndex] = useState<number | null>(null)
+  const [nextOffset, setNextOffset] = useState(100)
+  const [animating, setAnimating] = useState(false)
+  const [arrowLeft, setArrowLeft] = useState(false)
+  const [arrowRight, setArrowRight] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const goTo = useCallback((index: number) => {
-    if (animating) return
-    const next = (index + SLIDES.length) % SLIDES.length
-    if (next === current) return
+  const goTo = useCallback(
+    (index: number) => {
+      if (animating) return
+      const next = (index + SLIDES.length) % SLIDES.length
+      if (next === current) return
 
-    setAnimating(true)
-    setNextIndex(next)
-    setNextOffset(100)     // new slide enters from right
+      setAnimating(true)
+      setNextIndex(next)
+      setNextOffset(100)
 
-    // Trigger the transition on next paint
-    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        setOffset(-100)    // current slides out left
-        setNextOffset(0)   // next slides in to center
+        requestAnimationFrame(() => {
+          setOffset(-100)
+          setNextOffset(0)
 
-        setTimeout(() => {
-          setCurrent(next)
-          setOffset(0)
-          setNextIndex(null)
-          setNextOffset(100)
-          setAnimating(false)
-        }, 420)
+          setTimeout(() => {
+            setCurrent(next)
+            setOffset(0)
+            setNextIndex(null)
+            setNextOffset(100)
+            setAnimating(false)
+          }, 420)
+        })
       })
-    })
-  }, [animating, current])
+    },
+    [animating, current]
+  )
 
   const next = useCallback(() => goTo(current + 1), [current, goTo])
   const prev = useCallback(() => goTo(current - 1), [current, goTo])
@@ -59,41 +81,70 @@ export default function PhoneSlider() {
     timerRef.current = setInterval(next, INTERVAL_MS)
   }, [next])
 
-  // Auto-slide
   useEffect(() => {
     timerRef.current = setInterval(next, INTERVAL_MS)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
   }, [next])
 
-  const handleArrow = useCallback((dir: 'prev' | 'next') => {
-    if (dir === 'prev') prev(); else next()
-    resetTimer()
-  }, [prev, next, resetTimer])
+  const handleArrow = useCallback(
+    (dir: 'prev' | 'next') => {
+      if (dir === 'prev') prev()
+      else next()
+      resetTimer()
+    },
+    [prev, next, resetTimer]
+  )
 
-  const handleDot = useCallback((i: number) => {
-    goTo(i)
-    resetTimer()
-  }, [goTo, resetTimer])
+  const handleDot = useCallback(
+    (i: number) => {
+      goTo(i)
+      resetTimer()
+    },
+    [goTo, resetTimer]
+  )
 
   return (
-    <section
+    <div
       style={{
         width: '100%',
-        background: '#ffffff',
-        padding: '3rem 1rem 2.5rem',
+        background: 'transparent',
+        padding: '1rem 0.5rem 0.5rem',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
       }}
       className={dmSans.className}
     >
+      {/* Interactive Screen Selector Pills */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+        {SLIDES.map((slide, idx) => {
+          const isActive = idx === current
+          return (
+            <button
+              key={slide.src}
+              type="button"
+              onClick={() => handleDot(idx)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-mono tracking-wide transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-teal-500 text-zinc-950 font-semibold shadow-sm'
+                  : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700/80 hover:text-white border border-zinc-700/70'
+              }`}
+            >
+              {slide.label}
+            </button>
+          )
+        })}
+      </div>
+
       {/* Slide row */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '1.5rem',
+          gap: '1.25rem',
           width: '100%',
           maxWidth: '500px',
         }}
@@ -104,20 +155,18 @@ export default function PhoneSlider() {
           aria-label="Previous screen"
           onMouseEnter={() => setArrowLeft(true)}
           onMouseLeave={() => setArrowLeft(false)}
+          className="rounded-full border border-zinc-700/80 bg-zinc-900/80 text-zinc-200 hover:border-teal-400 hover:text-teal-300"
           style={{
-            background: 'none',
-            border: 'none',
             cursor: 'pointer',
-            fontSize: '1.5rem',
-            color: '#555',
-            padding: '0.75rem',
+            fontSize: '1.15rem',
+            padding: '0.65rem',
             minWidth: '44px',
             minHeight: '44px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: arrowLeft ? 1 : 0.4,
-            transition: 'opacity 0.25s ease',
+            opacity: arrowLeft ? 1 : 0.75,
+            transition: 'all 0.25s ease',
             flexShrink: 0,
           }}
         >
@@ -128,17 +177,16 @@ export default function PhoneSlider() {
         <div
           style={{
             position: 'relative',
-            width: 'clamp(220px, 30vw, 280px)',
+            width: 'clamp(220px, 28vw, 276px)',
             flexShrink: 0,
-            animation: 'phoneBob 3s ease-in-out infinite',
-            filter: 'drop-shadow(0 24px 32px rgba(0,184,148,0.35))',
+            animation: 'phoneBob 3.5s ease-in-out infinite',
+            filter: 'drop-shadow(0 24px 36px rgba(13, 148, 136, 0.28))',
           }}
         >
-          {/* Keyframe animation */}
           <style>{`
             @keyframes phoneBob {
               0%, 100% { transform: translateY(0px); }
-              50%       { transform: translateY(-10px); }
+              50%       { transform: translateY(-8px); }
             }
           `}</style>
 
@@ -149,7 +197,8 @@ export default function PhoneSlider() {
               width: '100%',
               aspectRatio: '9/19',
               overflow: 'hidden',
-              borderRadius: '16px',
+              borderRadius: '20px',
+              border: '1px solid rgba(255,255,255,0.14)',
             }}
           >
             {/* Current slide */}
@@ -165,6 +214,7 @@ export default function PhoneSlider() {
                 src={SLIDES[current].src}
                 alt={SLIDES[current].alt}
                 fill
+                sizes="280px"
                 style={{ objectFit: 'cover' }}
                 priority
               />
@@ -184,6 +234,7 @@ export default function PhoneSlider() {
                   src={SLIDES[nextIndex].src}
                   alt={SLIDES[nextIndex].alt}
                   fill
+                  sizes="280px"
                   style={{ objectFit: 'cover' }}
                 />
               </div>
@@ -197,20 +248,18 @@ export default function PhoneSlider() {
           aria-label="Next screen"
           onMouseEnter={() => setArrowRight(true)}
           onMouseLeave={() => setArrowRight(false)}
+          className="rounded-full border border-zinc-700/80 bg-zinc-900/80 text-zinc-200 hover:border-teal-400 hover:text-teal-300"
           style={{
-            background: 'none',
-            border: 'none',
             cursor: 'pointer',
-            fontSize: '1.5rem',
-            color: '#555',
-            padding: '0.75rem',
+            fontSize: '1.15rem',
+            padding: '0.65rem',
             minWidth: '44px',
             minHeight: '44px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: arrowRight ? 1 : 0.4,
-            transition: 'opacity 0.25s ease',
+            opacity: arrowRight ? 1 : 0.75,
+            transition: 'all 0.25s ease',
             flexShrink: 0,
           }}
         >
@@ -218,12 +267,17 @@ export default function PhoneSlider() {
         </button>
       </div>
 
+      {/* Active slide caption */}
+      <p className="mt-4 text-xs sm:text-sm text-zinc-300 text-center max-w-md px-3 min-h-[2.5rem]">
+        {SLIDES[current].caption}
+      </p>
+
       {/* Dot indicators */}
       <div
         style={{
           display: 'flex',
           gap: '0.25rem',
-          marginTop: '1.25rem',
+          marginTop: '0.5rem',
         }}
       >
         {SLIDES.map((_, i) => (
@@ -245,10 +299,10 @@ export default function PhoneSlider() {
           >
             <span
               style={{
-                width: i === current ? '20px' : '8px',
+                width: i === current ? '22px' : '8px',
                 height: '8px',
                 borderRadius: '4px',
-                background: i === current ? '#00b894' : '#d1d5db',
+                background: i === current ? '#14b8a6' : '#52525b',
                 display: 'block',
                 transition: 'width 0.3s ease, background 0.3s ease',
               }}
@@ -256,6 +310,6 @@ export default function PhoneSlider() {
           </button>
         ))}
       </div>
-    </section>
+    </div>
   )
 }
