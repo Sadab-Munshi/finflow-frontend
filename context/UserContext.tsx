@@ -3,13 +3,17 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
-import { trackLogin, sendHeartbeat, checkBan, checkIpBan } from '@/lib/api-client'
+import { trackLogin, sendHeartbeat, checkBan, checkIpBan, getSubscriptionStatus, type PlanId } from '@/lib/api-client'
 
 interface UserProfile {
   userId: string
   email: string
   userName: string
   avatarUrl: string
+  isPro?: boolean
+  planId?: PlanId
+  planName?: string
+  aiMultiplier?: number
 }
 
 interface UserContextType {
@@ -42,13 +46,33 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (data?.avatar_url) avatarUrl = data.avatar_url
     if (data?.name) userName = data.name
 
+    let isPro = false
+    let planId: PlanId = 'free'
+    let planName = 'Free Starter'
+    let aiMultiplier = 1
+    try {
+      const subRes = await getSubscriptionStatus()
+      const subPayload = (subRes as any)?.data ? (subRes as any).data : (subRes as any)
+      const sub = subPayload?.subscription
+      if (sub) {
+        planId = sub.planId || 'free'
+        planName = sub.planName || 'Free Starter'
+        aiMultiplier = Number(sub.aiMultiplier) || 1
+        isPro = sub.status === 'active' && planId !== 'free'
+      }
+    } catch {}
+
     setUser(prev => {
-      if (prev) return { ...prev, userName, avatarUrl }
+      if (prev) return { ...prev, userName, avatarUrl, isPro, planId, planName, aiMultiplier }
       return {
         userId: authUser.id,
         email: authUser.email || '',
         userName,
         avatarUrl,
+        isPro,
+        planId,
+        planName,
+        aiMultiplier,
       }
     })
   }, [])
@@ -115,11 +139,31 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (data?.avatar_url) avatarUrl = data.avatar_url
       if (data?.name) userName = data.name
 
+      let isPro = false
+      let planId: PlanId = 'free'
+      let planName = 'Free Starter'
+      let aiMultiplier = 1
+      try {
+        const subRes = await getSubscriptionStatus()
+        const subPayload = (subRes as any)?.data ? (subRes as any).data : (subRes as any)
+        const sub = subPayload?.subscription
+        if (sub) {
+          planId = sub.planId || 'free'
+          planName = sub.planName || 'Free Starter'
+          aiMultiplier = Number(sub.aiMultiplier) || 1
+          isPro = sub.status === 'active' && planId !== 'free'
+        }
+      } catch {}
+
       setUser({
         userId: authUser.id,
         email: authUser.email || '',
         userName,
         avatarUrl,
+        isPro,
+        planId,
+        planName,
+        aiMultiplier,
       })
       setLoading(false)
     }

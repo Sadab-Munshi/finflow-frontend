@@ -97,10 +97,31 @@ test('formatQuotaMetric and getNormalizedUsageMetrics map internal keys to frien
   assert.equal(metrics[2].tone, 'danger')
   assert.equal(metrics[2].remaining, 2)
 
+  // Pro Monthly (5x multiplier): must scale limits to 300, 150, 250, 50 even if rawStat has base limits or is null
+  const proMonthlyMetrics = utils.getNormalizedUsageMetrics(
+    {
+      nlp: { used: 0, limit: 60 },
+      receipt: { used: 0, limit: 30 },
+      voice: { used: 0, limit: 50 },
+      insights: { used: 0, limit: 10 },
+    },
+    false,
+    5
+  )
+  assert.deepEqual(
+    proMonthlyMetrics.map((m) => m.limit),
+    [300, 150, 250, 50]
+  )
+  assert.deepEqual(
+    proMonthlyMetrics.map((m) => m.usageText),
+    ['0 / 300', '0 / 150', '0 / 250', '0 / 50']
+  )
+
   // High-capacity Pro Yearly (unlimitedAi: true -> 9,999/month)
   const yearlyMetrics = utils.getNormalizedUsageMetrics(
     { nlp: { used: 120, limit: 9999 } },
-    true
+    true,
+    999
   )
   assert.equal(yearlyMetrics[0].limit, 9999)
   assert.equal(yearlyMetrics[0].isHighCapacity, true)

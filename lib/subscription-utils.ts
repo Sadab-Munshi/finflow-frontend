@@ -425,7 +425,8 @@ export function getPlanDisplayName(
  */
 export function formatQuotaMetric(
   key: QuotaMetricKey,
-  rawStat: QuotaSingleStat | null | undefined
+  rawStat: QuotaSingleStat | null | undefined,
+  options?: { aiMultiplier?: number; unlimitedAi?: boolean }
 ): FormattedQuotaMetric {
   const meta: Record<
     QuotaMetricKey,
@@ -454,11 +455,18 @@ export function formatQuotaMetric(
   }
 
   const info = meta[key]
+  const multiplier = Math.max(1, Number(options?.aiMultiplier) || 1)
+  const expectedPlanLimit = options?.unlimitedAi
+    ? 9999
+    : info.defaultLimit * multiplier
+
   const rawUsed = Number(rawStat?.used)
   const rawLimit = Number(rawStat?.limit)
   const used = Number.isFinite(rawUsed) && rawUsed >= 0 ? Math.floor(rawUsed) : 0
   const limit =
-    Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : info.defaultLimit
+    Number.isFinite(rawLimit) && rawLimit >= expectedPlanLimit
+      ? Math.floor(rawLimit)
+      : expectedPlanLimit
   const remaining = Math.max(0, limit - used)
   const isHighCapacity = limit >= 9000
   const rawPct = limit > 0 ? (used / limit) * 100 : 0
@@ -502,18 +510,23 @@ export function formatQuotaMetric(
  */
 export function getNormalizedUsageMetrics(
   quotas: AiQuotasPayload | null | undefined,
-  unlimitedAi = false
+  unlimitedAi = false,
+  aiMultiplier = 1
 ): FormattedQuotaMetric[] {
   const keys: QuotaMetricKey[] = ['nlp', 'receipt', 'voice', 'insights']
+  const effectiveMultiplier = Math.max(
+    1,
+    Number(aiMultiplier) || Number((quotas as any)?.plan?.multiplier) || 1
+  )
+  const effectiveUnlimited =
+    Boolean(unlimitedAi) || Boolean((quotas as any)?.plan?.unlimited)
+
   return keys.map((key) => {
     const stat = quotas?.[key]
-    if (unlimitedAi && (!stat?.limit || stat.limit < 9999)) {
-      return formatQuotaMetric(key, {
-        used: stat?.used ?? 0,
-        limit: 9999,
-      })
-    }
-    return formatQuotaMetric(key, stat)
+    return formatQuotaMetric(key, stat, {
+      aiMultiplier: effectiveMultiplier,
+      unlimitedAi: effectiveUnlimited,
+    })
   })
 }
 
