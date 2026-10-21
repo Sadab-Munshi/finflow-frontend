@@ -52,8 +52,6 @@ export default function AuthShell({ mode, children }: AuthShellProps) {
 
         <Link
           href="/support"
-          aria-label="Need help?"
-          title="Need help?"
           className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm backdrop-blur transition-all hover:border-teal-200 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2"
         >
           <CircleHelp className="h-4 w-4" />

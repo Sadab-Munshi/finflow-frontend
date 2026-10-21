@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AuthShell from '@/components/auth/AuthShell'
 import { createClient } from '@/lib/supabase/client'
-import { sanitizeInternalRedirect } from '@/lib/security'
 
 // Invite / magic-link landing page.
 //
@@ -54,8 +53,8 @@ export default function AuthCompletePage() {
           router.replace('/auth/set-password')
           return
         }
-        const rawNext = new URLSearchParams(window.location.search).get('next')
-        router.replace(sanitizeInternalRedirect(rawNext, '/dashboard'))
+        const next = new URLSearchParams(window.location.search).get('next')
+        router.replace(next && next.startsWith('/') ? next : '/dashboard')
       } catch {
         setError('Something went wrong while signing you in. Please try again.')
       }

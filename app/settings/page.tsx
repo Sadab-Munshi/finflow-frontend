@@ -119,7 +119,7 @@ export default function SettingsPage() {
   const handleInstallApp = async () => {
     if (!installPrompt) return
     installPrompt.prompt()
-    await installPrompt.userChoice
+    const { outcome } = await installPrompt.userChoice
     setInstallPrompt(null)
   }
 

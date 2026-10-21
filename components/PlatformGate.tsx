@@ -20,35 +20,22 @@ export default function PlatformGate() {
   useEffect(() => {
     let cancelled = false
     const dismissKey = (a: string) => `ff-announce-dismiss:${a}`
-    const checkStatus = () => {
-      authAppStatus()
-        .then((s) => {
-          if (cancelled) return
-          const st: Status = {
-            maintenance: !!s.maintenance,
-            read_only: !!s.read_only,
-            announcement: s.announcement || null,
-          }
-          if (st.announcement && sessionStorage.getItem(dismissKey(st.announcement))) {
-            st.announcement = null
-          }
-          setStatus(st)
-        })
-        .catch(() => {})
-    }
-
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const id = window.requestIdleCallback(checkStatus, { timeout: 2000 })
-      return () => {
-        cancelled = true
-        window.cancelIdleCallback(id)
-      }
-    }
-
-    const timer = setTimeout(checkStatus, 400)
+    authAppStatus()
+      .then((s) => {
+        if (cancelled) return
+        const st: Status = {
+          maintenance: !!s.maintenance,
+          read_only: !!s.read_only,
+          announcement: s.announcement || null,
+        }
+        if (st.announcement && sessionStorage.getItem(dismissKey(st.announcement))) {
+          st.announcement = null
+        }
+        setStatus(st)
+      })
+      .catch(() => {})
     return () => {
       cancelled = true
-      clearTimeout(timer)
     }
   }, [])
 
@@ -63,7 +50,7 @@ export default function PlatformGate() {
           </div>
           <h1 className="text-xl font-bold text-white">FinFlow is under maintenance</h1>
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            We&apos;re making a few improvements. Your data is safe — please check back in a little while.
+            We're making a few improvements. Your data is safe — please check back in a little while.
           </p>
           <button
             onClick={() => window.location.reload()}

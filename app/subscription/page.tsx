@@ -64,35 +64,6 @@ function SubscriptionContent() {
   const [selectedOrder, setSelectedOrder] = useState<PaymentOrderRecord | null>(null)
   const [notice, setNotice] = useState<NoticeBannerState | null>(null)
 
-  interface SubscriptionStatusResponse {
-    data?: SubscriptionStatusResponse
-    plans?: SubscriptionPlan[]
-    subscription?: UserSubscriptionState | null
-    usage?: AiQuotasPayload | null
-    quotas?: AiQuotasPayload | null
-    orders?: PaymentOrderRecord[]
-  }
-
-  interface VerifyPaymentResponse {
-    data?: VerifyPaymentResponse
-    verified?: boolean
-    status?: string
-    subscription?: UserSubscriptionState | null
-    usage?: AiQuotasPayload | null
-    quotas?: AiQuotasPayload | null
-  }
-
-  interface CreateOrderResponse {
-    data?: CreateOrderResponse
-    error?: string
-    orderId?: string
-    paymentId?: string
-    checkoutUrl?: string
-    sdkUrl?: string
-    amountInr?: number
-    planName?: string
-  }
-
   const fetchSubscriptionState = useCallback(async (quiet = false) => {
     if (!quiet) {
       setLoading(true)
@@ -102,8 +73,8 @@ function SubscriptionContent() {
     }
 
     try {
-      const res = (await getSubscriptionStatus()) as SubscriptionStatusResponse
-      const payload = res?.data ? res.data : res
+      const res = await getSubscriptionStatus()
+      const payload = (res as any)?.data ? (res as any).data : (res as any)
 
       if (payload && (payload.plans || payload.subscription)) {
         setPlans(payload.plans || [])
@@ -114,12 +85,10 @@ function SubscriptionContent() {
       } else {
         setLoadError('Unable to load your subscription details right now.')
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       if (!quiet) {
         setLoadError(
-          err instanceof Error
-            ? err.message
-            : 'Unable to connect to the subscription service. Please try again.'
+          err?.message || 'Unable to connect to the subscription service. Please try again.'
         )
       }
     } finally {
@@ -136,19 +105,19 @@ function SubscriptionContent() {
       const showPendingNotice = options?.showPendingNotice ?? true
       setVerifyingOrderId(orderId)
       try {
-        const res = (await verifySubscriptionPayment({
+        const res = await verifySubscriptionPayment({
           orderId,
           paymentId: options?.paymentId,
           utr: options?.utr,
-        })) as VerifyPaymentResponse
-        const payload = res?.data ? res.data : res
+        })
+        const payload = (res as any)?.data ? (res as any).data : (res as any)
 
         if (payload?.verified && (payload?.status === 'SUCCESS' || payload?.subscription?.status === 'active')) {
           if (payload.subscription) {
             setSubscription(payload.subscription)
           }
           if (payload.usage || payload.quotas) {
-            setQuotas(payload.usage || payload.quotas || null)
+            setQuotas(payload.usage || payload.quotas)
           }
           const activatedName = getPlanDisplayName(
             payload.subscription?.planId,
@@ -171,15 +140,14 @@ function SubscriptionContent() {
           })
           await fetchSubscriptionState(true)
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         if (showPendingNotice) {
           setNotice({
             type: 'error',
             title: 'Could Not Verify Payment Status',
             message:
-              err instanceof Error
-                ? err.message
-                : 'We could not verify this transaction right now. Please try checking again shortly.',
+              err?.message ||
+              'We could not verify this transaction right now. Please try checking again shortly.',
           })
         }
       } finally {
@@ -187,11 +155,11 @@ function SubscriptionContent() {
       }
       return false
     },
-    [fetchSubscriptionState, refreshProfile]
+    [fetchSubscriptionState]
   )
 
   useEffect(() => {
-    void Promise.resolve().then(() => fetchSubscriptionState())
+    fetchSubscriptionState()
   }, [fetchSubscriptionState])
 
   // Auto-verify if returning from UPI redirect flow (?payment=return&orderId=...)
@@ -199,9 +167,7 @@ function SubscriptionContent() {
     const paymentFlag = searchParams?.get('payment')
     const returnOrderId = searchParams?.get('orderId')
     if (returnOrderId && (paymentFlag === 'return' || paymentFlag === 'success')) {
-      void Promise.resolve().then(() =>
-        verifyOrderById(returnOrderId, { showPendingNotice: true })
-      )
+      verifyOrderById(returnOrderId, { showPendingNotice: true })
       if (typeof window !== 'undefined') {
         const cleanUrl = window.location.pathname
         window.history.replaceState({}, '', cleanUrl)
@@ -215,19 +181,21 @@ function SubscriptionContent() {
     setNotice(null)
 
     try {
-      const orderRes = (await createSubscriptionOrder(plan.id)) as CreateOrderResponse
-      const orderData = orderRes?.data ? orderRes.data : orderRes
+      const orderRes = await createSubscriptionOrder(plan.id)
+      const orderData = (orderRes as any)?.data
+        ? (orderRes as any).data
+        : (orderRes as any)
 
       if (!orderData?.checkoutUrl && !orderData?.paymentId) {
         throw new Error(
-          orderRes?.error || 'Could not initialize UPI checkout session.'
+          (orderRes as any)?.error || 'Could not initialize UPI checkout session.'
         )
       }
 
       const {
-        orderId = '',
-        paymentId = '',
-        checkoutUrl = '',
+        orderId,
+        paymentId,
+        checkoutUrl,
         sdkUrl,
         amountInr,
         planName,
@@ -299,14 +267,13 @@ function SubscriptionContent() {
           }
         },
       })
-    } catch (err: unknown) {
+    } catch (err: any) {
       setNotice({
         type: 'error',
         title: 'Unable to Start UPI Checkout',
         message:
-          err instanceof Error
-            ? err.message
-            : 'Please check your internet connection and try selecting the plan again.',
+          err?.message ||
+          'Please check your internet connection and try selecting the plan again.',
       })
     } finally {
       setProcessingPlanId(null)
@@ -320,10 +287,9 @@ function SubscriptionContent() {
     }
   }
 
-  const testPassEnabled = process.env.NEXT_PUBLIC_ENABLE_TEST_PASS === 'true'
   const showTestPlan =
-    (testPassEnabled && searchParams?.get('testMode') === '1') ||
-    testPassEnabled ||
+    searchParams?.get('testMode') === '1' ||
+    process.env.NEXT_PUBLIC_ENABLE_TEST_PASS === 'true' ||
     subscription?.planId === 'test_1inr'
 
   const latestPaidOrder =

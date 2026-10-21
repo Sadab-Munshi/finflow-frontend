@@ -9,7 +9,7 @@ import { Category } from '@/lib/types'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
 import {
   TEAL, RED, GREEN, FONT,
-  categoryIconMap, formatDateOnly, isTodayIST, getTodayIST,
+  categoryIconMap, formatDateDisplay, formatDateOnly, isTodayIST, getTodayIST,
 } from '../constants'
 import { useTransaction } from '../hooks/useTransaction'
 

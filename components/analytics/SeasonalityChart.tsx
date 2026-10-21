@@ -16,7 +16,7 @@ import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipCont
 import { formatIndianCurrency } from '@/lib/utils'
 import type { SeasonalityDay } from '@/lib/analytics-types'
 
-const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     const entry = payload[0]
     const ratio = entry.payload?.ratio as number

@@ -41,18 +41,6 @@ export default function SubscriptionPaymentsPage() {
   const [verifyingOrderId, setVerifyingOrderId] = useState<string | null>(null)
   const [notice, setNotice] = useState<NoticeBannerState | null>(null)
 
-  interface OrdersStatusResponse {
-    data?: OrdersStatusResponse
-    orders?: PaymentOrderRecord[]
-  }
-
-  interface VerifyOrderResponse {
-    data?: VerifyOrderResponse
-    verified?: boolean
-    status?: string
-    subscription?: { planId?: string; planName?: string } | null
-  }
-
   const fetchOrders = useCallback(async (quiet = false) => {
     if (!quiet) {
       setLoading(true)
@@ -62,8 +50,8 @@ export default function SubscriptionPaymentsPage() {
     }
 
     try {
-      const res = (await getSubscriptionStatus()) as OrdersStatusResponse
-      const payload = res?.data ? res.data : res
+      const res = await getSubscriptionStatus()
+      const payload = (res as any)?.data ? (res as any).data : (res as any)
 
       if (payload && Array.isArray(payload.orders)) {
         setOrders(payload.orders)
@@ -71,12 +59,10 @@ export default function SubscriptionPaymentsPage() {
       } else {
         setOrders([])
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       if (!quiet) {
         setLoadError(
-          err instanceof Error
-            ? err.message
-            : 'Unable to load your payment history. Please try again.'
+          err?.message || 'Unable to load your payment history. Please try again.'
         )
       }
     } finally {
@@ -86,14 +72,14 @@ export default function SubscriptionPaymentsPage() {
   }, [])
 
   useEffect(() => {
-    void Promise.resolve().then(() => fetchOrders())
+    fetchOrders()
   }, [fetchOrders])
 
   const handleVerifyOrder = async (orderId: string) => {
     setVerifyingOrderId(orderId)
     try {
-      const res = (await verifySubscriptionPayment({ orderId })) as VerifyOrderResponse
-      const payload = res?.data ? res.data : res
+      const res = await verifySubscriptionPayment({ orderId })
+      const payload = (res as any)?.data ? (res as any).data : (res as any)
 
       if (payload?.verified && payload?.status === 'SUCCESS') {
         const planTitle = getPlanDisplayName(
@@ -115,14 +101,12 @@ export default function SubscriptionPaymentsPage() {
         })
         await fetchOrders(true)
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       setNotice({
         type: 'error',
         title: 'Verification Check Failed',
         message:
-          err instanceof Error
-            ? err.message
-            : 'Could not check payment status right now. Please try again.',
+          err?.message || 'Could not check payment status right now. Please try again.',
       })
     } finally {
       setVerifyingOrderId(null)

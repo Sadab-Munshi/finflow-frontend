@@ -3,8 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { clearClientSecurityState } from '@/lib/security'
-import { identifyUser, resetAnalytics, track } from '@/lib/posthog'
+import { identifyUser, track } from '@/lib/posthog'
 
 export default function AuthListener() {
   const router = useRouter()
@@ -35,6 +34,7 @@ export default function AuthListener() {
         }
         router.refresh()
         // Re-subscribe push notification with current user's ID
+        // This ensures the push subscription is always associated with the logged-in user
         import('@/lib/push').then(({ subscribeToPush, isPushSupported }) => {
           if (isPushSupported() && Notification.permission === 'granted') {
             subscribeToPush().catch((err) => {
@@ -46,8 +46,6 @@ export default function AuthListener() {
         })
       }
       if (event === 'SIGNED_OUT') {
-        clearClientSecurityState().catch(() => {})
-        resetAnalytics()
         router.push('/login')
         router.refresh()
       }

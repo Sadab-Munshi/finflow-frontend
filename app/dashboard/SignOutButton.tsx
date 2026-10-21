@@ -1,8 +1,6 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { clearClientSecurityState } from '@/lib/security'
-import { resetAnalytics } from '@/lib/posthog'
 import { useRouter } from 'next/navigation'
 
 export default function SignOutButton() {
@@ -10,9 +8,7 @@ export default function SignOutButton() {
 
   const handleSignOut = async () => {
     const supabase = createClient()
-    await supabase.auth.signOut()
-    await clearClientSecurityState()
-    resetAnalytics()
+    await supabase.auth.signOut({ scope: 'local' })
     router.push('/login')
     router.refresh()
   }

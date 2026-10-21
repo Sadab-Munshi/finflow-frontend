@@ -106,16 +106,9 @@ export function updateUser(updates: Partial<User>): void {
 }
 
 export function getSettings(): Settings {
-  const defaultSettings: Settings = {
-    language: 'en',
-    currency: 'INR',
-    name: '',
-    budget_alerts: true,
-    monthly_report: true,
-  };
-  if (typeof window === 'undefined') return defaultSettings;
+  if (typeof window === 'undefined') return { budgetAlerts: true, monthlyReports: true };
   const data = localStorage.getItem(getKeys(getUserId()).SETTINGS);
-  return data ? { ...defaultSettings, ...JSON.parse(data) } : defaultSettings;
+  return data ? JSON.parse(data) : { budgetAlerts: true, monthlyReports: true };
 }
 
 export function updateSettings(updates: Partial<Settings>): void {
@@ -189,9 +182,9 @@ export function importData(jsonData: string): { transactions: number; budgets: n
   let skipped = 0;
 
   if (data.transactions && Array.isArray(data.transactions)) {
-    for (const t of data.transactions as Transaction[]) {
+    for (const t of data.transactions) {
       const isDuplicate = existingTransactions.some(
-        et => et.date === t.date && et.amount === t.amount && et.note === t.note
+        et => et.date === t.date && et.amount === t.amount && et.description === t.description
       );
       if (!isDuplicate) {
         existingTransactions.push(t);
@@ -204,9 +197,9 @@ export function importData(jsonData: string): { transactions: number; budgets: n
   }
 
   if (data.budgets && Array.isArray(data.budgets)) {
-    for (const b of data.budgets as Budget[]) {
+    for (const b of data.budgets) {
       const isDuplicate = existingBudgets.some(
-        eb => eb.category === b.category && eb.month === b.month
+        eb => eb.categoryId === b.categoryId && eb.period === b.period
       );
       if (!isDuplicate) {
         existingBudgets.push(b);
