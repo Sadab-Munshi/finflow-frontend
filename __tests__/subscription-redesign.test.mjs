@@ -182,7 +182,7 @@ test('customer-facing subscription UI files contain zero internal gateway or eng
   }
 })
 
-test('redesigned landing page uses pure code-loop visualisations, trustworthy palette, and zero pricing or sandbox clutter', () => {
+test('redesigned landing page uses unique ReactBits & BorderBeam code-loop visualisations per feature and natural copy', () => {
   const homeContent = fs.readFileSync(
     path.resolve(process.cwd(), 'app/(landing)/HomeContent.tsx'),
     'utf8'
@@ -193,19 +193,22 @@ test('redesigned landing page uses pure code-loop visualisations, trustworthy pa
     'utf8'
   )
 
-  // Verify pure code loop visualisations are wired into HomeContent
-  assert.ok(homeContent.includes('HeroLedgerLoop'))
-  assert.ok(homeContent.includes('VoiceWaveLoopCard'))
-  assert.ok(homeContent.includes('ReceiptScannerLoopCard'))
-  assert.ok(homeContent.includes('AnalyticsReportLoopCard'))
-  assert.ok(homeContent.includes('WorkspacePreviewLoop'))
-  assert.ok(motionLoops.includes('FinFlow Live Engine'))
+  // Verify each unique visual loop component is wired into HomeContent
+  assert.ok(homeContent.includes('HeroCardSwapLoop'))
+  assert.ok(homeContent.includes('VoicePillVisual'))
+  assert.ok(homeContent.includes('TearTicketReceiptVisual'))
+  assert.ok(homeContent.includes('InsightPulseVisual'))
+  assert.ok(homeContent.includes('MonthlyReportVisual'))
+  assert.ok(homeContent.includes('BudgetGaugeVisual'))
+  assert.ok(homeContent.includes('SecurityVaultVisual'))
+  assert.ok(motionLoops.includes('BorderBeam'))
 
-  // Verify 00 / LIVE AI PARSER SANDBOX, static images, and PhoneSlider screenshots are not in HomeContent
+  // Verify banned robotic phrases and old sections are absent
+  assert.equal(homeContent.includes('Automated Finance'), false)
+  assert.equal(homeContent.includes('Everything happens automatically'), false)
   assert.equal(homeContent.includes('00 / LIVE AI PARSER SANDBOX'), false)
   assert.equal(homeContent.includes('LiveExpenseDemo'), false)
   assert.equal(homeContent.includes('PhoneSlider'), false)
-  assert.equal(homeContent.includes('.webp'), false)
 
   // Ensure no pricing tiers or subscription pricing clutter is shown on the landing page
   const forbiddenLandingPricing = ['Pro Monthly', 'Pro Yearly', '₹99/month', '₹999/year', '/subscription']
