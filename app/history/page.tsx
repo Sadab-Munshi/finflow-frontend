@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl'
 import { getTransactions, deleteTransactions } from '@/lib/db'
 import { categories, getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD } from '@/lib/utils'
+import { sanitizeCsvCell, sanitizePdfText } from '@/lib/security'
 import HistorySkeleton from '@/components/skeletons/HistorySkeleton'
 import { Transaction } from '@/lib/types'
 import toast from 'react-hot-toast'
@@ -125,13 +126,9 @@ function HistoryContent() {
       tx.note,
       tx.type === 'income' ? tx.amount : -tx.amount,
     ])
-    const escape = (v: unknown) => {
-      const s = String(v)
-      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-    }
     const csvLines = [
-      headers.map(escape).join(','),
-      ...rows.map(row => row.map(escape).join(',')),
+      headers.map(sanitizeCsvCell).join(','),
+      ...rows.map(row => row.map(sanitizeCsvCell).join(',')),
     ]
     // BOM (\uFEFF) ensures Excel correctly reads UTF-8 (e.g. ₹ symbol)
     const blob = new Blob(['\uFEFF' + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' })
@@ -146,8 +143,7 @@ function HistoryContent() {
   const handleExportPDF = async () => {
     setDropdownOpen(false)
     const { default: JsPDFClass } = await import('jspdf')
-    // jspdf v4.x ships its own types; cast to access constructor cleanly
-    const doc = new (JsPDFClass as unknown as new (opts: Record<string, unknown>) => Record<string, (...args: unknown[]) => unknown>)({
+    const doc = new JsPDFClass({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
@@ -236,15 +232,16 @@ function HistoryContent() {
       doc.setDrawColor(220, 220, 220)
       colX.forEach((x, i) => doc.rect(x, y, colW[i], rowH, 'S'))
 
-      const dateStr = formatTxDate(tx.date)
-      const typeStr = tx.type.charAt(0).toUpperCase() + tx.type.slice(1)
-      const desc = tx.note.length > 30 ? tx.note.slice(0, 30) + '...' : tx.note
+      const dateStr = sanitizePdfText(formatTxDate(tx.date), 25)
+      const typeStr = sanitizePdfText(tx.type.charAt(0).toUpperCase() + tx.type.slice(1), 15)
+      const cleanNote = sanitizePdfText(tx.note, 100)
+      const desc = cleanNote.length > 30 ? cleanNote.slice(0, 30) + '...' : cleanNote
       const amountStr = (tx.type === 'income' ? '+' : '-') + Math.abs(tx.amount).toLocaleString('en-IN')
 
       doc.setTextColor(55, 65, 81)
       doc.text(dateStr, colX[0] + 3, y + 5.5)
       doc.text(typeStr, colX[1] + 3, y + 5.5)
-      doc.text(tx.category, colX[2] + 3, y + 5.5)
+      doc.text(sanitizePdfText(tx.category, 30), colX[2] + 3, y + 5.5)
       doc.text(desc, colX[3] + 3, y + 5.5)
 
       // Amount: colour-coded and right-aligned

@@ -22,15 +22,21 @@ export function RotatingText({
 
   useEffect(() => {
     if (items.length <= 1) return
-    const timer = setInterval(() => {
-      setAnimating(true)
-      setTimeout(() => {
-        setIndex((prev) => (prev + 1) % items.length)
-        setAnimating(false)
-      }, 220)
-    }, intervalMs)
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    const startDelay = setTimeout(() => {
+      intervalId = setInterval(() => {
+        setAnimating(true)
+        setTimeout(() => {
+          setIndex((prev) => (prev + 1) % items.length)
+          setAnimating(false)
+        }, 220)
+      }, intervalMs)
+    }, 6000)
 
-    return () => clearInterval(timer)
+    return () => {
+      clearTimeout(startDelay)
+      if (intervalId) clearInterval(intervalId)
+    }
   }, [items.length, intervalMs])
 
   return (

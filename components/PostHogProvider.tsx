@@ -11,6 +11,7 @@ export default function PostHogProvider({ children }: { children: React.ReactNod
   }, [])
 
   useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return
     posthog.capture('$pageview', { path: pathname })
   }, [pathname])
 

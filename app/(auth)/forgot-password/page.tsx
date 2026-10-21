@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
                   <Mail className="w-6 h-6 text-[#00D4FF]" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900">Forgot Your Password?</h1>
-                <p className="text-gray-500 text-sm mt-1">No worries. Enter your email and we'll send you a reset link.</p>
+                <p className="text-gray-500 text-sm mt-1">No worries. Enter your email and we&apos;ll send you a reset link.</p>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -95,13 +95,13 @@ export default function ForgotPasswordPage() {
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Check Your Inbox!</h2>
-              <p className="text-gray-500 text-sm mb-1">We've sent a reset link to</p>
+              <p className="text-gray-500 text-sm mb-1">We&apos;ve sent a reset link to</p>
               <p className="text-blue-600 font-medium mb-6">{sentEmail}</p>
               <button
                 onClick={() => setSent(false)}
                 className="text-gray-800 font-semibold text-sm hover:text-black transition-colors"
               >
-                Didn't receive it? Resend
+                Didn&apos;t receive it? Resend
               </button>
               <div className="mt-4">
                 <Link href="/login" className="inline-flex items-center gap-2 text-gray-800 font-semibold text-sm hover:text-black transition-colors">

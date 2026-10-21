@@ -15,16 +15,31 @@ interface TurnstileWidgetProps {
 }
 
 const TurnstileWidget = forwardRef<TurnstileInstance, TurnstileWidgetProps>(
-  function TurnstileWidget({ siteKey, theme = 'dark', className = 'mt-2', invisible = false, onSuccess, onError, onExpire }, ref) {
-    const key = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
+  function TurnstileWidget(
+    {
+      siteKey,
+      theme = 'dark',
+      className = 'mt-2',
+      invisible = false,
+      onSuccess,
+      onError,
+      onExpire,
+    },
+    ref
+  ) {
+    const key = (siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '').trim()
+    if (!key) return null
 
     return (
       <Turnstile
         ref={ref}
         siteKey={key}
-        options={invisible
-          ? { theme, size: 'invisible', execution: 'execute' }
-          : { theme }}
+        scriptOptions={{ async: true, defer: true }}
+        options={
+          invisible
+            ? { theme, size: 'invisible', execution: 'execute' }
+            : { theme }
+        }
         onSuccess={onSuccess}
         onError={onError}
         onExpire={onExpire}

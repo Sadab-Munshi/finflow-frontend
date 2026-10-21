@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Camera, Pencil, Check, Bell, Lock, Database, HelpCircle,
-  ChevronRight, LogOut, Send, MessageCircle, ExternalLink, Loader2, Star,
+  ChevronRight, LogOut, ExternalLink, Loader2, Star,
   ClipboardList, Flame, TrendingDown, MessageSquarePlus, CheckCircle, XCircle, AlertTriangle,
   Mail, Globe, User, Crown,
 } from 'lucide-react'
@@ -16,14 +16,13 @@ import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton'
 import { useLocale, useTranslations } from 'next-intl'
 import { setLocaleCookie } from '@/lib/i18n-cookie'
 import { LOCALE_NAMES, LOCALES, type Locale } from '@/i18n/config'
-import { getSettings, upsertSettings, getTransactions } from '@/lib/db'
+import { getSettings, getTransactions } from '@/lib/db'
 import { createClient } from '@/lib/supabase/client'
-import { posthog } from '@/lib/posthog'
+import { posthog, resetAnalytics } from '@/lib/posthog'
+import { clearClientSecurityState, validateAvatarFile } from '@/lib/security'
 
 import toast from 'react-hot-toast'
 import { aiUsage as fetchAiUsage, telegramNotify, whatsappNotify, submitFeedback } from '@/lib/api-client'
-
-type Language = 'en' | 'hi' | 'bn'
 
 const FEEDBACK_CATEGORIES = [
   { value: 'general', labelKey: 'fbCatGeneral' },
@@ -105,9 +104,7 @@ export default function ProfilePage() {
   )
 
   // Telegram
-  const [telegramChatId, setTelegramChatId] = useState('')
   const [telegramConnected, setTelegramConnected] = useState(false)
-  const [telegramToggle, setTelegramToggle] = useState(false)
   const [showTelegramDisconnectDialog, setShowTelegramDisconnectDialog] = useState(false)
 
   // WhatsApp
@@ -134,32 +131,36 @@ export default function ProfilePage() {
     const load = async () => {
       const supabase = createClient()
 
-      const dbSettings = await getSettings()
+      const [dbSettings, authRes, transactions, usageData] = await Promise.all([
+        getSettings(),
+        supabase.auth.getUser(),
+        getTransactions(),
+        fetchAiUsage().catch(() => null),
+      ])
+
+      if (usageData) setAiUsage(usageData)
+
       if (dbSettings) {
         if (dbSettings.name) setName(dbSettings.name)
         if (dbSettings.avatar_url) setAvatarUrl(dbSettings.avatar_url)
         if (dbSettings.telegram_chat_id) {
-          setTelegramChatId(dbSettings.telegram_chat_id)
           setTelegramConnected(true)
-          setTelegramToggle(true)
         }
         const extSettings = dbSettings as typeof dbSettings & { whatsapp_phone?: string }
         if (extSettings.whatsapp_phone) setWhatsappConnected(true)
       }
 
-      const { data } = await supabase.auth.getUser()
-      if (data.user) {
-        const userName = data.user.user_metadata?.full_name || dbSettings?.name || ''
+      if (authRes.data.user) {
+        const userName = authRes.data.user.user_metadata?.full_name || dbSettings?.name || ''
         setName(userName)
-        setEmail(data.user.email || '')
-        if (data.user.created_at) {
-          const createdAt = new Date(data.user.created_at)
+        setEmail(authRes.data.user.email || '')
+        if (authRes.data.user.created_at) {
+          const createdAt = new Date(authRes.data.user.created_at)
           setMemberSince(createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))
         }
       }
 
       // Load stats
-      const transactions = await getTransactions()
       setTotalEntries(transactions.length)
 
       // Day streak: count consecutive days (including today) that have at least one transaction
@@ -191,10 +192,7 @@ export default function ProfilePage() {
 
       setMounted(true)
     }
-    load()
-
-    // AI usage
-    fetchAiUsage().then(data => setAiUsage(data)).catch(() => {})
+    void load()
   }, [])
 
   useEffect(() => {
@@ -206,20 +204,28 @@ export default function ProfilePage() {
   if (!mounted) return <ProfileSkeleton />
 
   const uploadAvatar = async (file: File) => {
+    const validation = validateAvatarFile(file)
+    if (!validation.valid || !validation.ext) {
+      toast.error(validation.error || 'Invalid image file.')
+      return
+    }
+
     setUploading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-        setUploading(false)
-        return
-      }
+      setUploading(false)
+      return
+    }
 
-    const fileExt = file.name.split('.').pop()
-    const filePath = `${user.id}/avatar.${fileExt}`
+    const filePath = `${user.id}/avatar.${validation.ext}`
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, file, { upsert: true })
+      .upload(filePath, file, {
+        upsert: true,
+        contentType: validation.contentType,
+      })
 
     if (!uploadError) {
       const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
@@ -229,6 +235,8 @@ export default function ProfilePage() {
         { onConflict: 'user_id' }
       )
       posthog.capture('profile_photo_uploaded')
+    } else {
+      toast.error('Failed to upload profile photo.')
     }
     setUploading(false)
   }
@@ -333,9 +341,7 @@ export default function ProfilePage() {
       { user_id: user.id, telegram_chat_id: null, telegram_id: null, telegram_connect_code: null },
       { onConflict: 'user_id' }
     )
-    setTelegramChatId('')
     setTelegramConnected(false)
-    setTelegramToggle(false)
     setShowTelegramDisconnectDialog(false)
   }
 
@@ -435,7 +441,9 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     const supabase = createClient()
-    await supabase.auth.signOut({ scope: 'local' })
+    await supabase.auth.signOut()
+    await clearClientSecurityState()
+    resetAnalytics()
     router.push('/login')
   }
 
@@ -563,7 +571,7 @@ export default function ProfilePage() {
                 <Camera size={12} className="sm:w-3.5 sm:h-3.5" />
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && uploadAvatar(e.target.files[0])}
                 />
@@ -943,7 +951,7 @@ export default function ProfilePage() {
                 { icon: Bell, labelKey: 'prefNotifications', path: '/settings' },
                 { icon: Lock, labelKey: 'prefPrivacy', path: '/privacy-security' },
                 { icon: Database, labelKey: 'prefBackup', path: '/backup-restore' },
-              ].map((item, i) => (
+              ].map((item) => (
                 <button
                   key={item.labelKey}
                   onClick={() => router.push(item.path)}

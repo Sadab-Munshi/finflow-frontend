@@ -14,7 +14,6 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { BorderBeam } from 'border-beam'
-import { createClient } from '@/lib/supabase/client'
 import { BlurText } from '@/components/landing/reactbits/BlurText'
 import { RotatingText } from '@/components/landing/reactbits/RotatingText'
 import { SpotlightCard } from '@/components/landing/reactbits/SpotlightCard'
@@ -33,14 +32,18 @@ export default function LandingPage() {
 
   /* ── auth redirect ── */
   useEffect(() => {
+    if (typeof document === 'undefined' || !document.cookie.includes('sb-')) {
+      return
+    }
     const check = async () => {
+      const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
       const {
         data: { session },
       } = await supabase.auth.getSession()
       if (session) router.push('/dashboard')
     }
-    check()
+    void check()
   }, [router])
 
   const features = [

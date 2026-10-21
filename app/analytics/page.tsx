@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { BarChart2, AlertCircle, RefreshCw, Clock, TrendingUp, Info } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { formatIST } from '@/lib/utils'
@@ -16,11 +17,12 @@ import type {
   AnomalyDetectionResponse,
   YoYComparisonResponse,
 } from '@/lib/analytics-types'
-import RollingAveragesChart from '@/components/analytics/RollingAveragesChart'
-import SeasonalityChart from '@/components/analytics/SeasonalityChart'
-import AnomalyList from '@/components/analytics/AnomalyList'
-import YoYComparison from '@/components/analytics/YoYComparison'
 import AnalyticsSkeleton from '@/components/analytics/AnalyticsSkeleton'
+
+const RollingAveragesChart = dynamic(() => import('@/components/analytics/RollingAveragesChart'), { ssr: false })
+const SeasonalityChart = dynamic(() => import('@/components/analytics/SeasonalityChart'), { ssr: false })
+const AnomalyList = dynamic(() => import('@/components/analytics/AnomalyList'), { ssr: false })
+const YoYComparison = dynamic(() => import('@/components/analytics/YoYComparison'), { ssr: false })
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
@@ -50,8 +52,8 @@ export default function AnalyticsPage() {
       setForecastData(forecast)
       setAnomalyData(anomaly)
       setYoYData(yoy)
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load analytics data')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load analytics data')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -59,7 +61,7 @@ export default function AnalyticsPage() {
   }
 
   useEffect(() => {
-    loadAll()
+    void Promise.resolve().then(() => loadAll())
   }, [])
 
   if (loading) {

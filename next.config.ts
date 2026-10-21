@@ -1,182 +1,116 @@
-import type { NextConfig } from "next";
-import createNextIntlPlugin from "next-intl/plugin";
+import type { NextConfig } from 'next'
+import createNextIntlPlugin from 'next-intl/plugin'
 
-const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+const withNextIntl = createNextIntlPlugin()
+
+const configuredApiOrigin = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_API_URL
+      ? new URL(process.env.NEXT_PUBLIC_API_URL).origin
+      : 'http://localhost:3001'
+  } catch {
+    return 'http://localhost:3001'
+  }
+})()
+
+const configuredSupabaseOrigin = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+      : ''
+  } catch {
+    return ''
+  }
+})()
+
+const ContentSecurityPolicy = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://pay.sadabmunshi.me",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://pay.sadabmunshi.me",
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com https://eu.i.posthog.com https://app.posthog.com https://api.sadabmunshi.me https://pay.sadabmunshi.me https://challenges.cloudflare.com ${configuredApiOrigin} ${configuredSupabaseOrigin}`.trim(),
+  "frame-src 'self' https://challenges.cloudflare.com https://pay.sadabmunshi.me",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ')
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  compress: true,
+  poweredByHeader: false,
   experimental: {
     optimizePackageImports: [
-      "lucide-react",
-      "recharts",
-      "framer-motion",
-      "posthog-js",
-      "@radix-ui/react-dialog",
-      "@radix-ui/react-select",
-      "@radix-ui/react-tabs",
-      "@radix-ui/react-alert-dialog",
-      "@radix-ui/react-checkbox",
-      "@radix-ui/react-switch",
+      'lucide-react',
+      'recharts',
+      'date-fns',
+      'framer-motion',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-tooltip',
     ],
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "**.supabase.co",
-        pathname: "/storage/v1/object/public/**",
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
       },
     ],
-    minimumCacheTTL: 604800, // 1 week
-    formats: ["image/avif", "image/webp"],
-  },
-  webpack(config, { isServer }) {
-    if (!isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          ...config.optimization?.splitChunks,
-          cacheGroups: {
-            ...(typeof config.optimization?.splitChunks === "object"
-              ? config.optimization.splitChunks.cacheGroups
-              : {}),
-            threeVendor: {
-              test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
-              name: "three-vendor",
-              chunks: "async" as const,
-              priority: 30,
-              reuseExistingChunk: true,
-            },
-            recharts: {
-              test: /[\\/]node_modules[\\/]recharts[\\/]/,
-              name: "recharts-vendor",
-              chunks: "async" as const,
-              priority: 20,
-              reuseExistingChunk: true,
-            },
-            framer: {
-              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
-              name: "framer-vendor",
-              chunks: "async" as const,
-              priority: 20,
-              reuseExistingChunk: true,
-            },
-          },
-        },
-      };
-    }
-    return config;
   },
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: '/(.*)',
         headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
           {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
           },
           {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(self), geolocation=()",
+            key: 'Permissions-Policy',
+            value: 'camera=(self), microphone=(self), geolocation=()',
           },
           {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin",
-          },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://app.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://challenges.cloudflare.com https://pay.sadabmunshi.me https://*.sadabmunshi.me",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.supabase.co https://pay.sadabmunshi.me https://*.sadabmunshi.me",
-              "frame-src 'self' https://challenges.cloudflare.com https://pay.sadabmunshi.me https://*.sadabmunshi.me",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://app.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://api.groq.com https://api.sarvam.ai https://generativelanguage.googleapis.com https://api.brevo.com https://challenges.cloudflare.com https://finflow-api.sadabmunshi.me https://pay.sadabmunshi.me https://pay-api.sadabmunshi.me https://*.sadabmunshi.me",
-              "worker-src 'self' blob:",
-              "frame-ancestors 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join("; "),
+            key: 'Content-Security-Policy',
+            value: ContentSecurityPolicy,
           },
         ],
       },
       {
-        source: "/icons/:path*",
+        source: '/sw.js',
         headers: [
           {
-            key: "Cache-Control",
-            value: "public, max-age=2592000, immutable",
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/',
           },
         ],
       },
-      {
-        source: "/images/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=2592000, immutable",
-          },
-        ],
-      },
-      {
-        source: "/assets/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=2592000, immutable",
-          },
-        ],
-      },
-      {
-        source: "/finflow-logo.png",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=2592000, immutable",
-          },
-        ],
-      },
-      {
-        source: "/hero-illustration.png",
-        headers: [
-          {
-            key: "Cache-Control",
-            value:
-              "public, max-age=604800, stale-while-revalidate=86400",
-          },
-        ],
-      },
-      {
-        source: "/hero-dashboard.webp",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=2592000, immutable",
-          },
-        ],
-      },
-      {
-        source: "/sw.js",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=0, must-revalidate",
-          },
-          { key: "Service-Worker-Allowed", value: "/" },
-        ],
-      },
-    ];
+    ]
   },
-};
+}
 
-export default withNextIntl(nextConfig);
+export default withNextIntl(nextConfig)

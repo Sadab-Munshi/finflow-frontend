@@ -84,17 +84,17 @@ export default function SignupForm() {
   useEffect(() => {
     const email = emailValue.trim()
     const valid = z.string().email().safeParse(email).success
-    if (!valid) {
-      setDomainError(null)
-      return
-    }
     const timer = setTimeout(() => {
+      if (!valid) {
+        setDomainError(null)
+        return
+      }
       authSignupStatus(email)
         .then((status) => {
           setDomainError(domainMessageFor(status))
         })
         .catch(() => {})
-    }, 400)
+    }, valid ? 400 : 0)
     return () => clearTimeout(timer)
   }, [emailValue])
 
@@ -194,7 +194,7 @@ export default function SignupForm() {
   }
 
   return (
-    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }} onFocusCapture={warmUp}>
+    <div className="auth-fade-up space-y-5" onFocusCapture={warmUp}>
       <AuthModeSwitcher mode="signup" />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -208,7 +208,6 @@ export default function SignupForm() {
         <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200" />
       </div>
 
-      {/* eslint-disable-next-line react-hooks/refs -- react-hook-form handleSubmit is safe as a form submit handler. */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <AuthField
           {...register('email', {

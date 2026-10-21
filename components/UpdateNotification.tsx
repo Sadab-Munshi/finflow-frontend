@@ -18,17 +18,18 @@ export default function UpdateNotification() {
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
 
+    let cleanupVisibility: (() => void) | undefined
+    const hadController = Boolean(navigator.serviceWorker.controller)
+
     const registerSW = async () => {
       try {
         const reg = await navigator.serviceWorker.register('/sw.js')
         setRegistration(reg)
 
-        // If a new worker is already waiting
-        if (reg.waiting) {
+        if (reg.waiting && hadController) {
           setShowUpdate(true)
         }
 
-        // When a new worker is installed and waiting
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing
           if (!newWorker) return
@@ -40,23 +41,21 @@ export default function UpdateNotification() {
           })
         })
 
-        // When the controller changes (new SW activated), reload
+        // Only reload on controllerchange if an existing SW was replaced (never on first install)
         let refreshing = false
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return
+          if (!hadController || refreshing) return
           refreshing = true
           window.location.reload()
         })
 
-        // Check for updates when user returns to tab
         const handleVisibilityChange = () => {
           if (document.visibilityState === 'visible') {
-            reg.update()
+            reg.update().catch(() => {})
           }
         }
         document.addEventListener('visibilitychange', handleVisibilityChange)
-
-        return () => {
+        cleanupVisibility = () => {
           document.removeEventListener('visibilitychange', handleVisibilityChange)
         }
       } catch (err) {
@@ -64,7 +63,21 @@ export default function UpdateNotification() {
       }
     }
 
-    registerSW()
+    // Defer SW registration until after page load + idle so precaching never competes with LCP/TTI
+    const timer = setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => {
+          void registerSW()
+        }, { timeout: 4000 })
+      } else {
+        void registerSW()
+      }
+    }, 3500)
+
+    return () => {
+      clearTimeout(timer)
+      cleanupVisibility?.()
+    }
   }, [])
 
   if (!showUpdate) return null

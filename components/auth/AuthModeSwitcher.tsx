@@ -23,7 +23,7 @@ export default function AuthModeSwitcher({ mode }: AuthModeSwitcherProps) {
         href="/login"
         className={cn(
           'relative z-10 rounded-full px-4 py-2.5 text-center text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2',
-          isLogin ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'
+          isLogin ? 'text-slate-950' : 'text-slate-600 hover:text-slate-900'
         )}
         aria-current={isLogin ? 'page' : undefined}
       >
@@ -33,7 +33,7 @@ export default function AuthModeSwitcher({ mode }: AuthModeSwitcherProps) {
         href="/signup"
         className={cn(
           'relative z-10 rounded-full px-4 py-2.5 text-center text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2',
-          !isLogin ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'
+          !isLogin ? 'text-slate-950' : 'text-slate-600 hover:text-slate-900'
         )}
         aria-current={!isLogin ? 'page' : undefined}
       >

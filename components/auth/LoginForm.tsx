@@ -28,6 +28,10 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 type SubmitState = 'idle' | 'loading' | 'success'
 
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL || ''
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD || ''
+const SHOW_DEMO_BUTTON = Boolean(DEMO_EMAIL && DEMO_PASSWORD)
+
 export default function LoginForm() {
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [emailValue, setEmailValue] = useState('')
@@ -90,13 +94,14 @@ export default function LoginForm() {
   }
 
   const handleDemoCredentials = () => {
-    setValue('email', 'demo@finflow.com', { shouldValidate: true, shouldDirty: true })
-    setValue('password', '#demofinflow2026', { shouldValidate: true, shouldDirty: true })
-    setEmailValue('demo@finflow.com')
+    if (!SHOW_DEMO_BUTTON) return
+    setValue('email', DEMO_EMAIL, { shouldValidate: true, shouldDirty: true })
+    setValue('password', DEMO_PASSWORD, { shouldValidate: true, shouldDirty: true })
+    setEmailValue(DEMO_EMAIL)
   }
 
   return (
-    <div className="auth-fade-up space-y-5" style={{ animationDelay: '90ms' }} onFocusCapture={warmUp}>
+    <div className="auth-fade-up space-y-5" onFocusCapture={warmUp}>
       <AuthModeSwitcher mode="login" />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -110,7 +115,6 @@ export default function LoginForm() {
         <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200" />
       </div>
 
-      {/* eslint-disable-next-line react-hooks/refs -- react-hook-form handleSubmit is safe as a form submit handler. */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <AuthField
           {...register('email', {
@@ -123,17 +127,19 @@ export default function LoginForm() {
           icon={<Mail className="h-4 w-4" />}
           error={errors.email?.message}
           isValid={emailLooksValid}
-          action={(
-            <button
-              type="button"
-              onClick={handleDemoCredentials}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-slate-500 transition-all hover:border-teal-300 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
-              aria-label="Fill demo credentials"
-              title="Demo credentials"
-            >
-              <FlaskConical className="h-4 w-4" />
-            </button>
-          )}
+          action={
+            SHOW_DEMO_BUTTON ? (
+              <button
+                type="button"
+                onClick={handleDemoCredentials}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white text-slate-500 transition-all hover:border-teal-300 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                aria-label="Fill demo credentials"
+                title="Demo credentials"
+              >
+                <FlaskConical className="h-4 w-4" />
+              </button>
+            ) : undefined
+          }
           suggestion={emailSuggestion ? {
             label: emailSuggestion,
             onApply: () => {
