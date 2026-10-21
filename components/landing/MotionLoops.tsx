@@ -5,11 +5,7 @@ import {
   Mic,
   ScanLine,
   Sparkles,
-  FileText,
-  PiggyBank,
-  ShieldCheck,
   CheckCircle2,
-  TrendingUp,
   ArrowUpRight,
   Lock,
 } from 'lucide-react'
@@ -17,7 +13,7 @@ import { BorderBeam } from 'border-beam'
 
 /**
  * 1. HERO VISUAL: ReactBits "CardSwap" + "Voice Pill" 3D Stack (Light Glass + Ocean BorderBeam)
- * A tactile 3D card deck that swaps the active card every 3s, paired with a swelling Voice Pill.
+ * GPU-accelerated (translate3d) and sized cleanly so mobile titles never truncate or jump.
  */
 export function HeroCardSwapLoop() {
   const [activeIndex, setActiveIndex] = useState(0)
@@ -50,7 +46,7 @@ export function HeroCardSwapLoop() {
       badge: 'Camera Receipt Scan',
       badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
       accentBar: 'from-amber-500 to-orange-500',
-      title: 'DMart Avenue Supermarts',
+      title: 'DMart Supermarket',
       amount: '-₹1,450',
       sub: '14 items · GST ₹118.40 extracted automatically',
       pill: 'Bill Verified',
@@ -66,7 +62,7 @@ export function HeroCardSwapLoop() {
   }, [cards.length])
 
   return (
-    <div className="relative w-full max-w-md mx-auto py-4">
+    <div className="relative w-full max-w-md mx-auto pt-1 pb-2">
       <style>{`
         @keyframes eqSwell {
           0%, 100% { transform: scaleY(0.35); }
@@ -77,13 +73,13 @@ export function HeroCardSwapLoop() {
       {/* Soft multi-tone ambient halo */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-4 rounded-[36px] bg-gradient-to-tr from-teal-200/40 via-indigo-200/30 to-amber-200/35 blur-2xl"
+        className="pointer-events-none absolute -inset-4 rounded-[36px] bg-gradient-to-tr from-teal-200/35 via-indigo-200/25 to-amber-200/30 blur-2xl"
       />
 
       {/* Top Floating ReactBits "Voice Pill" */}
-      <div className="relative z-20 flex justify-center mb-5">
-        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-md">
-          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white">
+      <div className="relative z-20 flex justify-center mb-4">
+        <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-sm">
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white shrink-0">
             <Mic className="w-3.5 h-3.5" />
           </span>
           <div className="flex items-center gap-0.5 h-3.5" aria-hidden="true">
@@ -98,31 +94,31 @@ export function HeroCardSwapLoop() {
               />
             ))}
           </div>
-          <span className="text-xs font-semibold text-slate-700">
+          <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
             EN · हिंदी · বাংলা
           </span>
         </div>
       </div>
 
-      {/* 3D Card Swap Container */}
-      <div className="relative h-[250px] sm:h-[260px] w-full">
+      {/* 3D Card Swap Container — fixed height so zero layout shift on mobile */}
+      <div className="relative h-[220px] sm:h-[245px] w-full">
         {cards.map((card, index) => {
           const offset = (index - activeIndex + cards.length) % cards.length
-          // offset 0 = front, 1 = middle, 2 = back
-          const translateY = offset === 0 ? 0 : offset === 1 ? 18 : 34
-          const scale = offset === 0 ? 1 : offset === 1 ? 0.94 : 0.88
+          const translateY = offset === 0 ? 0 : offset === 1 ? 14 : 28
+          const scale = offset === 0 ? 1 : offset === 1 ? 0.95 : 0.9
           const zIndex = offset === 0 ? 30 : offset === 1 ? 20 : 10
-          const opacity = offset === 0 ? 1 : offset === 1 ? 0.82 : 0.55
+          const opacity = offset === 0 ? 1 : offset === 1 ? 0.8 : 0.5
 
           return (
             <div
               key={card.id}
               onClick={() => setActiveIndex(index)}
               style={{
-                transform: `translateY(${translateY}px) scale(${scale})`,
+                transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
                 zIndex,
                 opacity,
-                transition: 'all 550ms cubic-bezier(0.16, 1, 0.3, 1)',
+                willChange: 'transform, opacity',
+                transition: 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), opacity 500ms cubic-bezier(0.16, 1, 0.3, 1)',
               }}
               className="absolute inset-x-0 top-0 cursor-pointer"
             >
@@ -134,33 +130,33 @@ export function HeroCardSwapLoop() {
                 theme="light"
                 borderRadius={24}
               >
-                <div className="rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-6 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12)]">
-                  <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="rounded-3xl bg-white border border-slate-200/90 p-4 sm:p-6 shadow-[0_18px_42px_-15px_rgba(15,23,42,0.12)]">
+                  <div className="flex items-center justify-between gap-2 mb-3.5">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${card.badgeColor}`}
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold border whitespace-nowrap ${card.badgeColor}`}
                     >
                       {card.badge}
                     </span>
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${card.pillColor}`}
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap ${card.pillColor}`}
                     >
                       {card.pill}
                     </span>
                   </div>
 
-                  <div className="flex items-baseline justify-between gap-3 mb-2">
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 truncate">
+                  <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                    <h3 className="text-[15px] sm:text-lg font-bold text-slate-900 truncate">
                       {card.title}
                     </h3>
                     <span
-                      className="text-xl sm:text-2xl font-extrabold text-slate-900 font-mono shrink-0"
+                      className="text-lg sm:text-2xl font-extrabold text-slate-900 font-mono shrink-0"
                       style={{ fontVariantNumeric: 'tabular-nums' }}
                     >
                       {card.amount}
                     </span>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-500 mb-4">
+                  <p className="text-xs sm:text-sm text-slate-500 mb-3.5 truncate">
                     {card.sub}
                   </p>
 
@@ -179,7 +175,7 @@ export function HeroCardSwapLoop() {
       </div>
 
       {/* Card Deck Switcher Dots */}
-      <div className="flex items-center justify-center gap-2 mt-4">
+      <div className="flex items-center justify-center gap-2 mt-3">
         {cards.map((c, i) => (
           <button
             key={c.id}
@@ -198,7 +194,7 @@ export function HeroCardSwapLoop() {
 
 /**
  * FEATURE 1 VISUAL: ReactBits "Voice Pill" Acoustic Studio
- * Unique Palette: Soft Lavender & Royal Indigo (from-indigo-50/90 via-violet-50/50 to-white)
+ * Unique Palette: Soft Lavender & Royal Indigo
  */
 export function VoicePillVisual() {
   const samples = [
@@ -217,7 +213,6 @@ export function VoicePillVisual() {
 
   return (
     <div className="rounded-2xl bg-gradient-to-br from-indigo-50/90 via-violet-50/60 to-white border border-indigo-100 p-4">
-      {/* Language switcher chips */}
       <div className="flex items-center justify-between gap-1.5 mb-3">
         <div className="flex items-center gap-1">
           {samples.map((item, i) => (
@@ -238,7 +233,6 @@ export function VoicePillVisual() {
         </span>
       </div>
 
-      {/* Swelling Voice Pill Capsule */}
       <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-full bg-white border border-indigo-200/80 shadow-xs mb-3">
         <span className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center shrink-0">
           <Mic className="w-3.5 h-3.5" />
@@ -261,7 +255,7 @@ export function VoicePillVisual() {
         </span>
       </div>
 
-      <div className="text-center text-xs font-semibold text-indigo-950">
+      <div className="text-center text-xs font-semibold text-indigo-950 h-4">
         {s.spoken}
       </div>
     </div>
@@ -270,7 +264,7 @@ export function VoicePillVisual() {
 
 /**
  * FEATURE 2 VISUAL: ReactBits "Tear Ticket" Paper Receipt
- * Unique Palette: Warm Ivory Paper & Amber/Orange Stamp (from-amber-50/90 via-orange-50/40 to-white)
+ * Unique Palette: Warm Ivory Paper & Amber/Orange Stamp
  */
 export function TearTicketReceiptVisual() {
   return (
@@ -282,17 +276,15 @@ export function TearTicketReceiptVisual() {
         }
       `}</style>
 
-      {/* Warm optical scan bar */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-amber-500 to-transparent shadow-[0_0_10px_rgba(245,158,11,0.6)] z-10"
         style={{ animation: 'amberScan 3s ease-in-out infinite' }}
       />
 
-      {/* Tactile Paper Ticket with perforated divider */}
       <div className="relative bg-[#FFFDF9] rounded-xl border border-amber-200/90 p-3 shadow-2xs font-mono text-xs">
         <div className="flex items-center justify-between pb-2 border-b border-dashed border-amber-300">
-          <span className="font-bold text-slate-800">DMART SUPERMARTS</span>
+          <span className="font-bold text-slate-800">DMART SUPERMARKET</span>
           <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
             SCANNED
           </span>
@@ -318,7 +310,7 @@ export function TearTicketReceiptVisual() {
 
 /**
  * FEATURE 3 VISUAL: Smart Insights Pulse Card
- * Unique Palette: Soft Rose & Coral Intelligence (from-rose-50/80 via-pink-50/40 to-white)
+ * Unique Palette: Soft Rose & Coral Intelligence
  */
 export function InsightPulseVisual() {
   const tips = [
@@ -352,7 +344,7 @@ export function InsightPulseVisual() {
           <div className="text-xs font-bold text-slate-800">{item.label}</div>
           <div className="text-[11px] text-rose-600 font-medium mt-0.5">{item.save}</div>
         </div>
-        <span className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+        <span className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
           <ArrowUpRight className="w-4 h-4" />
         </span>
       </div>
@@ -362,7 +354,7 @@ export function InsightPulseVisual() {
 
 /**
  * FEATURE 4 VISUAL: Monthly Reports & Export Stack
- * Unique Palette: Crisp Ocean Sky Blue (from-sky-50/90 via-blue-50/50 to-white)
+ * Unique Palette: Crisp Ocean Sky Blue
  */
 export function MonthlyReportVisual() {
   const bars = [45, 62, 54, 78, 68, 88]
@@ -407,7 +399,7 @@ export function MonthlyReportVisual() {
 
 /**
  * FEATURE 5 VISUAL: Interactive Budget Sliders
- * Unique Palette: Fresh Mint & Emerald (from-emerald-50/90 via-teal-50/50 to-white)
+ * Unique Palette: Fresh Mint & Emerald
  */
 export function BudgetGaugeVisual() {
   const [step, setStep] = useState(0)
@@ -443,7 +435,7 @@ export function BudgetGaugeVisual() {
 
 /**
  * FEATURE 6 VISUAL: Secured Cloud Vault with BorderBeam
- * Unique Palette: Clean Metallic Slate & Cyan Shield (from-slate-100 via-slate-50 to-white)
+ * Unique Palette: Clean Metallic Slate & Cyan Shield
  */
 export function SecurityVaultVisual() {
   return (

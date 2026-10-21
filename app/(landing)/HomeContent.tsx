@@ -136,7 +136,7 @@ export default function LandingPage() {
   return (
     <div className="overflow-x-hidden">
       {/* ── HERO ── */}
-      <section className="relative z-0 min-h-fit flex flex-col justify-center px-4 sm:px-6 pt-6 sm:pt-12 pb-16 sm:pb-24 bg-gradient-to-b from-[#f0f9f4] via-white to-[#e8f4fd]">
+      <section className="relative z-0 min-h-fit flex flex-col justify-center px-4 sm:px-6 pt-5 sm:pt-12 pb-14 sm:pb-24 bg-gradient-to-b from-[#f0f9f4] via-white to-[#e8f4fd]">
         {/* Ambient multi-layered glow backdrop */}
         <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
           <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[520px] h-[340px] bg-gradient-to-tr from-teal-200/45 via-emerald-200/35 to-sky-200/40 rounded-full blur-3xl" />
@@ -145,15 +145,16 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto w-full px-2 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left 7 Columns: Headline + CTA */}
             <div className="lg:col-span-7 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-teal-200/80 shadow-xs text-xs sm:text-sm font-medium text-teal-800 mb-6">
+              {/* Crisp single-line badge on both mobile and desktop */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-teal-200/90 shadow-2xs text-xs sm:text-sm font-semibold text-teal-800 mb-5 whitespace-nowrap">
                 <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                <span>Be among the first to manage money the smarter way</span>
+                <span>Manage your money the smarter way</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12] mb-6">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12] mb-5">
                 <BlurText text="Spend less time counting," delayStepMs={45} />
                 <br />
                 <span className="bg-gradient-to-r from-[#0F766E] via-[#059669] to-[#0284C7] bg-clip-text text-transparent">
@@ -161,18 +162,26 @@ export default function LandingPage() {
                 </span>
               </h1>
 
-              <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto lg:mx-0 mb-8 leading-relaxed">
-                Track every rupee effortlessly. Voice, camera, or text in{' '}
-                <RotatingText
-                  items={[
-                    'English · “₹340 Coffee”',
-                    'हिंदी · “₹480 किराना”',
-                    'বাংলা · “₹৪৫০ বাজার”',
-                    'Seconds · “₹1,450 Receipt”',
-                  ]}
-                  className="font-semibold text-teal-800 bg-teal-50/90 px-2.5 py-0.5 rounded-lg border border-teal-200/80 text-sm sm:text-lg"
-                />
+              {/* Static subtitle so lines never jump or reflow on mobile */}
+              <p className="text-base sm:text-xl text-slate-600 max-w-xl mx-auto lg:mx-0 mb-4 leading-relaxed">
+                Track every rupee effortlessly by voice, camera, or text — in your language, backed by a secured database.
               </p>
+
+              {/* Dedicated fixed-height pill row for RotatingText so mobile layout never shifts */}
+              <div className="h-9 flex items-center justify-center lg:justify-start mb-7">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-50/90 border border-teal-200/80 text-xs sm:text-sm font-semibold text-teal-800 whitespace-nowrap shadow-2xs">
+                  <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse shrink-0" />
+                  <RotatingText
+                    items={[
+                      'English · “₹340 Coffee”',
+                      'हिंदी · “₹480 किराना”',
+                      'বাংলা · “₹৪৫০ বাজার”',
+                      'Camera · “₹1,450 Receipt”',
+                    ]}
+                    className="font-mono"
+                  />
+                </div>
+              </div>
 
               <div className="flex flex-row items-center justify-center lg:justify-start gap-3.5 flex-wrap">
                 <BorderBeam
