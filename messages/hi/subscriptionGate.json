@@ -1,0 +1,18 @@
+{
+  "disabledBadge": "अस्थायी रूप से अनुपलब्ध",
+  "featureDisabledTitle": "{feature} अभी बंद है",
+  "featureDisabledDesc": "यह सुविधा व्यवस्थापक द्वारा अस्थायी रूप से बंद की गई है। कृपया बाद में पुनः प्रयास करें।",
+  "tierRequiredBadge": "{tier} प्लान सुविधा",
+  "upgradeTitle": "{tier} के साथ {feature} अनलॉक करें",
+  "upgradeDesc": "{feature} के लिए {tier} प्लान आवश्यक है। आपका वर्तमान प्लान {current} है।",
+  "upgradeInlineDesc": "{tier} प्लान आवश्यक है (वर्तमान प्लान: {current})।",
+  "upgradeCta": "{tier} में अपग्रेड करें",
+  "paymentsDisabledBadge": "खरीद अस्थायी रूप से बंद",
+  "paymentsPausedDesc": "{tier} प्लान आवश्यक है। नए प्लान की खरीद अभी अस्थायी रूप से रोकी गई है।",
+  "viewPlanStatus": "सदस्यता स्थिति देखें",
+  "openAccessTitle": "ओपन एक्सेस सक्रिय",
+  "openAccessDesc": "सभी सक्रिय प्रीमियम सुविधाएँ इस समय सभी उपयोगकर्ताओं के लिए निःशुल्क उपलब्ध हैं।",
+  "paymentsPausedBannerTitle": "नए भुगतान अस्थायी रूप से बंद हैं",
+  "paymentsPausedBannerDesc": "नए प्लान की खरीद फिलहाल बंद है। मौजूदा सक्रिय पास सामान्य रूप से काम करते रहेंगे।",
+  "overrideBadge": "एडमिन प्लान ओवरराइड ({tier})"
+}

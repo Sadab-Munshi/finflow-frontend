@@ -9,6 +9,7 @@ import { getTransactions } from '@/lib/db'
 import { cn } from '@/lib/utils'
 import { aiInsights } from '@/lib/api-client'
 import InsightsSkeleton from '@/components/skeletons/InsightsSkeleton'
+import FeatureGate from '@/components/subscription/FeatureGate'
 import { Transaction } from '@/lib/types'
 
 // Type for insights
@@ -195,6 +196,8 @@ export default function InsightsPage() {
           )}
         </div>
 
+        {/* Feature Gate around AI Summaries */}
+        <FeatureGate feature="ai_summaries" title="AI Summaries & Insights">
         {/* Loading State - Staged AI analysis */}
         {dataLoading ? (
           <div className="space-y-5">
@@ -364,6 +367,7 @@ export default function InsightsPage() {
             )}
           </>
         )}
+        </FeatureGate>
       </div>
     </Layout>
   )

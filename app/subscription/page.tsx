@@ -18,6 +18,9 @@ import {
 } from '@/lib/api-client'
 import { openYoupiCheckout } from '@/lib/youpi-checkout'
 import { useUser } from '@/context/UserContext'
+import { useSubscriptionGate } from '@/hooks/useSubscriptionGate'
+import { TIER_DISPLAY_NAMES } from '@/lib/subscription-gate'
+import { useTranslations } from 'next-intl'
 import {
   getPlanDisplayName,
   normalizePaymentStatus,
@@ -47,6 +50,14 @@ import {
 function SubscriptionContent() {
   const searchParams = useSearchParams()
   const { user, refreshProfile } = useUser()
+  const tGate = useTranslations('subscriptionGate')
+  const {
+    subscriptionsEnabled,
+    paymentsEnabled,
+    override: adminOverride,
+    userTier,
+    refresh: refreshGate,
+  } = useSubscriptionGate()
 
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscription, setSubscription] = useState<UserSubscriptionState | null>(null)
@@ -177,6 +188,15 @@ function SubscriptionContent() {
 
   const handleConfirmPurchase = async (plan: CustomerFacingPlan | SubscriptionPlan) => {
     if (plan.id === 'free') return
+    if (!paymentsEnabled) {
+      setReviewPlan(null)
+      setNotice({
+        type: 'error',
+        title: tGate('paymentsPausedBannerTitle'),
+        message: tGate('paymentsPausedBannerDesc'),
+      })
+      return
+    }
     setProcessingPlanId(plan.id)
     setNotice(null)
 
@@ -330,6 +350,56 @@ function SubscriptionContent() {
         />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-6 sm:space-y-8">
+          {/* Live Global Controls Banners (Open Access / Payments Paused / Super-Admin Override) */}
+          {!subscriptionsEnabled && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 px-5 py-4 flex items-start gap-3">
+              <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-emerald-950">{tGate('openAccessTitle')}</p>
+                <p className="text-xs text-emerald-800 mt-0.5">{tGate('openAccessDesc')}</p>
+              </div>
+            </div>
+          )}
+
+          {!paymentsEnabled && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/90 px-5 py-4 flex items-start gap-3">
+              <Zap className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-amber-950">{tGate('paymentsPausedBannerTitle')}</p>
+                <p className="text-xs text-amber-800 mt-0.5">{tGate('paymentsPausedBannerDesc')}</p>
+              </div>
+            </div>
+          )}
+
+          {adminOverride && (
+            <div className="rounded-2xl border border-teal-200 bg-teal-50/80 px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-teal-950">
+                  {tGate('overrideBadge', { tier: TIER_DISPLAY_NAMES[userTier] })}
+                </p>
+                <p className="text-xs text-teal-800 mt-0.5">
+                  Status: <span className="font-semibold capitalize">{adminOverride.status}</span>
+                  {adminOverride.trial_ends_at
+                    ? ` · Trial ends ${new Date(adminOverride.trial_ends_at).toLocaleDateString('en-IN')}`
+                    : ''}
+                  {adminOverride.expires_at
+                    ? ` · Expires ${new Date(adminOverride.expires_at).toLocaleDateString('en-IN')}`
+                    : ''}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  refreshGate()
+                  fetchSubscriptionState(true)
+                }}
+                className="text-xs font-semibold text-teal-700 hover:underline"
+              >
+                Refresh status
+              </button>
+            </div>
+          )}
+
           {/* Status / Verification Notice Banner */}
           <SubscriptionNoticeBanner
             notice={notice}
@@ -367,7 +437,17 @@ function SubscriptionContent() {
                 currentStatus={subscription?.status || 'free'}
                 processingPlanId={processingPlanId}
                 showTestPlan={showTestPlan}
-                onSelectPlan={(plan) => setReviewPlan(plan)}
+                onSelectPlan={(plan) => {
+                  if (!paymentsEnabled) {
+                    setNotice({
+                      type: 'error',
+                      title: tGate('paymentsPausedBannerTitle'),
+                      message: tGate('paymentsPausedBannerDesc'),
+                    })
+                    return
+                  }
+                  setReviewPlan(plan)
+                }}
               />
 
               {/* 4. Recent Payments Preview */}

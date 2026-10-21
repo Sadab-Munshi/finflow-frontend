@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
 import { useTranslations } from 'next-intl'
 import { useUser } from '@/context/UserContext'
+import { useSubscriptionGate } from '@/hooks/useSubscriptionGate'
 import { createClient } from '@/lib/supabase/client'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import { BorderBeam } from 'border-beam'
@@ -29,11 +30,11 @@ const sidebarNavItems = [
 
 // Exact demo colors. Order: Auto & Type at the bottom (closest to thumb), moving up to PDF
 const fabInputMethods = [
-  { icon: Sparkles, labelKey: "fabAuto", color: "bg-purple-500", tab: "text" },
-  { icon: PenLine, labelKey: "fabType", color: "bg-blue-500", tab: "manual" },
-  { icon: Mic, labelKey: "fabVoice", color: "bg-green-500", tab: "voice" },
-  { icon: Camera, labelKey: "fabScan", color: "bg-orange-500", tab: "scan" },
-  { icon: FileText, labelKey: "fabPdf", color: "bg-red-500", tab: "scan" },
+  { icon: Sparkles, labelKey: "fabAuto", color: "bg-purple-500", tab: "text", feature: "nlp_entry" },
+  { icon: PenLine, labelKey: "fabType", color: "bg-blue-500", tab: "manual", feature: null },
+  { icon: Mic, labelKey: "fabVoice", color: "bg-green-500", tab: "voice", feature: "voice_entry" },
+  { icon: Camera, labelKey: "fabScan", color: "bg-orange-500", tab: "scan", feature: "receipt_scan" },
+  { icon: FileText, labelKey: "fabPdf", color: "bg-red-500", tab: "scan", feature: "receipt_scan" },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -41,6 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const t = useTranslations('nav')
   const { user, loading } = useUser()
+  const { checkFeature, userTier } = useSubscriptionGate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
@@ -82,7 +84,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const userName = user?.userName || ''
   const avatarUrl = user?.avatarUrl || ''
-  const isPro = Boolean(user?.isPro)
+  const isPro = Boolean(user?.isPro) || userTier === 'pro' || userTier === 'premium'
   const initial = userName ? userName.charAt(0).toUpperCase() : ''
 
   const AvatarCircle = ({ size = 40, className = '' }: { size?: number; className?: string }) => (
@@ -286,9 +288,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         >
           {fabInputMethods.map((method, index) => {
             const Icon = method.icon
+            const gate = method.feature ? checkFeature(method.feature) : null
             return (
               <button
-                key={method.tab}
+                key={method.labelKey}
                 onClick={() => {
                   setFabOpen(false)
                   // Tiny delay ensures the closing animation plays before Next.js interrupts it with a route change
@@ -300,12 +303,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <div
                   className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center text-white",
-                    method.color
+                    gate && !gate.enabled ? "bg-slate-400" : method.color
                   )}
                 >
                   <Icon className="h-4 w-4" />
                 </div>
-                <span className="font-medium text-gray-900 pr-2">{t(method.labelKey)}</span>
+                <span className="font-medium text-gray-900">{t(method.labelKey)}</span>
+                {gate && !gate.allowed && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-800">
+                    {!gate.enabled ? 'Off' : gate.requiredTier}
+                  </span>
+                )}
               </button>
             )
           })}

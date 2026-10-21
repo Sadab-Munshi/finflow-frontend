@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Layout from '@/components/layout/Layout'
+import FeatureGate from '@/components/subscription/FeatureGate'
 import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
@@ -235,6 +236,7 @@ export default function SettingsPage() {
           <span className="text-xs font-semibold uppercase tracking-widest text-[#64748B]">{t('pushSection')}</span>
           <div className="flex-1 border-b border-[#E2E8F0]" />
         </div>
+        <FeatureGate feature="push_notifications" mode="inline" title="Push Notifications">
         <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4">
           <div className="flex items-start justify-between py-3 border-b border-[#F1F5F9]">
             <div className="flex-1 pr-4">
@@ -323,6 +325,7 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+        </FeatureGate>
         </div>
 
         {/* ── SECTION 4: IN-APP NOTIFICATIONS ── */}

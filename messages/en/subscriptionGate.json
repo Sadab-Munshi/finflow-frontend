@@ -1,0 +1,18 @@
+{
+  "disabledBadge": "Temporarily unavailable",
+  "featureDisabledTitle": "{feature} is currently disabled",
+  "featureDisabledDesc": "This feature has been temporarily turned off by an administrator. Please check back later.",
+  "tierRequiredBadge": "{tier} Plan Feature",
+  "upgradeTitle": "Unlock {feature} with {tier}",
+  "upgradeDesc": "{feature} requires the {tier} plan. Your account is currently on the {current} plan.",
+  "upgradeInlineDesc": "Requires the {tier} plan (current plan: {current}).",
+  "upgradeCta": "Upgrade to {tier}",
+  "paymentsDisabledBadge": "Purchases paused",
+  "paymentsPausedDesc": "Requires the {tier} plan. New plan purchases are temporarily paused.",
+  "viewPlanStatus": "View Subscription Status",
+  "openAccessTitle": "Open Access Active",
+  "openAccessDesc": "Subscription tier gates are currently switched off — all enabled features are available at no cost.",
+  "paymentsPausedBannerTitle": "New Plan Purchases Paused",
+  "paymentsPausedBannerDesc": "Payments are temporarily disabled by the administrator. Existing active passes continue working normally.",
+  "overrideBadge": "Admin Plan Override ({tier})"
+}

@@ -5,6 +5,8 @@ import { FileText, Download, Calendar, Info, Loader2 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { useTranslations } from 'next-intl'
 import ReportsSkeleton from '@/components/skeletons/ReportsSkeleton'
+import FeatureGate from '@/components/subscription/FeatureGate'
+import { useSubscriptionGate } from '@/hooks/useSubscriptionGate'
 import toast from 'react-hot-toast'
 import { getReports } from '@/lib/api-client'
 
@@ -55,11 +57,18 @@ function getNextMonthInfo(): { nextMonthName: string; nextYear: number } {
 
 export default function ReportsPage() {
   const t = useTranslations('reports')
+  const { loading: gateLoading, canAccessFeature } = useSubscriptionGate()
+  const pdfAllowed = canAccessFeature('pdf_export')
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   useEffect(() => {
+    if (gateLoading) return
+    if (!pdfAllowed) {
+      setLoading(false)
+      return
+    }
     const fetchReports = async () => {
       try {
         const data = await getReports()
@@ -71,7 +80,7 @@ export default function ReportsPage() {
       }
     }
     fetchReports()
-  }, [])
+  }, [gateLoading, pdfAllowed])
 
   const handleDownload = async (report: Report) => {
     try {
@@ -112,6 +121,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Report cards or empty state */}
+        <FeatureGate feature="pdf_export" title="PDF Reports & Export">
         {reports.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
             <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -172,6 +182,7 @@ export default function ReportsPage() {
             Reports are automatically generated on the 1st of each month .
           </p>
         </div>
+        </FeatureGate>
       </div>
     </Layout>
   )
