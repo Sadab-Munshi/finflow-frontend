@@ -20,13 +20,13 @@ export default function VoiceTab() {
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
+  const [recordingTime, setRecordingTime] = useState(0)
   const [loading, setLoading] = useState(false)
   const [parsedList, setParsedList] = useState<ParsedTransaction[]>([])
   const [parseError, setParseError] = useState<string | null>(null)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const recordingSecondsRef = useRef(0)
 
   // Edit form state
   const [amount, setAmount] = useState('')
@@ -39,27 +39,22 @@ export default function VoiceTab() {
 
   const availableCategories = getCategoriesByType(type)
 
-  const handleVoiceStop = () => {
-    mediaRecorderRef.current?.stop()
-    setIsListening(false)
-  }
-
   /* Recording auto-stop timer (hidden from UI) */
   useEffect(() => {
-    if (!isListening) {
-      recordingSecondsRef.current = 0
-      return
-    }
-    recordingSecondsRef.current = 0
+    if (!isListening) { setRecordingTime(0); return }
     const timer = setInterval(() => {
-      recordingSecondsRef.current += 1
-      if (recordingSecondsRef.current >= MAX_RECORDING_SECONDS) {
-        mediaRecorderRef.current?.stop()
-        setIsListening(false)
-        clearInterval(timer)
-      }
+      setRecordingTime(prev => {
+        const next = prev + 1
+        if (next >= MAX_RECORDING_SECONDS) {
+          handleVoiceStop()
+          clearInterval(timer)
+          return MAX_RECORDING_SECONDS
+        }
+        return next
+      })
     }, 1000)
     return () => clearInterval(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening])
 
   const fillForm = (p: ParsedTransaction) => {
@@ -113,6 +108,11 @@ export default function VoiceTab() {
     } catch {
       setParseError(VOICE_ERROR_MIC)
     }
+  }
+
+  const handleVoiceStop = () => {
+    mediaRecorderRef.current?.stop()
+    setIsListening(false)
   }
 
   const handleSaveSingle = (index: number) => {

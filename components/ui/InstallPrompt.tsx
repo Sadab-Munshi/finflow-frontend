@@ -18,16 +18,11 @@ function isInStandaloneMode() {
   return window.matchMedia('(display-mode: standalone)').matches
 }
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
-}
-
 export default function InstallPrompt() {
   const pathname = usePathname()
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [show, setShow] = useState(false)
-  const [isIOSDevice] = useState(() => isIOS())
+  const [isIOSDevice, setIsIOSDevice] = useState(false)
 
   useEffect(() => {
     // Don't show on public pages
@@ -41,21 +36,23 @@ export default function InstallPrompt() {
       if (sessionStorage.getItem('install-dismissed') === 'true') return
     } catch {}
 
-    if (isIOSDevice) {
+    const ios = isIOS()
+    setIsIOSDevice(ios)
+
+    if (ios) {
       // iOS doesn't support beforeinstallprompt, show manual instructions
-      const timer = setTimeout(() => setShow(true), 2000)
-      return () => clearTimeout(timer)
+      setTimeout(() => setShow(true), 2000)
     } else {
       // Android/Chrome
-      const handler = (e: Event) => {
+      const handler = (e: any) => {
         e.preventDefault()
-        setDeferredPrompt(e as BeforeInstallPromptEvent)
+        setDeferredPrompt(e)
         setShow(true)
       }
       window.addEventListener('beforeinstallprompt', handler)
       return () => window.removeEventListener('beforeinstallprompt', handler)
     }
-  }, [pathname, isIOSDevice])
+  }, [pathname])
 
   const handleInstall = async () => {
     if (!deferredPrompt) return

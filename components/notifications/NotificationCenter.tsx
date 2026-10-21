@@ -1,11 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { X, CheckCheck, Bell } from 'lucide-react'
 import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
-import { sanitizeInternalRedirect } from '@/lib/security'
 import type { Notification } from '@/lib/types'
 
 interface NotificationCenterProps {
@@ -13,10 +11,6 @@ interface NotificationCenterProps {
   onMarkAsRead: (id: string) => void
   onMarkAllAsRead: () => void
   onClose: () => void
-}
-
-function sanitizeIconFileName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, '')
 }
 
 export default function NotificationCenter({
@@ -32,7 +26,7 @@ export default function NotificationCenter({
       onMarkAsRead(notification.id)
     }
     if (notification.link) {
-      router.push(sanitizeInternalRedirect(notification.link, '/dashboard'))
+      router.push(notification.link)
       onClose()
     }
   }
@@ -42,7 +36,7 @@ export default function NotificationCenter({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
         <h3 className="font-semibold text-gray-800 text-sm">Notifications</h3>
-        <button onClick={onClose} aria-label="Close notifications" className="text-gray-400 hover:text-gray-600 transition-colors">
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -54,52 +48,45 @@ export default function NotificationCenter({
             <p className="text-gray-400 text-sm">No notifications yet</p>
           </div>
         ) : (
-          notifications.slice(0, 5).map((notification) => {
-            const rawIcon = notification.icon || getNotificationIcon(notification.type)
-            const safePng = rawIcon?.endsWith('.png') ? sanitizeIconFileName(rawIcon) : null
-
-            return (
-              <button
-                key={notification.id}
-                onClick={() => handleNotificationClick(notification)}
-                className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
-                  !notification.read ? 'bg-teal-50/30' : ''
-                }`}
-              >
-                <div className="flex gap-3">
-                  {safePng ? (
-                    <Image
-                      src={`/icons-png/${safePng}`}
-                      alt=""
-                      width={28}
-                      height={28}
-                      className="w-[28px] h-[28px] object-contain flex-shrink-0"
-                    />
-                  ) : rawIcon ? (
-                    <span className="text-base leading-none">{rawIcon}</span>
-                  ) : (
-                    <Bell className="w-5 h-5 text-slate-400" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-800' : 'font-medium text-gray-600'}`}>
-                        {notification.title}
-                      </p>
-                      <span className="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">
-                        {timeAgo(notification.created_at)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                      {notification.message}
+          notifications.slice(0, 5).map((notification) => (
+            <button
+              key={notification.id}
+              onClick={() => handleNotificationClick(notification)}
+              className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
+                !notification.read ? 'bg-teal-50/30' : ''
+              }`}
+            >
+              <div className="flex gap-3">
+                {(notification.icon || getNotificationIcon(notification.type))?.endsWith('.png') ? (
+                  <img
+                    src={`/icons-png/${notification.icon || getNotificationIcon(notification.type)}`}
+                    alt=""
+                    className="w-[28px] h-[28px] object-contain flex-shrink-0"
+                  />
+                ) : (notification.icon || getNotificationIcon(notification.type)) ? (
+                  <span className="text-base leading-none">{notification.icon || getNotificationIcon(notification.type)}</span>
+                ) : (
+                  <Bell className="w-5 h-5 text-slate-400" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-800' : 'font-medium text-gray-600'}`}>
+                      {notification.title}
                     </p>
+                    <span className="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">
+                      {timeAgo(notification.created_at)}
+                    </span>
                   </div>
-                  {!notification.read && (
-                    <span className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0 mt-2" />
-                  )}
+                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                    {notification.message}
+                  </p>
                 </div>
-              </button>
-            )
-          })
+                {!notification.read && (
+                  <span className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0 mt-2" />
+                )}
+              </div>
+            </button>
+          ))
         )}
       </div>
 

@@ -22,10 +22,7 @@ export default function PrivacySecurityPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(() => {
-    if (typeof window === 'undefined') return true
-    return localStorage.getItem('finflow_analytics_enabled') !== 'false'
-  })
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(true)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -35,10 +32,11 @@ export default function PrivacySecurityPage() {
       setLoading(false)
       setMounted(true)
     }
-    void checkAuth()
+    checkAuth()
 
     const storedAnalytics = localStorage.getItem('finflow_analytics_enabled')
     const enabled = storedAnalytics !== 'false'
+    setAnalyticsEnabled(enabled)
     if (enabled) {
       posthog.opt_in_capturing()
     } else {

@@ -221,20 +221,11 @@
 
 @keyframes auth-fade-up {
   from {
-    opacity: 0.92;
-    transform: translateY(8px);
+    opacity: 0;
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes blurTextSlide {
-  from {
-    transform: translateY(6px);
-  }
-  to {
     transform: translateY(0);
   }
 }

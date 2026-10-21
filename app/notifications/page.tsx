@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import {
   CheckCheck, Bell, Trash2, Loader2,
   CheckSquare, Square, X, ArrowRight,
@@ -12,7 +11,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Layout from '@/components/layout/Layout'
 import { createClient } from '@/lib/supabase/client'
 import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
-import { sanitizeInternalRedirect } from '@/lib/security'
 import NotificationsSkeleton from '@/components/skeletons/NotificationsSkeleton'
 import toast from 'react-hot-toast'
 import type { Notification } from '@/lib/types'
@@ -144,18 +142,13 @@ export default function NotificationsPage() {
       return
     }
     if (!notification.read) handleMarkAsRead(notification.id)
-    if (notification.link) router.push(sanitizeInternalRedirect(notification.link, '/dashboard'))
+    if (notification.link) router.push(notification.link)
   }
 
   /* ── Bulk select helpers ────────────────────────────────────────── */
-  const toggleSelect = (id: string) => {
-    setSelected(prev => {
+  const toggleSelect = (id: string) => {    setSelected(prev => {
       const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
+      next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
   }
@@ -250,14 +243,12 @@ export default function NotificationsPage() {
   /* PNG → Emoji → Lucide fallback chain for notification icons */
   function renderNotificationIcon(icon: string | undefined, type: string) {
     if (icon?.endsWith('.png')) {
-      const safeIcon = icon.replace(/[^a-zA-Z0-9._-]/g, '')
       return (
-        <Image
-          src={`/icons-png/${safeIcon}`}
+        <img
+          src={`/icons-png/${icon}`}
           alt=""
-          width={26}
-          height={26}
           className="w-[26px] h-[26px] object-contain"
+          loading="lazy"
         />
       )
     }
@@ -477,8 +468,7 @@ export default function NotificationsPage() {
 
                 {/* Notifications */}
                 <div>
-                  <AnimatePresence initial={false}>
-                    {grouped[group].map((notification) => {
+                  <AnimatePresence initial={false}>                    {grouped[group].map((notification, i) => {
                       const iconBg = typeIconBg(notification.type)
                       const isSelected = selected.has(notification.id)
 

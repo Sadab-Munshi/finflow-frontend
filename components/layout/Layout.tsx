@@ -8,12 +8,11 @@ import {
   LayoutDashboard, History, PiggyBank, BarChart2, FileText, Settings,
   User, PenLine, LogOut, PanelLeftClose, Menu, Plus, Mic, Camera, Sparkles, TrendingUp, Crown
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { cn, getTodayIndianDate } from '@/lib/utils'
 import { useTranslations } from 'next-intl'
 import { useUser } from '@/context/UserContext'
 import { createClient } from '@/lib/supabase/client'
-import { clearClientSecurityState } from '@/lib/security'
-import { resetAnalytics } from '@/lib/posthog'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import { BorderBeam } from 'border-beam'
 
@@ -30,67 +29,12 @@ const sidebarNavItems = [
 
 // Exact demo colors. Order: Auto & Type at the bottom (closest to thumb), moving up to PDF
 const fabInputMethods = [
-  { icon: Sparkles, labelKey: 'fabAuto', color: 'bg-purple-500', tab: 'text' },
-  { icon: PenLine, labelKey: 'fabType', color: 'bg-blue-500', tab: 'manual' },
-  { icon: Mic, labelKey: 'fabVoice', color: 'bg-green-500', tab: 'voice' },
-  { icon: Camera, labelKey: 'fabScan', color: 'bg-orange-500', tab: 'scan' },
-  { icon: FileText, labelKey: 'fabPdf', color: 'bg-red-500', tab: 'scan' },
+  { icon: Sparkles, labelKey: "fabAuto", color: "bg-purple-500", tab: "text" },
+  { icon: PenLine, labelKey: "fabType", color: "bg-blue-500", tab: "manual" },
+  { icon: Mic, labelKey: "fabVoice", color: "bg-green-500", tab: "voice" },
+  { icon: Camera, labelKey: "fabScan", color: "bg-orange-500", tab: "scan" },
+  { icon: FileText, labelKey: "fabPdf", color: "bg-red-500", tab: "scan" },
 ]
-
-interface AvatarCircleProps {
-  size?: number
-  className?: string
-  avatarUrl: string
-  initial: string
-  isPro: boolean
-}
-
-function AvatarCircle({
-  size = 40,
-  className = '',
-  avatarUrl,
-  initial,
-  isPro,
-}: AvatarCircleProps) {
-  return (
-    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <div
-        className={cn(
-          'rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center overflow-hidden relative w-full h-full',
-          isPro && 'ring-2 ring-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.65)]',
-          className
-        )}
-      >
-        {avatarUrl ? (
-          <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes={`${size}px`} />
-        ) : (
-          <span className="text-white font-bold" style={{ fontSize: size * 0.35 }}>
-            {initial}
-          </span>
-        )}
-      </div>
-      {isPro && (
-        <span
-          title="FinFlow Pro Member"
-          className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 border border-teal-900 flex items-center justify-center shadow-sm"
-        >
-          <Crown className="w-2.5 h-2.5 text-slate-950 fill-slate-950" />
-        </span>
-      )}
-    </div>
-  )
-}
-
-function ProfileSkeleton() {
-  return (
-    <div className="flex items-center gap-3 animate-pulse w-full">
-      <div className="w-10 h-10 rounded-full bg-teal-600/50 flex-shrink-0" />
-      <div className="flex-1 min-w-0">
-        <div className="h-4 w-24 bg-teal-600/50 rounded" />
-      </div>
-    </div>
-  )
-}
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -113,12 +57,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Close side panels/modals on route change
+  useEffect(() => {
+    setSidebarOpen(false)
+    setFabOpen(false)
+    setProfileDropdownOpen(false)
+  }, [pathname])
+
   const handleSignOut = async () => {
     setProfileDropdownOpen(false)
     const supabase = createClient()
-    await supabase.auth.signOut()
-    await clearClientSecurityState()
-    resetAnalytics()
+    await supabase.auth.signOut({ scope: 'local' })
     router.push('/login')
   }
 
@@ -135,6 +84,43 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const avatarUrl = user?.avatarUrl || ''
   const isPro = Boolean(user?.isPro)
   const initial = userName ? userName.charAt(0).toUpperCase() : ''
+
+  const AvatarCircle = ({ size = 40, className = '' }: { size?: number; className?: string }) => (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <div
+        className={cn(
+          'rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center overflow-hidden relative w-full h-full',
+          isPro && 'ring-2 ring-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.65)]',
+          className
+        )}
+      >
+        {avatarUrl ? (
+          <Image src={avatarUrl} alt="Profile" fill className="object-cover" sizes={`${size}px}`} />
+        ) : (
+          <span className="text-white font-bold" style={{ fontSize: size * 0.35 }}>
+            {initial}
+          </span>
+        )}
+      </div>
+      {isPro && (
+        <span
+          title="FinFlow Pro Member"
+          className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 border border-teal-900 flex items-center justify-center shadow-sm"
+        >
+          <Crown className="w-2.5 h-2.5 text-slate-950 fill-slate-950" />
+        </span>
+      )}
+    </div>
+  )
+
+  const ProfileSkeleton = () => (
+    <div className="flex items-center gap-3 animate-pulse w-full">
+      <div className="w-10 h-10 rounded-full bg-teal-600/50 flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <div className="h-4 w-24 bg-teal-600/50 rounded" />
+      </div>
+    </div>
+  )
 
   const isSubscriptionRoute = pathname?.startsWith('/subscription')
 
@@ -168,164 +154,174 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Portrait Sidebar (Mobile Drawer) */}
-      {sidebarOpen && (
-        <div className="md:hidden fixed inset-0 z-50 no-print">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div
-            className="fixed left-0 top-0 h-screen w-[72vw] max-w-[260px] bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto shadow-2xl transition-transform duration-200"
-          >
-            <div className="px-4 pt-4 flex-shrink-0">
-              <BorderBeam
-                size="sm"
-                colorVariant={isPro ? 'colorful' : 'ocean'}
-                strength={isPro ? 0.9 : 0.4}
-                active={isPro}
-                theme="dark"
-                borderRadius={12}
-              >
-                <div
-                  className={cn(
-                    'flex items-center justify-between rounded-xl px-3 py-2',
-                    isPro && 'ring-1 ring-amber-300/60 shadow-[0_0_18px_rgba(251,191,36,0.25)]'
-                  )}
-                  style={{ backgroundColor: '#D9FAF7' }}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <div className="md:hidden fixed inset-0 z-50 no-print">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed left-0 top-0 h-screen w-[72vw] max-w-[260px] bg-gradient-to-b from-teal-700 to-teal-800 flex flex-col z-50 overflow-y-auto"
+            >
+              <div className="px-4 pt-4 flex-shrink-0">
+                <BorderBeam
+                  size="sm"
+                  colorVariant={isPro ? 'colorful' : 'ocean'}
+                  strength={isPro ? 0.9 : 0.4}
+                  active={isPro}
+                  theme="dark"
+                  borderRadius={12}
                 >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Image
-                      src="/images/finflow-logo.png"
-                      alt="FinFlow"
-                      width={110}
-                      height={36}
-                      sizes="110px"
-                      style={{ objectFit: 'contain', pointerEvents: 'none' }}
-                      draggable={false}
-                      onContextMenu={(e) => e.preventDefault()}
-                    />
-                    {isPro && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-extrabold tracking-wider uppercase shadow-xs shrink-0">
-                        <Crown className="w-2.5 h-2.5 fill-white" />
-                        PRO
-                      </span>
+                  <div
+                    className={cn(
+                      'flex items-center justify-between rounded-xl px-3 py-2',
+                      isPro && 'ring-1 ring-amber-300/60 shadow-[0_0_18px_rgba(251,191,36,0.25)]'
                     )}
-                  </div>
-                  <button
-                    onClick={() => setSidebarOpen(false)}
-                    className="text-teal-700 hover:text-teal-900 transition-colors flex-shrink-0"
-                    aria-label="Close sidebar panel"
+                    style={{ backgroundColor: '#D9FAF7' }}
                   >
-                    <PanelLeftClose className="w-5 h-5" />
-                  </button>
-                </div>
-              </BorderBeam>
-            </div>
-            <div className="mx-4 mt-3 border-t border-teal-600/50" />
-            <nav className="flex-1 p-3 space-y-1 mt-1">
-              {sidebarNavItems.map(item => (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
-                    pathname === item.path
-                      ? 'bg-white/20 text-white font-semibold'
-                      : 'text-white/70 font-normal hover:bg-white/10'
-                  )}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="text-sm">{t(item.labelKey)}</span>
-                </Link>
-              ))}
-            </nav>
-            <div className="mt-auto py-3 px-4 border-t border-white/20 flex-shrink-0">
-              {loading ? (
-                <ProfileSkeleton />
-              ) : (
-                <div className="flex items-center gap-3">
-                  <AvatarCircle
-                    size={36}
-                    avatarUrl={avatarUrl}
-                    initial={initial}
-                    isPro={isPro}
-                  />
-                  <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-white truncate">{userName}</p>
-                    {isPro && (
-                      <span className="px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[9px] font-extrabold uppercase tracking-wider shrink-0">
-                        PRO
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Image
+                        src="/images/finflow-logo.png"
+                        alt="FinFlow"
+                        width={110}
+                        height={36}
+                        sizes="110px"
+                        style={{ objectFit: 'contain', pointerEvents: 'none' }}
+                        draggable={false}
+                        onContextMenu={(e) => e.preventDefault()}
+                      />
+                      {isPro && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-extrabold tracking-wider uppercase shadow-xs shrink-0">
+                          <Crown className="w-2.5 h-2.5 fill-white" />
+                          PRO
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setSidebarOpen(false)}
+                      className="text-teal-700 hover:text-teal-900 transition-colors flex-shrink-0"
+                      aria-label="Close sidebar panel"
+                    >
+                      <PanelLeftClose className="w-5 h-5" />
+                    </button>
                   </div>
-                </div>
-              )}
-            </div>
+                </BorderBeam>
+              </div>
+              <div className="mx-4 mt-3 border-t border-teal-600/50" />
+              <nav className="flex-1 p-3 space-y-1 mt-1">
+                {sidebarNavItems.map(item => (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
+                      pathname === item.path
+                        ? 'bg-white/20 text-white font-semibold'
+                        : 'text-white/70 font-normal hover:bg-white/10'
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="text-sm">{t(item.labelKey)}</span>
+                  </Link>
+                ))}
+              </nav>
+              <div className="mt-auto py-3 px-4 border-t border-white/20 flex-shrink-0">
+                {loading ? (
+                  <ProfileSkeleton />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <AvatarCircle size={36} />
+                    <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                      <p className="text-sm font-semibold text-white truncate">{userName}</p>
+                      {isPro && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-[9px] font-extrabold uppercase tracking-wider shrink-0">
+                          PRO
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* FAB Speed Dial Backdrop */}
-      {fabOpen && (
-        <div
-          className="fixed inset-0 bg-black/25 z-40 no-print transition-opacity duration-150"
-          onClick={() => setFabOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {fabOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 bg-black/25 z-40 no-print"
+            onClick={() => setFabOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ======================================================= */}
       {/* EXACT DEMO FAB - FAST ANIMATION & THUMB-FRIENDLY ORDER */}
       {/* ======================================================= */}
       {!isSubscriptionRoute && (
-        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 no-print">
-          {/* Input Method Options */}
-          <div
-            className={cn(
-              'absolute bottom-16 right-0 flex flex-col-reverse gap-3 transition-all duration-200',
-              fabOpen
-                ? 'opacity-100 translate-y-0'
-                : 'opacity-0 -translate-y-4 pointer-events-none'
-            )}
-          >
-            {fabInputMethods.map((method, index) => {
-              const Icon = method.icon
-              return (
-                <button
-                  key={`${method.tab}-${index}`}
-                  onClick={() => {
-                    setFabOpen(false)
-                    setTimeout(() => router.push(`/add?tab=${method.tab}`), 50)
-                  }}
-                  className="flex items-center gap-3 px-4 py-2 rounded-full bg-white shadow-lg border border-gray-200 hover:scale-105 transition-transform"
-                  style={{ animationDelay: `${index * 50}ms` }}
+      <div className="fixed bottom-20 md:bottom-6 right-6 z-50 no-print">
+        {/* Input Method Options */}
+        <div
+          className={cn(
+            "absolute bottom-16 right-0 flex flex-col-reverse gap-3 transition-all duration-200",
+            fabOpen
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-4 pointer-events-none"
+          )}
+        >
+          {fabInputMethods.map((method, index) => {
+            const Icon = method.icon
+            return (
+              <button
+                key={method.tab}
+                onClick={() => {
+                  setFabOpen(false)
+                  // Tiny delay ensures the closing animation plays before Next.js interrupts it with a route change
+                  setTimeout(() => router.push(`/add?tab=${method.tab}`), 50)
+                }}
+                className="flex items-center gap-3 px-4 py-2 rounded-full bg-white shadow-lg border border-gray-200 hover:scale-105 transition-transform"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-white",
+                    method.color
+                  )}
                 >
-                  <div
-                    className={cn(
-                      'w-8 h-8 rounded-full flex items-center justify-center text-white',
-                      method.color
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <span className="font-medium text-gray-900 pr-2">{t(method.labelKey)}</span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* FAB Button - Matching App Theme */}
-          <button
-            onClick={() => setFabOpen(!fabOpen)}
-            aria-label={fabOpen ? 'Close quick add menu' : 'Open quick add menu'}
-            className={cn(
-              'w-14 h-14 rounded-full bg-teal-600 text-white shadow-lg shadow-teal-600/30 flex items-center justify-center transition-transform hover:scale-105 hover:bg-teal-700',
-              fabOpen && 'rotate-45'
-            )}
-          >
-            <Plus className="h-6 w-6" />
-          </button>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <span className="font-medium text-gray-900 pr-2">{t(method.labelKey)}</span>
+              </button>
+            )
+          })}
         </div>
+
+        {/* FAB Button - Matching App Theme */}
+<button
+  onClick={() => setFabOpen(!fabOpen)}
+  className={cn(
+    "w-14 h-14 rounded-full bg-teal-600 text-white shadow-lg shadow-teal-600/30 flex items-center justify-center transition-transform hover:scale-105 hover:bg-teal-700",
+    fabOpen && "rotate-45"
+  )}
+>
+          <Plus className="h-6 w-6" />
+        </button>
+      </div>
       )}
       {/* ======================================================= */}
 
@@ -413,35 +409,41 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="relative p-4 border-t border-teal-600/50 flex-shrink-0" ref={profileDropdownRef}>
-          {profileDropdownOpen && (
-            <div
-              className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 transition-all duration-150"
-            >
-              <Link
-                href="/profile"
-                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors"
-                onClick={() => setProfileDropdownOpen(false)}
+          <AnimatePresence>
+            {profileDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.15 }}
+                className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
               >
-                <User className="w-4 h-4" />
-                <span className="text-sm font-medium">{t('viewProfile')}</span>
-              </Link>
-              <Link
-                href="/profile"
-                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors border-t border-gray-100"
-                onClick={() => setProfileDropdownOpen(false)}
-              >
-                <PenLine className="w-4 h-4" />
-                <span className="text-sm font-medium">{t('editProfile')}</span>
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors w-full border-t border-gray-100 text-left outline-none"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm font-medium">{t('signOut')}</span>
-              </button>
-            </div>
-          )}
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors"
+                  onClick={() => setProfileDropdownOpen(false)}
+                >
+                  <User className="w-4 h-4" />
+                  <span className="text-sm font-medium">{t('viewProfile')}</span>
+                </Link>
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors border-t border-gray-100"
+                  onClick={() => setProfileDropdownOpen(false)}
+                >
+                  <PenLine className="w-4 h-4" />
+                  <span className="text-sm font-medium">{t('editProfile')}</span>
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-600 transition-colors w-full border-t border-gray-100 text-left outline-none"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-sm font-medium">{t('signOut')}</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <button
             onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
             onKeyDown={handleProfileKeyDown}
@@ -453,12 +455,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <ProfileSkeleton />
             ) : (
               <>
-                <AvatarCircle
-                  size={40}
-                  avatarUrl={avatarUrl}
-                  initial={initial}
-                  isPro={isPro}
-                />
+                <AvatarCircle size={40} />
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                   <span className="text-white font-medium text-sm truncate">{userName}</span>
                   {isPro && (
@@ -483,12 +480,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           'min-h-screen'
         )}
       >
-        <div
+        <motion.div
           key={pathname}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
           className={cn(isSubscriptionRoute ? 'p-0' : 'p-4 md:p-6 lg:p-8')}
         >
           {children}
-        </div>
+        </motion.div>
       </main>
 
       {/* Print Header */}

@@ -49,53 +49,20 @@ declare global {
   }
 }
 
-const DEFAULT_PORTAL_ORIGIN = 'https://pay.sadabmunshi.me'
-
-function getAllowedPaymentOrigins(): Set<string> {
-  const allowed = new Set<string>([DEFAULT_PORTAL_ORIGIN])
-  const envOrigin = (process.env.NEXT_PUBLIC_YOUPI_CHECKOUT_URL || '').trim()
-  if (envOrigin) {
-    try {
-      const parsed = new URL(envOrigin)
-      if (parsed.protocol === 'https:') {
-        allowed.add(parsed.origin)
-      }
-    } catch {
-      // ignore malformed env URL
-    }
-  }
-  return allowed
-}
-
 let sdkLoadPromise: Promise<boolean> | null = null
 
 export function resolvePortalOrigin(sdkUrl?: string): string {
-  const allowed = getAllowedPaymentOrigins()
   const configured = (
-    process.env.NEXT_PUBLIC_YOUPI_CHECKOUT_URL || DEFAULT_PORTAL_ORIGIN
+    process.env.NEXT_PUBLIC_YOUPI_CHECKOUT_URL || 'https://pay.sadabmunshi.me'
   ).replace(/\/+$/, '')
-
   if (sdkUrl) {
     try {
-      const candidate = new URL(sdkUrl)
-      if (candidate.protocol === 'https:' && allowed.has(candidate.origin)) {
-        return candidate.origin
-      }
+      return new URL(sdkUrl).origin
     } catch {
       // ignore invalid URL
     }
   }
-
-  try {
-    const parsedConfig = new URL(configured)
-    if (parsedConfig.protocol === 'https:' && allowed.has(parsedConfig.origin)) {
-      return parsedConfig.origin
-    }
-  } catch {
-    // ignore
-  }
-
-  return DEFAULT_PORTAL_ORIGIN
+  return configured
 }
 
 export function normalizeCheckoutUrl(
@@ -104,27 +71,17 @@ export function normalizeCheckoutUrl(
   sdkUrl?: string
 ): string {
   const portalOrigin = resolvePortalOrigin(sdkUrl)
-  const defaultCheckout = `${portalOrigin}/checkout/${encodeURIComponent(paymentId)}`
   if (!rawCheckoutUrl) {
-    return defaultCheckout
+    return `${portalOrigin}/checkout/${encodeURIComponent(paymentId)}`
   }
   if (
     rawCheckoutUrl.includes('localhost') ||
     rawCheckoutUrl.includes('127.0.0.1') ||
     rawCheckoutUrl.includes('gauravtesting.online')
   ) {
-    return defaultCheckout
+    return `${portalOrigin}/checkout/${encodeURIComponent(paymentId)}`
   }
-
-  try {
-    const parsed = new URL(rawCheckoutUrl, portalOrigin)
-    if (parsed.protocol !== 'https:' || parsed.origin !== portalOrigin) {
-      return defaultCheckout
-    }
-    return parsed.toString()
-  } catch {
-    return defaultCheckout
-  }
+  return rawCheckoutUrl
 }
 
 export function loadYoupiSdk(sdkUrl?: string): Promise<boolean> {
@@ -132,8 +89,7 @@ export function loadYoupiSdk(sdkUrl?: string): Promise<boolean> {
   if (window.YoupiCheckout) return Promise.resolve(true)
   if (sdkLoadPromise) return sdkLoadPromise
 
-  const portalOrigin = resolvePortalOrigin(sdkUrl)
-  const resolvedUrl = `${portalOrigin}/youpi.js`
+  const resolvedUrl = sdkUrl || `${resolvePortalOrigin()}/youpi.js`
 
   sdkLoadPromise = new Promise<boolean>((resolve) => {
     const existing = document.querySelector<HTMLScriptElement>(
@@ -152,7 +108,6 @@ export function loadYoupiSdk(sdkUrl?: string): Promise<boolean> {
     const script = document.createElement('script')
     script.src = resolvedUrl
     script.async = true
-    script.crossOrigin = 'anonymous'
     script.setAttribute('data-youpi-sdk', 'true')
     script.onload = () => resolve(Boolean(window.YoupiCheckout))
     script.onerror = () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { MessageSquare, Bell, BarChart3, Brain, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { MessageSquare, Camera, Mic, Bell, BarChart3, Brain, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 import Image from 'next/image'
 import BackButton from '@/components/landing/BackButton'
@@ -123,7 +123,7 @@ export default function UserGuidePage() {
               className="absolute inset-0 z-10"
               style={{ background: 'transparent' }}
               onContextMenu={(e) => e.preventDefault()}
-              onTouchStart={() => {
+              onTouchStart={(e) => {
                 // Allow scroll but prevent long-press
                 // Long press typically fires after ~500ms
               }}

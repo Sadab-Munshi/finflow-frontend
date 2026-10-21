@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { getTransactions, getBudgets, deleteBudget, upsertBudget, deleteTransactions } from '@/lib/db'
-import { sanitizeCsvCell } from '@/lib/security'
 import { useUser } from '@/context/UserContext'
 import { createClient } from '@/lib/supabase/client'
 import { Transaction, Budget } from '@/lib/types'
@@ -114,7 +113,6 @@ function sanitizeText(str: unknown): string {
     .replace(/javascript:/gi, '')  // strip js: protocol
     .replace(/vbscript:/gi, '')    // strip vbscript: protocol
     .replace(/data:/gi, '')        // strip data: protocol
-    .replace(/^[=+\-@\t\r]+/, '')  // strip leading spreadsheet formula triggers
     .trim()
     .slice(0, 200)                 // max 200 chars
 }
@@ -335,11 +333,11 @@ export default function BackupRestorePage() {
       }
       const headers = ['Date', 'Type', 'Category', 'Amount', 'Note']
       const rows = transactions.map(t => [
-        sanitizeCsvCell(t.date),
-        sanitizeCsvCell(t.type),
-        sanitizeCsvCell(t.category),
-        sanitizeCsvCell(t.amount),
-        sanitizeCsvCell(t.note || ''),
+        t.date,
+        t.type,
+        t.category,
+        t.amount,
+        `"${(t.note || '').replace(/"/g, '""')}"`,
       ])
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
       triggerDownload(csv, `finflow-backup-${formatDateForFilename()}.csv`, 'text/csv;charset=utf-8;')

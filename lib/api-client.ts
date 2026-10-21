@@ -285,8 +285,10 @@ export async function checkBan(userId: string) {
   return request(`/api/check-ban?userId=${encodeURIComponent(userId)}`)
 }
 
-export async function checkIpBan() {
-  return request('/api/check-ip-ban')
+export async function checkIpBan(ipAddress: string) {
+  return request('/api/check-ip-ban', {
+    headers: { 'x-forwarded-for': ipAddress },
+  })
 }
 
 // ============ Track Login ============

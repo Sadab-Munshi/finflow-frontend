@@ -67,43 +67,26 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'crea
 }
 
 export async function updateTransaction(id: string, updates: Partial<Transaction>): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
-
-  const safeUpdates: Record<string, unknown> = {}
-  if (updates.amount !== undefined) safeUpdates.amount = Number(updates.amount)
-  if (updates.type !== undefined) safeUpdates.type = updates.type
-  if (updates.category !== undefined) safeUpdates.category = updates.category
-  if (updates.note !== undefined) safeUpdates.note = updates.note
-  if (updates.date !== undefined) safeUpdates.date = updates.date
-
   const { error } = await supabase
     .from('transactions')
-    .update(safeUpdates)
+    .update(updates)
     .eq('id', id)
-    .eq('user_id', user.id)
   return !error
 }
 
 export async function deleteTransaction(id: string): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
   const { error } = await supabase
     .from('transactions')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
   return !error
 }
 
 export async function deleteTransactions(ids: string[]): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
   const { error } = await supabase
     .from('transactions')
     .delete()
     .in('id', ids)
-    .eq('user_id', user.id)
   return !error
 }
 
@@ -140,19 +123,10 @@ export async function saveBudget(budget: Omit<Budget, 'id' | 'created_at'>): Pro
 }
 
 export async function updateBudget(id: string, updates: Partial<Budget>): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
-
-  const safeUpdates: Record<string, unknown> = {}
-  if (updates.amount !== undefined) safeUpdates.amount = Number(updates.amount)
-  if (updates.category !== undefined) safeUpdates.category = updates.category
-  if (updates.month !== undefined) safeUpdates.month = updates.month
-
   const { error } = await supabase
     .from('budgets')
-    .update(safeUpdates)
+    .update(updates)
     .eq('id', id)
-    .eq('user_id', user.id)
   return !error
 }
 
@@ -166,13 +140,10 @@ export async function upsertBudget(budget: Omit<Budget, 'id' | 'created_at'>): P
 }
 
 export async function deleteBudget(id: string): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
   const { error } = await supabase
     .from('budgets')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
   return !error
 }
 

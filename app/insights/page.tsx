@@ -35,7 +35,6 @@ export default function InsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([])
   const [savedTimestamp, setSavedTimestamp] = useState<string | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [cutoffDate, setCutoffDate] = useState<Date>(() => new Date(0))
   const [loading, setLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -53,40 +52,38 @@ export default function InsightsPage() {
   useEffect(() => {
     const load = async () => {
       const data = await getTransactions()
-      setCutoffDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
       setTransactions(data)
       setLoading(false)
       setMounted(true)
     }
-    void load()
+    load()
   }, [])
 
   // Load saved insights from localStorage once userId is available
   useEffect(() => {
     const key = userId ? 'finflow_insights_' + userId : 'finflow_insights_guest'
-    void Promise.resolve().then(() => {
-      try {
-        const saved = localStorage.getItem(key)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (parsed.insights && Array.isArray(parsed.insights)) {
-            setInsights(parsed.insights)
-            setSavedTimestamp(parsed.timestamp || null)
-          }
+    try {
+      const saved = localStorage.getItem(key)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.insights && Array.isArray(parsed.insights)) {
+          setInsights(parsed.insights)
+          setSavedTimestamp(parsed.timestamp || null)
         }
-      } catch (e) {
-        console.warn('Failed to load saved insights', e)
-      } finally {
-        setInsightsHydrating(false)
       }
-    })
-  }, [userId])
+    } catch (e) {
+      console.warn('Failed to load saved insights', e)
+    } finally {
+      setInsightsHydrating(false)
+    }
+  }, [user])
 
   if (loading) return <InsightsSkeleton />
   if (insightsHydrating) return <InsightsSkeleton />
   if (!mounted) return null
 
-  const last30DaysTx = transactions.filter(tx => new Date(tx.date) >= cutoffDate)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const last30DaysTx = transactions.filter(tx => new Date(tx.date) >= thirtyDaysAgo)
 
   const handleGenerate = async () => {
     setDataLoading(true)
@@ -118,8 +115,8 @@ export default function InsightsPage() {
       setSavedTimestamp(timestamp)
       const key = userId ? 'finflow_insights_' + userId : 'finflow_insights_guest'
       localStorage.setItem(key, JSON.stringify({ insights: result, timestamp }))
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('errorOccurred'))
+    } catch (err: any) {
+      setError(err?.message || t('errorOccurred'))
     } finally {
       stageTimers.forEach(clearTimeout)
       setDataLoading(false)

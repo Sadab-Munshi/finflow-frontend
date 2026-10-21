@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -148,11 +148,9 @@ export default function BudgetsPage() {
   }
 
   useEffect(() => {
-    void Promise.resolve().then(() => loadData())
+    loadData()
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        void loadData()
-      }
+      if (document.visibilityState === 'visible') loadData()
     }
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)
@@ -160,19 +158,16 @@ export default function BudgetsPage() {
 
   /* ── Spent calculation ──────────────────────────────────────────── */
 
-  const getSpentAmount = useCallback(
-    (budget: Budget) =>
-      transactions
-        .filter(t => {
-          const typeMatch     = t.type === 'expense'
-          const categoryMatch = t.category.trim().toLowerCase() === budget.category.trim().toLowerCase()
-          const ymd           = normalizeDateToYMD(t.date)
-          const dateMatch     = ymd.startsWith(budget.month)
-          return typeMatch && categoryMatch && dateMatch
-        })
-        .reduce((sum, t) => sum + Number(t.amount), 0),
-    [transactions]
-  )
+  const getSpentAmount = (budget: Budget) =>
+    transactions
+      .filter(t => {
+        const typeMatch     = t.type === 'expense'
+        const categoryMatch = t.category.trim().toLowerCase() === budget.category.trim().toLowerCase()
+        const ymd           = normalizeDateToYMD(t.date)
+        const dateMatch     = ymd.startsWith(budget.month)
+        return typeMatch && categoryMatch && dateMatch
+      })
+      .reduce((sum, t) => sum + Number(t.amount), 0)
 
   /* ── Derived data ───────────────────────────────────────────────── */
 
@@ -181,9 +176,10 @@ export default function BudgetsPage() {
     [budgets, selectedMonth],
   )
 
-  const totalBudget = filtered.reduce((s, b) => s + b.amount, 0)
-  const totalSpent  = filtered.reduce((s, b) => s + getSpentAmount(b), 0)
-  const overallPct  = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0
+  const totalBudget    = filtered.reduce((s, b) => s + b.amount, 0)
+  const totalSpent     = filtered.reduce((s, b) => s + getSpentAmount(b), 0)
+  const totalRemaining = totalBudget - totalSpent
+  const overallPct     = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0
 
   /* Over-budget items for alert banner */
   const overBudgetItems = filtered.filter(b => {
@@ -198,7 +194,7 @@ export default function BudgetsPage() {
       const pctB = b.amount > 0 ? (getSpentAmount(b) / b.amount) * 100 : 0
       return pctB - pctA
     })
-  }, [filtered, getSpentAmount])
+  }, [filtered, transactions])
 
   /* ── Month navigation ───────────────────────────────────────────── */
 

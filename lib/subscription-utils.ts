@@ -42,19 +42,12 @@ export interface QuotaSingleStat {
   remaining?: number
 }
 
-export interface QuotaPlanMeta {
-  id?: string
-  name?: string
-  multiplier?: number
-  unlimited?: boolean
-}
-
 export interface AiQuotasPayload {
   nlp?: QuotaSingleStat
   receipt?: QuotaSingleStat
   voice?: QuotaSingleStat
   insights?: QuotaSingleStat
-  plan?: QuotaPlanMeta
+  [key: string]: QuotaSingleStat | undefined
 }
 
 export interface UserSubscriptionState {
@@ -523,10 +516,10 @@ export function getNormalizedUsageMetrics(
   const keys: QuotaMetricKey[] = ['nlp', 'receipt', 'voice', 'insights']
   const effectiveMultiplier = Math.max(
     1,
-    Number(aiMultiplier) || Number(quotas?.plan?.multiplier) || 1
+    Number(aiMultiplier) || Number((quotas as any)?.plan?.multiplier) || 1
   )
   const effectiveUnlimited =
-    Boolean(unlimitedAi) || Boolean(quotas?.plan?.unlimited)
+    Boolean(unlimitedAi) || Boolean((quotas as any)?.plan?.unlimited)
 
   return keys.map((key) => {
     const stat = quotas?.[key]
