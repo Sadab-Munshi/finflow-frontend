@@ -13,6 +13,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Layout from '@/components/layout/Layout'
 import ProfileSkeleton from '@/components/skeletons/ProfileSkeleton'
+import FeatureGate from '@/components/subscription/FeatureGate'
 import { useLocale, useTranslations } from 'next-intl'
 import { setLocaleCookie } from '@/lib/i18n-cookie'
 import { LOCALE_NAMES, LOCALES, type Locale } from '@/i18n/config'
@@ -724,6 +725,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-4">
 
               {/* Telegram — unified-bot deep-link connect (mirrors WhatsApp) */}
+              <FeatureGate feature="telegram" mode="inline" title="Telegram Sync">
               <div>
                 {telegramPolling ? (
                   <div className="flex items-center gap-3 flex-nowrap">
@@ -793,10 +795,12 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+              </FeatureGate>
 
               <div className="border-t border-gray-100" />
 
               {/* WhatsApp */}
+              <FeatureGate feature="whatsapp" mode="inline" title="WhatsApp Sync">
               <div>
                 {whatsappPolling ? (
                   <div className="flex items-center gap-3 flex-nowrap">
@@ -865,6 +869,7 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+              </FeatureGate>
             </div>
           </div>
 

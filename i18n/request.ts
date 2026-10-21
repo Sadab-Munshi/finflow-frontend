@@ -19,6 +19,7 @@ const NAMESPACES = [
   'reports',
   'settings',
   'profile',
+  'subscriptionGate',
 ] as const
 
 async function loadNamespace(locale: Locale, ns: string): Promise<Record<string, string>> {

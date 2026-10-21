@@ -21,8 +21,12 @@ import SeasonalityChart from '@/components/analytics/SeasonalityChart'
 import AnomalyList from '@/components/analytics/AnomalyList'
 import YoYComparison from '@/components/analytics/YoYComparison'
 import AnalyticsSkeleton from '@/components/analytics/AnalyticsSkeleton'
+import FeatureGate from '@/components/subscription/FeatureGate'
+import { useSubscriptionGate } from '@/hooks/useSubscriptionGate'
 
 export default function AnalyticsPage() {
+  const { loading: gateLoading, canAccessFeature } = useSubscriptionGate()
+  const analyticsAllowed = canAccessFeature('advanced_analytics')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,8 +63,29 @@ export default function AnalyticsPage() {
   }
 
   useEffect(() => {
+    if (gateLoading) return
+    if (!analyticsAllowed) {
+      setLoading(false)
+      return
+    }
     loadAll()
-  }, [])
+  }, [gateLoading, analyticsAllowed])
+
+  if (!analyticsAllowed && !gateLoading) {
+    return (
+      <Layout>
+        <div className="space-y-4 pb-6">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-[#0F172A]">Analytics</h1>
+            <BarChart2 className="w-6 h-6 text-[#0A7B7B]" />
+          </div>
+          <FeatureGate feature="advanced_analytics" title="Advanced Analytics">
+            <div />
+          </FeatureGate>
+        </div>
+      </Layout>
+    )
+  }
 
   if (loading) {
     return (

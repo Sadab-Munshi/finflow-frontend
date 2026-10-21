@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 import { UserProvider } from '@/context/UserContext'
+import { SubscriptionGateProvider } from '@/context/SubscriptionGateContext'
 import AuthListener from '@/components/auth/AuthListener'
 import { WebsiteJsonLd, OrganizationJsonLd } from '@/components/JsonLd'
 import './globals.css'
@@ -132,20 +133,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <PostHogProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <UserProvider>
-              <AuthListener />
-              <UpdateNotification />
-              <PlatformGate />
-              <InstallPrompt />
-              <OnboardingModal />
-              {children}
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  style: { background: '#111827', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' },
-                  success: { iconTheme: { primary: '#10b981', secondary: '#0A0F1E' } },
-                  error: { iconTheme: { primary: '#ef4444', secondary: '#0A0F1E' } },
-                }}
-              />
+              <SubscriptionGateProvider>
+                <AuthListener />
+                <UpdateNotification />
+                <PlatformGate />
+                <InstallPrompt />
+                <OnboardingModal />
+                {children}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    style: { background: '#111827', color: '#F9FAFB', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' },
+                    success: { iconTheme: { primary: '#10b981', secondary: '#0A0F1E' } },
+                    error: { iconTheme: { primary: '#ef4444', secondary: '#0A0F1E' } },
+                  }}
+                />
+              </SubscriptionGateProvider>
             </UserProvider>
           </NextIntlClientProvider>
         </PostHogProvider>

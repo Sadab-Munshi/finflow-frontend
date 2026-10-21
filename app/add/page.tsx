@@ -11,6 +11,7 @@ import ManualTab from './components/ManualTab'
 import NLPTab from './components/NLPTab'
 import VoiceTab from './components/VoiceTab'
 import ScanTab from './components/ScanTab'
+import FeatureGate from '@/components/subscription/FeatureGate'
 
 function AddTransactionContent() {
   const t = useTranslations('add')
@@ -73,9 +74,21 @@ function AddTransactionContent() {
               transition={{ duration: 0.2 }}
             >
               {activeTab === 'manual' && <ManualTab />}
-              {activeTab === 'nlp'    && <NLPTab />}
-              {activeTab === 'voice'  && <VoiceTab />}
-              {activeTab === 'scan'   && <ScanTab />}
+              {activeTab === 'nlp' && (
+                <FeatureGate feature="nlp_entry" title="Smart Text Entry">
+                  <NLPTab />
+                </FeatureGate>
+              )}
+              {activeTab === 'voice' && (
+                <FeatureGate feature="voice_entry" title="Voice Entry">
+                  <VoiceTab />
+                </FeatureGate>
+              )}
+              {activeTab === 'scan' && (
+                <FeatureGate feature="receipt_scan" title="Receipt & PDF Scan">
+                  <ScanTab />
+                </FeatureGate>
+              )}
             </motion.div>
           </AnimatePresence>
 

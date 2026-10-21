@@ -38,7 +38,14 @@ async function request(path: string, options: RequestInit = {}) {
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    throw new Error(error.error || `API error: ${res.status}`)
+    const err = new Error(error.message || error.error || `API error: ${res.status}`)
+    Object.assign(err, {
+      status: res.status,
+      code: error.code,
+      requiredTier: error.requiredTier,
+      currentTier: error.currentTier,
+    })
+    throw err
   }
 
   return res.json()
@@ -461,4 +468,8 @@ export async function verifySubscriptionPayment(data: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
+}
+
+export async function getSubscriptionControlsConfig() {
+  return request('/api/subscriptions/config')
 }
