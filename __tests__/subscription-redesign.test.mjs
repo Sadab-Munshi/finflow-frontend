@@ -182,35 +182,30 @@ test('customer-facing subscription UI files contain zero internal gateway or eng
   }
 })
 
-test('redesigned landing page integrates all 4 bespoke webp visuals, interactive sandbox, and zero pricing clutter', () => {
-  const expectedAssets = [
-    'public/landing/hero-finflow-editorial.webp',
-    'public/landing/feature-voice-multilingual.webp',
-    'public/landing/feature-receipt-scanner.webp',
-    'public/landing/feature-monthly-report.webp',
-  ]
-
-  for (const asset of expectedAssets) {
-    const fullPath = path.resolve(process.cwd(), asset)
-    assert.equal(fs.existsSync(fullPath), true, `Expected landing asset ${asset} to exist`)
-    const stat = fs.statSync(fullPath)
-    assert.ok(stat.size > 10000, `Expected ${asset} to be a valid non-empty webp image`)
-  }
-
+test('redesigned landing page uses pure code-loop visualisations, trustworthy palette, and zero pricing or sandbox clutter', () => {
   const homeContent = fs.readFileSync(
     path.resolve(process.cwd(), 'app/(landing)/HomeContent.tsx'),
     'utf8'
   )
 
-  assert.ok(homeContent.includes('/landing/hero-finflow-editorial.webp'))
-  assert.ok(homeContent.includes('/landing/feature-voice-multilingual.webp'))
-  assert.ok(homeContent.includes('/landing/feature-receipt-scanner.webp'))
-  assert.ok(homeContent.includes('/landing/feature-monthly-report.webp'))
-  assert.ok(homeContent.includes('LiveExpenseDemo'))
-  assert.ok(homeContent.includes('BlurText'))
-  assert.ok(homeContent.includes('RotatingText'))
-  assert.ok(homeContent.includes('SpotlightCard'))
-  assert.ok(homeContent.includes('CountUpText'))
+  const motionLoops = fs.readFileSync(
+    path.resolve(process.cwd(), 'components/landing/MotionLoops.tsx'),
+    'utf8'
+  )
+
+  // Verify pure code loop visualisations are wired into HomeContent
+  assert.ok(homeContent.includes('HeroLedgerLoop'))
+  assert.ok(homeContent.includes('VoiceWaveLoopCard'))
+  assert.ok(homeContent.includes('ReceiptScannerLoopCard'))
+  assert.ok(homeContent.includes('AnalyticsReportLoopCard'))
+  assert.ok(homeContent.includes('WorkspacePreviewLoop'))
+  assert.ok(motionLoops.includes('FinFlow Live Engine'))
+
+  // Verify 00 / LIVE AI PARSER SANDBOX, static images, and PhoneSlider screenshots are not in HomeContent
+  assert.equal(homeContent.includes('00 / LIVE AI PARSER SANDBOX'), false)
+  assert.equal(homeContent.includes('LiveExpenseDemo'), false)
+  assert.equal(homeContent.includes('PhoneSlider'), false)
+  assert.equal(homeContent.includes('.webp'), false)
 
   // Ensure no pricing tiers or subscription pricing clutter is shown on the landing page
   const forbiddenLandingPricing = ['Pro Monthly', 'Pro Yearly', '₹99/month', '₹999/year', '/subscription']
