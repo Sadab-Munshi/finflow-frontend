@@ -473,3 +473,10 @@ export async function verifySubscriptionPayment(data: {
 export async function getSubscriptionControlsConfig() {
   return request('/api/subscriptions/config')
 }
+
+export async function startSubscriptionFreeTrial() {
+  return request('/api/payments/start-trial', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
