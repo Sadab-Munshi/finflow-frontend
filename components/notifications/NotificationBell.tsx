@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/context/UserContext'
+import { sanitizeInternalRedirect } from '@/lib/security'
 import NotificationCenter from './NotificationCenter'
 import type { Notification } from '@/lib/types'
 
 const NOTIFICATIONS_LIMIT = 20
 const NOTIFICATION_CACHE_TTL_MS = 30_000 // 30 seconds
 
-// Module-level cache so it persists across re-renders
-let notificationsCache: { data: Notification[]; timestamp: number } | null = null
+// Module-level cache scoped by userId so it persists across re-renders safely
+let notificationsCache: { userId: string; data: Notification[]; timestamp: number } | null = null
 
 function getToastStyle(type: string) {
   switch (type) {
@@ -29,17 +31,24 @@ function getToastStyle(type: string) {
 
 export default function NotificationBell() {
   const router = useRouter()
+  const { user } = useUser()
+  const userId = user?.userId || null
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
-  const [userId, setUserId] = useState<string | null>(null)
   const bellRef = useRef<HTMLDivElement>(null)
+  const shownToastsForUserRef = useRef<string | null>(null)
 
   const loadNotifications = useCallback(async (forceRefresh = false) => {
     if (!userId) return
 
-    // Use cached data if fresh enough and not forced
-    if (!forceRefresh && notificationsCache && (Date.now() - notificationsCache.timestamp < NOTIFICATION_CACHE_TTL_MS)) {
+    // Use cached data if fresh enough, matches current user, and not forced
+    if (
+      !forceRefresh &&
+      notificationsCache &&
+      notificationsCache.userId === userId &&
+      Date.now() - notificationsCache.timestamp < NOTIFICATION_CACHE_TTL_MS
+    ) {
       setNotifications(notificationsCache.data)
       setUnreadCount(notificationsCache.data.filter((n: Notification) => !n.read).length)
       return
@@ -54,7 +63,7 @@ export default function NotificationBell() {
       .limit(NOTIFICATIONS_LIMIT)
 
     if (data) {
-      notificationsCache = { data, timestamp: Date.now() }
+      notificationsCache = { userId, data, timestamp: Date.now() }
       setNotifications(data)
       setUnreadCount(data.filter((n: Notification) => !n.read).length)
     }
@@ -79,21 +88,23 @@ export default function NotificationBell() {
     await supabase
       .from('notifications')
       .update({ shown: true })
+      .eq('user_id', uid)
       .in('id', ids)
 
     // Display a toast for each unseen notification
     data.forEach((n: Notification) => {
       const toastConfig = getToastStyle(n.type)
+      const safeLink = sanitizeInternalRedirect(n.link, '')
       toast(
         (t) => (
           <div
             onClick={() => {
               toast.dismiss(t.id)
-              if (n.link) {
-                router.push(n.link)
+              if (safeLink) {
+                router.push(safeLink)
               }
             }}
-            style={{ cursor: n.link ? 'pointer' : 'default' }}
+            style={{ cursor: safeLink ? 'pointer' : 'default' }}
           >
             <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '2px' }}>{n.title}</p>
             <p style={{ fontSize: '12px', opacity: 0.85 }}>{n.message}</p>
@@ -108,23 +119,16 @@ export default function NotificationBell() {
     })
   }, [router])
 
-  // Get user and load notifications
-  useEffect(() => {
-    const init = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
-        showUnseenToasts(user.id)
-      }
-    }
-    init()
-  }, [])
-
   useEffect(() => {
     if (!userId) return
-    loadNotifications()
-  }, [userId, loadNotifications])
+    void Promise.resolve().then(() => {
+      void loadNotifications()
+      if (shownToastsForUserRef.current !== userId) {
+        shownToastsForUserRef.current = userId
+        void showUnseenToasts(userId)
+      }
+    })
+  }, [userId, loadNotifications, showUnseenToasts])
 
   // Subscribe to realtime notifications
   useEffect(() => {
@@ -145,8 +149,7 @@ export default function NotificationBell() {
           const newNotification = payload.new as Notification
           setNotifications(prev => {
             const updated = [newNotification, ...prev].slice(0, NOTIFICATIONS_LIMIT)
-            // Invalidate cache with new data
-            notificationsCache = { data: updated, timestamp: Date.now() }
+            notificationsCache = { userId, data: updated, timestamp: Date.now() }
             return updated
           })
           setUnreadCount(prev => prev + 1)
@@ -156,22 +159,24 @@ export default function NotificationBell() {
             .from('notifications')
             .update({ shown: true })
             .eq('id', newNotification.id)
+            .eq('user_id', userId)
             .then(({ error }) => {
               if (error) console.error('Failed to mark notification as shown:', error)
             })
 
           // Show toast notification
           const toastConfig = getToastStyle(newNotification.type)
+          const safeLink = sanitizeInternalRedirect(newNotification.link, '')
           toast(
             (t) => (
               <div
                 onClick={() => {
                   toast.dismiss(t.id)
-                  if (newNotification.link) {
-                    router.push(newNotification.link)
+                  if (safeLink) {
+                    router.push(safeLink)
                   }
                 }}
-                style={{ cursor: newNotification.link ? 'pointer' : 'default' }}
+                style={{ cursor: safeLink ? 'pointer' : 'default' }}
               >
                 <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '2px' }}>{newNotification.title}</p>
                 <p style={{ fontSize: '12px', opacity: 0.85 }}>{newNotification.message}</p>
@@ -190,7 +195,7 @@ export default function NotificationBell() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [userId])
+  }, [userId, router])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -204,15 +209,17 @@ export default function NotificationBell() {
   }, [])
 
   const handleMarkAsRead = async (notificationId: string) => {
+    if (!userId) return
     const supabase = createClient()
     await supabase
       .from('notifications')
       .update({ read: true })
       .eq('id', notificationId)
+      .eq('user_id', userId)
 
     setNotifications(prev => {
       const updated = prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      notificationsCache = { data: updated, timestamp: Date.now() }
+      notificationsCache = { userId, data: updated, timestamp: Date.now() }
       return updated
     })
     setUnreadCount(prev => Math.max(0, prev - 1))
@@ -229,7 +236,7 @@ export default function NotificationBell() {
 
     setNotifications(prev => {
       const updated = prev.map(n => ({ ...n, read: true }))
-      notificationsCache = { data: updated, timestamp: Date.now() }
+      notificationsCache = { userId, data: updated, timestamp: Date.now() }
       return updated
     })
     setUnreadCount(0)

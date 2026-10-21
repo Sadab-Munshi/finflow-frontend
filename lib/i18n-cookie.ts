@@ -9,6 +9,10 @@ import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, isLocale, type Locale } from '@/i
  * `router.refresh()`.
  */
 export function setLocaleCookie(locale: Locale) {
-  if (!isLocale(locale)) return
-  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}; samesite=lax`
+  if (!isLocale(locale) || typeof document === 'undefined') return
+  const secureAttr =
+    typeof window !== 'undefined' && window.location.protocol === 'https:'
+      ? '; Secure'
+      : ''
+  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax${secureAttr}`
 }

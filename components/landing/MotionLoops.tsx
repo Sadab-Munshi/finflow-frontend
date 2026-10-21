@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react'
 import {
   Mic,
-  ScanLine,
   Sparkles,
   CheckCircle2,
   ArrowUpRight,
@@ -55,10 +54,16 @@ export function HeroCardSwapLoop() {
   ]
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % cards.length)
-    }, 3200)
-    return () => clearInterval(timer)
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    const startDelay = setTimeout(() => {
+      intervalId = setInterval(() => {
+        setActiveIndex((prev) => (prev + 1) % cards.length)
+      }, 3200)
+    }, 6000)
+    return () => {
+      clearTimeout(startDelay)
+      if (intervalId) clearInterval(intervalId)
+    }
   }, [cards.length])
 
   return (
@@ -145,9 +150,9 @@ export function HeroCardSwapLoop() {
                   </div>
 
                   <div className="flex items-baseline justify-between gap-2 mb-1.5">
-                    <h3 className="text-[15px] sm:text-lg font-bold text-slate-900 truncate">
+                    <p className="text-[15px] sm:text-lg font-bold text-slate-900 truncate">
                       {card.title}
-                    </h3>
+                    </p>
                     <span
                       className="text-lg sm:text-2xl font-extrabold text-slate-900 font-mono shrink-0"
                       style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -175,17 +180,21 @@ export function HeroCardSwapLoop() {
       </div>
 
       {/* Card Deck Switcher Dots */}
-      <div className="flex items-center justify-center gap-2 mt-3">
+      <div className="flex items-center justify-center gap-1 mt-3">
         {cards.map((c, i) => (
           <button
             key={c.id}
             type="button"
             aria-label={`Show ${c.badge}`}
             onClick={() => setActiveIndex(i)}
-            className={`h-2 rounded-full transition-all ${
-              i === activeIndex ? 'w-7 bg-teal-600' : 'w-2 bg-slate-300 hover:bg-slate-400'
-            }`}
-          />
+            className="min-w-6 min-h-6 px-1 flex items-center justify-center"
+          >
+            <span
+              className={`h-2 rounded-full transition-all ${
+                i === activeIndex ? 'w-7 bg-teal-600' : 'w-2 bg-slate-300 hover:bg-slate-400'
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>
@@ -205,8 +214,14 @@ export function VoicePillVisual() {
   const [idx, setIdx] = useState(0)
 
   useEffect(() => {
-    const t = setInterval(() => setIdx((p) => (p + 1) % samples.length), 2400)
-    return () => clearInterval(t)
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    const startDelay = setTimeout(() => {
+      intervalId = setInterval(() => setIdx((p) => (p + 1) % samples.length), 2400)
+    }, 6000)
+    return () => {
+      clearTimeout(startDelay)
+      if (intervalId) clearInterval(intervalId)
+    }
   }, [samples.length])
 
   const s = samples[idx]
@@ -221,14 +236,14 @@ export function VoicePillVisual() {
               className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition-all ${
                 i === idx
                   ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white text-indigo-900/60 border border-indigo-100'
+                  : 'bg-white text-indigo-900 border border-indigo-100'
               }`}
             >
               {item.lang}
             </span>
           ))}
         </div>
-        <span className="text-[11px] font-mono text-indigo-600 font-semibold">
+        <span className="text-[11px] font-mono text-indigo-800 font-semibold">
           00:0{idx + 2}s
         </span>
       </div>
@@ -301,7 +316,7 @@ export function TearTicketReceiptVisual() {
         </div>
         <div className="pt-2 border-t border-dashed border-amber-300 flex items-center justify-between font-bold text-amber-900">
           <span>TOTAL</span>
-          <span className="text-sm text-orange-600">₹1,450.00</span>
+          <span className="text-sm text-orange-800">₹1,450.00</span>
         </div>
       </div>
     </div>
@@ -321,8 +336,14 @@ export function InsightPulseVisual() {
   const [active, setActive] = useState(0)
 
   useEffect(() => {
-    const t = setInterval(() => setActive((p) => (p + 1) % tips.length), 2800)
-    return () => clearInterval(t)
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    const startDelay = setTimeout(() => {
+      intervalId = setInterval(() => setActive((p) => (p + 1) % tips.length), 2800)
+    }, 6000)
+    return () => {
+      clearTimeout(startDelay)
+      if (intervalId) clearInterval(intervalId)
+    }
   }, [tips.length])
 
   const item = tips[active]
@@ -361,15 +382,21 @@ export function MonthlyReportVisual() {
   const [activeBar, setActiveBar] = useState(5)
 
   useEffect(() => {
-    const t = setInterval(() => setActiveBar((p) => (p + 1) % bars.length), 1500)
-    return () => clearInterval(t)
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    const startDelay = setTimeout(() => {
+      intervalId = setInterval(() => setActiveBar((p) => (p + 1) % bars.length), 1500)
+    }, 6000)
+    return () => {
+      clearTimeout(startDelay)
+      if (intervalId) clearInterval(intervalId)
+    }
   }, [bars.length])
 
   return (
     <div className="rounded-2xl bg-gradient-to-br from-sky-50/90 via-blue-50/40 to-white border border-sky-100 p-4">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-bold text-sky-950">Monthly Summary</span>
-        <span className="px-2.5 py-0.5 rounded-full bg-sky-600 text-white text-[10px] font-semibold">
+        <span className="px-2.5 py-0.5 rounded-full bg-sky-700 text-white text-[10px] font-semibold">
           PDF &amp; CSV
         </span>
       </div>
@@ -391,7 +418,7 @@ export function MonthlyReportVisual() {
 
       <div className="flex items-center justify-between text-[11px] text-sky-900 font-medium pt-2 border-t border-sky-100">
         <span>Net Saved: ₹42,500</span>
-        <span className="text-sky-600 font-mono">1-Tap Download</span>
+        <span className="text-sky-800 font-mono">1-Tap Download</span>
       </div>
     </div>
   )
@@ -409,8 +436,14 @@ export function BudgetGaugeVisual() {
   ]
 
   useEffect(() => {
-    const t = setInterval(() => setStep((p) => (p + 1) % 2), 2600)
-    return () => clearInterval(t)
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    const startDelay = setTimeout(() => {
+      intervalId = setInterval(() => setStep((p) => (p + 1) % 2), 2600)
+    }, 6000)
+    return () => {
+      clearTimeout(startDelay)
+      if (intervalId) clearInterval(intervalId)
+    }
   }, [])
 
   return (
