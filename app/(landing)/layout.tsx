@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   AlertCircle,
   BookOpen,
-  ArrowRight,
 } from 'lucide-react'
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
@@ -57,11 +56,11 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 selection:bg-teal-600 selection:text-white">
       {/* ── HEADER ── */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-transform duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur-md transition-transform duration-300 ${
           headerVisible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 py-2.5">
           {/* Logo */}
           <Link href="/" className="flex items-center shrink-0" aria-label="FinFlow home">
             <Image
@@ -76,101 +75,72 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             />
           </Link>
 
-          {/* Desktop Quick Actions + Hamburger Menu */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <Link
-              href="/user-guide"
-              className="hidden md:inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-950 transition-colors"
+          {/* Hamburger menu toggle (clean header without redundant CTA button) */}
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-expanded={menuOpen}
+              aria-label="Open menu"
+              className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 ${
+                menuOpen
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400 hover:text-slate-950'
+              }`}
             >
-              User Guide
-            </Link>
-            <Link
-              href="/support"
-              className="hidden md:inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-950 transition-colors"
-            >
-              Support
-            </Link>
-            <Link
-              href="/login"
-              className="hidden sm:inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold text-slate-800 border border-slate-300 bg-white hover:border-teal-600 hover:text-teal-700 transition-colors"
-            >
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-[#0F766E] text-white hover:bg-[#0D9488] transition-colors shadow-xs"
-            >
-              <span>Get Started</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+              {menuOpen ? <X size={16} /> : <Menu size={16} />}
+            </button>
 
-            {/* Hamburger menu toggle */}
-            <div ref={menuRef} className="relative">
-              <button
-                onClick={() => setMenuOpen((v) => !v)}
-                aria-expanded={menuOpen}
-                aria-label="Open menu"
-                className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 ${
-                  menuOpen
-                    ? 'bg-slate-900 text-white border-slate-900'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400 hover:text-slate-950'
-                }`}
-              >
-                {menuOpen ? <X size={16} /> : <Menu size={16} />}
-              </button>
-
-              {/* ── DROPDOWN PANEL ── */}
-              {menuOpen && (
-                <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50">
-                  <div className="px-4 pt-4 pb-2">
-                    <p className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">
-                      Account
-                    </p>
-                    <Link
-                      href="/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
-                    >
-                      <LogIn size={15} className="text-slate-400" />
-                      Login
-                    </Link>
-                    <Link
-                      href="/signup"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
-                    >
-                      <UserPlus size={15} className="text-slate-400" />
-                      Sign Up
-                    </Link>
-                  </div>
-
-                  <div className="h-px bg-slate-100 mx-4 my-2" />
-
-                  <div className="px-4 pb-4">
-                    <p className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">
-                      Info
-                    </p>
-                    {[
-                      { href: '/support', label: 'Support', Icon: HelpCircle },
-                      { href: '/user-guide', label: 'User Guide', Icon: BookOpen },
-                      { href: '/privacy', label: 'Privacy', Icon: ShieldCheck },
-                      { href: '/terms', label: 'Terms', Icon: FileText },
-                      { href: '/disclaimer', label: 'Disclaimer', Icon: AlertCircle },
-                    ].map(({ href, label, Icon }) => (
-                      <Link
-                        key={href}
-                        href={href}
-                        onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
-                      >
-                        <Icon size={15} className="text-slate-400" />
-                        {label}
-                      </Link>
-                    ))}
-                  </div>
+            {/* ── DROPDOWN PANEL ── */}
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50">
+                <div className="px-4 pt-4 pb-2">
+                  <p className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">
+                    Account
+                  </p>
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                  >
+                    <LogIn size={15} className="text-slate-400" />
+                    Login
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                  >
+                    <UserPlus size={15} className="text-slate-400" />
+                    Sign Up
+                  </Link>
                 </div>
-              )}
-            </div>
+
+                <div className="h-px bg-slate-100 mx-4 my-2" />
+
+                <div className="px-4 pb-4">
+                  <p className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">
+                    Info
+                  </p>
+                  {[
+                    { href: '/support', label: 'Support', Icon: HelpCircle },
+                    { href: '/user-guide', label: 'User Guide', Icon: BookOpen },
+                    { href: '/privacy', label: 'Privacy', Icon: ShieldCheck },
+                    { href: '/terms', label: 'Terms', Icon: FileText },
+                    { href: '/disclaimer', label: 'Disclaimer', Icon: AlertCircle },
+                  ].map(({ href, label, Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                    >
+                      <Icon size={15} className="text-slate-400" />
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </nav>
