@@ -174,11 +174,11 @@ export const CUSTOMER_PLAN_OVERRIDES: Record<
     },
   },
   pro_yearly: {
-    name: 'Pro Yearly',
+    name: 'Max Yearly',
     publicBadge: 'Best Value · Save 16%',
     cadenceLabel: 'for 365 days',
     billingNote: 'One-time UPI payment for 365 days · Save ₹189 vs monthly · Does not auto-renew',
-    tagline: 'Full-year high-capacity access with no daily AI rate cap and maximum monthly allowances.',
+    tagline: 'Full-year high-capacity Max pass with no daily AI rate cap and maximum monthly allowances.',
     features: [
       'Up to 9,999 Smart, Voice & Receipt entries per month',
       'Up to 9,999 on-demand Spending Insights per month',
@@ -411,6 +411,9 @@ export function getPlanDisplayName(
   planId: string | null | undefined,
   fallbackName?: string | null
 ): string {
+  if (fallbackName && /trial/i.test(fallbackName)) {
+    return fallbackName
+  }
   if (planId && planId in CUSTOMER_PLAN_OVERRIDES) {
     return CUSTOMER_PLAN_OVERRIDES[planId as PlanId].name
   }

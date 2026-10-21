@@ -9,12 +9,15 @@ import {
   CalendarCheck,
   ArrowRight,
   ReceiptText,
+  Sparkles,
+  Loader2,
 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import {
   getSubscriptionStatus,
   createSubscriptionOrder,
   verifySubscriptionPayment,
+  startSubscriptionFreeTrial,
 } from '@/lib/api-client'
 import { openYoupiCheckout } from '@/lib/youpi-checkout'
 import { useUser } from '@/context/UserContext'
@@ -54,6 +57,8 @@ function SubscriptionContent() {
   const {
     subscriptionsEnabled,
     paymentsEnabled,
+    trialEnabled: gateTrialEnabled,
+    trialDays: gateTrialDays,
     override: adminOverride,
     userTier,
     refresh: refreshGate,
@@ -63,6 +68,10 @@ function SubscriptionContent() {
   const [subscription, setSubscription] = useState<UserSubscriptionState | null>(null)
   const [quotas, setQuotas] = useState<AiQuotasPayload | null>(null)
   const [orders, setOrders] = useState<PaymentOrderRecord[]>([])
+  const [trialEnabledFromApi, setTrialEnabledFromApi] = useState<boolean | null>(null)
+  const [trialDaysFromApi, setTrialDaysFromApi] = useState<number | null>(null)
+  const [trialUsed, setTrialUsed] = useState(false)
+  const [startingTrial, setStartingTrial] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -92,6 +101,15 @@ function SubscriptionContent() {
         setSubscription(payload.subscription || null)
         setQuotas(payload.usage || payload.quotas || null)
         setOrders(payload.orders || [])
+        if (typeof payload.trialEnabled === 'boolean') {
+          setTrialEnabledFromApi(payload.trialEnabled)
+        }
+        if (typeof payload.trialDays === 'number') {
+          setTrialDaysFromApi(payload.trialDays)
+        }
+        if (typeof payload.trialUsed === 'boolean') {
+          setTrialUsed(payload.trialUsed)
+        }
         setLoadError(null)
       } else {
         setLoadError('Unable to load your subscription details right now.')
@@ -300,6 +318,59 @@ function SubscriptionContent() {
     }
   }
 
+  const handleStartFreeTrial = async () => {
+    setStartingTrial(true)
+    setNotice(null)
+    try {
+      const res = await startSubscriptionFreeTrial()
+      const payload = (res as any)?.data ? (res as any).data : (res as any)
+      if (!res.ok || payload?.ok === false) {
+        const msg =
+          payload?.message ||
+          payload?.error ||
+          (res as any)?.error ||
+          'Unable to start free trial right now.'
+        if (payload?.code === 'TRIAL_ALREADY_USED') {
+          setTrialUsed(true)
+        }
+        setNotice({
+          type: 'error',
+          title: 'Free Trial Unavailable',
+          message: msg,
+        })
+        await fetchSubscriptionState(true)
+        return
+      }
+
+      setTrialUsed(true)
+      if (payload?.subscription) {
+        setSubscription(payload.subscription)
+      }
+      if (payload?.usage || payload?.quotas) {
+        setQuotas(payload.usage || payload.quotas)
+      }
+      setNotice({
+        type: 'success',
+        title: `${payload?.trialDays || effectiveTrialDays}-Day Free Trial Activated`,
+        message:
+          'Your Pro Free Trial is now active! Confirmation notifications have been sent to your active channels.',
+      })
+      await Promise.all([
+        fetchSubscriptionState(true),
+        refreshGate().catch(() => {}),
+        refreshProfile().catch(() => {}),
+      ])
+    } catch (err: any) {
+      setNotice({
+        type: 'error',
+        title: 'Unable to Start Free Trial',
+        message: err?.message || 'Please check your connection and try again.',
+      })
+    } finally {
+      setStartingTrial(false)
+    }
+  }
+
   const scrollToPlans = () => {
     const el = document.getElementById('plans-section')
     if (el) {
@@ -318,6 +389,14 @@ function SubscriptionContent() {
 
   const isPaidActive =
     subscription?.status === 'active' && subscription.planId !== 'free'
+  const effectiveTrialEnabled = trialEnabledFromApi ?? gateTrialEnabled
+  const effectiveTrialDays = trialDaysFromApi ?? gateTrialDays
+  const showFreeTrialOffer =
+    subscriptionsEnabled &&
+    effectiveTrialEnabled &&
+    effectiveTrialDays > 0 &&
+    !trialUsed &&
+    !isPaidActive
   const effectiveMultiplier = Math.max(
     1,
     Number(subscription?.aiMultiplier) ||
@@ -336,11 +415,11 @@ function SubscriptionContent() {
           subtitle="Manage your FinFlow AI allowance, prepaid passes, and payment receipts"
           backHref="/dashboard"
           backLabel="Back to Dashboard"
-          showHistoryLink={true}
+          showHistoryLink={false}
           isPro={isPaidActive}
           planBadgeText={
             subscription?.planId === 'pro_yearly'
-              ? 'PRO YEARLY VIP'
+              ? 'MAX YEARLY'
               : subscription?.planId === 'pro_monthly'
               ? 'PRO MONTHLY'
               : 'PRO PASS'
@@ -422,6 +501,45 @@ function SubscriptionContent() {
                 onUpgradeClick={scrollToPlans}
                 onViewLatestReceipt={(order) => setSelectedOrder(order)}
               />
+
+              {/* One-Time Free Trial Banner (shown strictly when trial_enabled & unused) */}
+              {showFreeTrialOffer && (
+                <section
+                  aria-label="Free trial offer"
+                  className="rounded-2xl border border-teal-300/80 bg-gradient-to-r from-[#042F2E] via-[#115E59] to-[#0F766E] text-white p-4 sm:p-5 shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-extrabold uppercase tracking-wider">
+                      <Sparkles className="w-3 h-3 shrink-0" />
+                      {tGate('freeTrialBadge')}
+                    </span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-white">
+                      {tGate('freeTrialTitle', { days: effectiveTrialDays })}
+                    </h3>
+                    <p className="text-xs text-teal-100 leading-relaxed">
+                      {tGate('freeTrialDesc')}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleStartFreeTrial}
+                    disabled={startingTrial}
+                    className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-[0.99] disabled:opacity-60 whitespace-nowrap shrink-0"
+                  >
+                    {startingTrial ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                        <span>{tGate('freeTrialStarting')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{tGate('freeTrialCta', { days: effectiveTrialDays })}</span>
+                        <ArrowRight className="w-4 h-4 shrink-0" />
+                      </>
+                    )}
+                  </button>
+                </section>
+              )}
 
               {/* 2. Monthly Feature Usage Overview */}
               <UsageOverview
