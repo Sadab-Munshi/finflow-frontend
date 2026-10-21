@@ -1,16 +1,16 @@
-export type SubscriptionTier = 'free' | 'pro' | 'premium'
+export type SubscriptionTier = 'free' | 'pro' | 'max'
 export type OverrideStatus = 'active' | 'trialing' | 'cancelled' | 'expired'
 
 export const TIER_RANK: Record<SubscriptionTier, number> = {
   free: 0,
   pro: 1,
-  premium: 2,
+  max: 2,
 }
 
 export const TIER_DISPLAY_NAMES: Record<SubscriptionTier, string> = {
   free: 'Free',
   pro: 'Pro',
-  premium: 'Premium',
+  max: 'Max',
 }
 
 export const FEATURE_KEYS = {
@@ -31,6 +31,7 @@ export interface SubscriptionSettingsConfig {
   id: number
   subscriptions_enabled: boolean
   payments_enabled: boolean
+  trial_enabled: boolean
   trial_days: number
   updated_by?: string | null
   updated_at?: string | null
@@ -81,19 +82,20 @@ export const DEFAULT_SUBSCRIPTION_SETTINGS: SubscriptionSettingsConfig = {
   id: 1,
   subscriptions_enabled: true,
   payments_enabled: true,
+  trial_enabled: true,
   trial_days: 7,
   updated_by: null,
   updated_at: null,
 }
 
 export function normalizeTier(value: unknown): SubscriptionTier {
-  if (value === 'premium') return 'premium'
+  if (value === 'max' || value === 'premium') return 'max'
   if (value === 'pro') return 'pro'
   return 'free'
 }
 
 export function mapPlanIdToTier(planId: string | null | undefined): SubscriptionTier {
-  if (planId === 'pro_yearly' || planId === 'premium') return 'premium'
+  if (planId === 'pro_yearly' || planId === 'max' || planId === 'premium') return 'max'
   if (planId === 'pro_monthly' || planId === 'test_1inr' || planId === 'pro') return 'pro'
   return 'free'
 }
@@ -136,7 +138,7 @@ export function resolveEffectiveTier(
 /**
  * Pure, deterministic evaluation of a feature's availability & tier requirement.
  * - Unregistered features default to enabled (`free`) for backward-compatible rollout.
- * - Per-feature `enabled = false` blocks everyone (including Pro/Premium and even when `subscriptions_enabled = false`).
+ * - Per-feature `enabled = false` blocks everyone (including Pro/Max and even when `subscriptions_enabled = false`).
  * - Master switch `subscriptions_enabled = false` opens all enabled features to everyone regardless of tier.
  */
 export function evaluateFeatureGate(params: {
@@ -198,29 +200,17 @@ export function evaluateFeatureGate(params: {
   }
 
   const requiredTier = normalizeTier(feature.required_tier)
-  if (TIER_RANK[currentTier] < TIER_RANK[requiredTier]) {
-    return {
-      allowed: false,
-      enabled: true,
-      reason: 'upgrade_required',
-      feature: feature.key,
-      featureName: feature.name || feature.key,
-      requiredTier,
-      currentTier,
-      paymentsEnabled: settings.payments_enabled,
-      subscriptionsEnabled: settings.subscriptions_enabled,
-    }
-  }
+  const allowed = TIER_RANK[currentTier] >= TIER_RANK[requiredTier]
 
   return {
-    allowed: true,
+    allowed,
     enabled: true,
-    reason: 'allowed',
+    reason: allowed ? 'allowed' : 'upgrade_required',
     feature: feature.key,
     featureName: feature.name || feature.key,
     requiredTier,
     currentTier,
     paymentsEnabled: settings.payments_enabled,
-    subscriptionsEnabled: settings.subscriptions_enabled,
+    subscriptionsEnabled: true,
   }
 }

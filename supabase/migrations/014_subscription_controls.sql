@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS public.subscription_settings (
   id                    integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   subscriptions_enabled boolean NOT NULL DEFAULT true,
   payments_enabled      boolean NOT NULL DEFAULT true,
+  trial_enabled         boolean NOT NULL DEFAULT true,
   trial_days            integer NOT NULL DEFAULT 7 CHECK (trial_days >= 0 AND trial_days <= 365),
   updated_by            uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   updated_at            timestamptz NOT NULL DEFAULT now()
@@ -59,7 +60,7 @@ CREATE TABLE IF NOT EXISTS public.subscription_features (
   name          text NOT NULL,
   description   text NOT NULL DEFAULT '',
   enabled       boolean NOT NULL DEFAULT true,
-  required_tier text NOT NULL DEFAULT 'free' CHECK (required_tier IN ('free', 'pro', 'premium')),
+  required_tier text NOT NULL DEFAULT 'free' CHECK (required_tier IN ('free', 'pro', 'max', 'premium')),
   updated_by    uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now()
@@ -68,7 +69,7 @@ CREATE TABLE IF NOT EXISTS public.subscription_features (
 -- 4. Super-Admin Per-User Subscription Overrides
 CREATE TABLE IF NOT EXISTS public.subscription_overrides (
   user_id       uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  plan          text NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'premium')),
+  plan          text NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'max', 'premium')),
   status        text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'trialing', 'cancelled', 'expired')),
   trial_ends_at timestamptz,
   expires_at    timestamptz,

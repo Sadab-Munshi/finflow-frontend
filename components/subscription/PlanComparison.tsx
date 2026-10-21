@@ -123,7 +123,7 @@ export function PlanComparison({
                 : 'text-[#475569] hover:text-[#0F172A]'
             }`}
           >
-            <span className="block">Monthly</span>
+            <span className="block">Pro</span>
             <span className="block text-[11px] font-bold text-[#0F766E]">₹99</span>
           </button>
 
@@ -138,7 +138,7 @@ export function PlanComparison({
                 : 'text-[#475569] hover:text-[#0F172A]'
             }`}
           >
-            <span className="block">Yearly</span>
+            <span className="block">Max</span>
             <span className="block text-[11px] font-bold text-[#B45309]">₹999 · -16%</span>
           </button>
 
@@ -260,7 +260,7 @@ export function PlanComparison({
                     Pro Monthly (₹99)
                   </th>
                   <th className="py-3 px-4 sm:px-5 text-center text-[#B45309]">
-                    Pro Yearly (₹999)
+                    Max Yearly (₹999)
                   </th>
                 </tr>
               </thead>

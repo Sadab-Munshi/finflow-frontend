@@ -24,6 +24,7 @@ interface SubscriptionGateContextValue {
   isSuperAdmin: boolean
   subscriptionsEnabled: boolean
   paymentsEnabled: boolean
+  trialEnabled: boolean
   trialDays: number
   checkFeature: (featureKey: string) => GateCheckResult
   isFeatureEnabled: (featureKey: string) => boolean
@@ -40,6 +41,7 @@ const SubscriptionGateContext = createContext<SubscriptionGateContextValue>({
   isSuperAdmin: false,
   subscriptionsEnabled: true,
   paymentsEnabled: true,
+  trialEnabled: true,
   trialDays: 7,
   checkFeature: (featureKey: string) =>
     evaluateFeatureGate({
@@ -101,6 +103,8 @@ export function SubscriptionGateProvider({ children }: { children: React.ReactNo
             typeof s.subscriptions_enabled === 'boolean' ? s.subscriptions_enabled : true,
           payments_enabled:
             typeof s.payments_enabled === 'boolean' ? s.payments_enabled : true,
+          trial_enabled:
+            typeof s.trial_enabled === 'boolean' ? s.trial_enabled : true,
           trial_days: typeof s.trial_days === 'number' ? s.trial_days : 7,
           updated_by: (s.updated_by as string | null) ?? null,
           updated_at: (s.updated_at as string | null) ?? null,
@@ -209,6 +213,7 @@ export function SubscriptionGateProvider({ children }: { children: React.ReactNo
       isSuperAdmin,
       subscriptionsEnabled: settings.subscriptions_enabled,
       paymentsEnabled: settings.payments_enabled,
+      trialEnabled: settings.trial_enabled,
       trialDays: settings.trial_days,
       checkFeature,
       isFeatureEnabled,
