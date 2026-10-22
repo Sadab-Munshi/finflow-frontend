@@ -9,7 +9,6 @@ import {
   Upload,
   Check,
   FileText,
-  Sparkles,
   Receipt,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -22,7 +21,8 @@ import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
 import { aiParseReceipt } from '@/lib/api-client'
 
-const BRAND_TEAL = '#0d9488'
+const CAMERA_TEAL = '#0d9488'
+const UPLOAD_INDIGO = '#4f46e5'
 
 /* ─── Scan Progress Steps ─── */
 const SCAN_STEPS = [
@@ -70,7 +70,7 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
           style={{
             fontSize: 12,
             fontWeight: 700,
-            color: BRAND_TEAL,
+            color: CAMERA_TEAL,
             background: '#f0fdfa',
             border: '1px solid #ccfbf1',
             padding: '2px 10px',
@@ -85,7 +85,7 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
         <motion.div
           style={{
             height: '100%',
-            background: BRAND_TEAL,
+            background: CAMERA_TEAL,
             borderRadius: 999,
           }}
           initial={{ width: '0%' }}
@@ -105,8 +105,8 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
                   width: 22,
                   height: 22,
                   borderRadius: '50%',
-                  background: done ? BRAND_TEAL : active ? '#f0fdfa' : '#f8fafc',
-                  border: active ? `2px solid ${BRAND_TEAL}` : done ? 'none' : '1px solid #e2e8f0',
+                  background: done ? CAMERA_TEAL : active ? '#f0fdfa' : '#f8fafc',
+                  border: active ? `2px solid ${CAMERA_TEAL}` : done ? 'none' : '1px solid #e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -118,7 +118,7 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
                   <Check size={12} color="#fff" />
                 ) : active ? (
                   <motion.div
-                    style={{ width: 7, height: 7, borderRadius: '50%', background: BRAND_TEAL }}
+                    style={{ width: 7, height: 7, borderRadius: '50%', background: CAMERA_TEAL }}
                     animate={{ scale: [1, 1.35, 1] }}
                     transition={{ duration: 0.8, repeat: Infinity }}
                   />
@@ -130,7 +130,7 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
                 style={{
                   fontSize: 13,
                   fontWeight: done || active ? 600 : 400,
-                  color: done ? BRAND_TEAL : active ? '#0f172a' : '#94a3b8',
+                  color: done ? CAMERA_TEAL : active ? '#0f172a' : '#94a3b8',
                   transition: 'all 0.25s',
                 }}
               >
@@ -181,6 +181,7 @@ function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promise<{ ba
 export default function ScanTab() {
   const t = useTranslations('add')
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
+  const galleryInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -450,7 +451,7 @@ export default function ScanTab() {
                 borderRadius: 10,
                 background: '#f0fdfa',
                 border: '1px solid #ccfbf1',
-                color: BRAND_TEAL,
+                color: CAMERA_TEAL,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -504,7 +505,7 @@ export default function ScanTab() {
           style={{
             width: '100%',
             padding: '15px 18px',
-            background: isSubmitting ? '#e5e7eb' : BRAND_TEAL,
+            background: isSubmitting ? '#e5e7eb' : CAMERA_TEAL,
             color: isSubmitting ? '#94a3b8' : '#ffffff',
             border: 'none',
             borderRadius: 14,
@@ -521,7 +522,7 @@ export default function ScanTab() {
     )
   }
 
-  /* ── Clean Minimal Fintech Scan Idle / Loading View ── */
+  /* ── Clean Minimal Scan Idle / Loading View ── */
   return (
     <div
       style={{
@@ -538,7 +539,20 @@ export default function ScanTab() {
         }
       `}</style>
 
-      {/* Hidden File Inputs: Camera (left action) & Unified Image/PDF Picker (right action + dropzone) */}
+      {/* 1. Gallery Photo Picker (triggered by tapping top scanner box) */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) handleFileUpload(f)
+          e.target.value = ''
+        }}
+      />
+
+      {/* 2. Rear Camera Picker (triggered by left Open Camera button) */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -551,10 +565,12 @@ export default function ScanTab() {
           e.target.value = ''
         }}
       />
+
+      {/* 3. Document / File Picker (triggered by right Upload File button) */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,.pdf,application/pdf,.heic,.webp"
+        accept=".pdf,application/pdf,image/*,.heic,.webp"
         style={{ display: 'none' }}
         onChange={(e) => {
           const f = e.target.files?.[0]
@@ -650,15 +666,15 @@ export default function ScanTab() {
         </div>
       ) : (
         <>
-          {/* ─── 1. Clean Minimal Scanner Viewfinder / Dropzone Card ─── */}
+          {/* ─── 1. Scanner Viewfinder Card (Tap opens Gallery directly) ─── */}
           <div
             role="button"
             tabIndex={0}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => galleryInputRef.current?.click()}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
-                fileInputRef.current?.click()
+                galleryInputRef.current?.click()
               }
             }}
             onDragOver={(e) => {
@@ -676,18 +692,18 @@ export default function ScanTab() {
               position: 'relative',
               borderRadius: 20,
               background: isDragging ? '#f0fdfa' : '#f8fafc',
-              border: isDragging ? `1.5px dashed ${BRAND_TEAL}` : '1.5px dashed #cbd5e1',
-              padding: '28px 20px 22px',
+              border: isDragging ? `1.5px dashed ${CAMERA_TEAL}` : '1.5px dashed #cbd5e1',
+              padding: '28px 16px 32px',
               textAlign: 'center',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
             }}
           >
             {/* Subtle Viewfinder Corner Brackets */}
-            <div style={{ position: 'absolute', top: 13, left: 13, width: 14, height: 14, borderTop: `2px solid ${BRAND_TEAL}`, borderLeft: `2px solid ${BRAND_TEAL}`, borderTopLeftRadius: 5, opacity: 0.6 }} />
-            <div style={{ position: 'absolute', top: 13, right: 13, width: 14, height: 14, borderTop: `2px solid ${BRAND_TEAL}`, borderRight: `2px solid ${BRAND_TEAL}`, borderTopRightRadius: 5, opacity: 0.6 }} />
-            <div style={{ position: 'absolute', bottom: 13, left: 13, width: 14, height: 14, borderBottom: `2px solid ${BRAND_TEAL}`, borderLeft: `2px solid ${BRAND_TEAL}`, borderBottomLeftRadius: 5, opacity: 0.6 }} />
-            <div style={{ position: 'absolute', bottom: 13, right: 13, width: 14, height: 14, borderBottom: `2px solid ${BRAND_TEAL}`, borderRight: `2px solid ${BRAND_TEAL}`, borderBottomRightRadius: 5, opacity: 0.6 }} />
+            <div style={{ position: 'absolute', top: 13, left: 13, width: 14, height: 14, borderTop: `2px solid ${CAMERA_TEAL}`, borderLeft: `2px solid ${CAMERA_TEAL}`, borderTopLeftRadius: 5, opacity: 0.6 }} />
+            <div style={{ position: 'absolute', top: 13, right: 13, width: 14, height: 14, borderTop: `2px solid ${CAMERA_TEAL}`, borderRight: `2px solid ${CAMERA_TEAL}`, borderTopRightRadius: 5, opacity: 0.6 }} />
+            <div style={{ position: 'absolute', bottom: 13, left: 13, width: 14, height: 14, borderBottom: `2px solid ${CAMERA_TEAL}`, borderLeft: `2px solid ${CAMERA_TEAL}`, borderBottomLeftRadius: 5, opacity: 0.6 }} />
+            <div style={{ position: 'absolute', bottom: 13, right: 13, width: 14, height: 14, borderBottom: `2px solid ${CAMERA_TEAL}`, borderRight: `2px solid ${CAMERA_TEAL}`, borderBottomRightRadius: 5, opacity: 0.6 }} />
 
             {/* Clean Centered Scanner Emblem */}
             <div
@@ -712,25 +728,25 @@ export default function ScanTab() {
                   left: 8,
                   right: 8,
                   height: 2,
-                  background: `linear-gradient(90deg, transparent, ${BRAND_TEAL}, transparent)`,
+                  background: `linear-gradient(90deg, transparent, ${CAMERA_TEAL}, transparent)`,
                   animation: 'scannerSweep 2.6s ease-in-out infinite',
                 }}
               />
-              <ScanLine size={27} color={BRAND_TEAL} />
+              <ScanLine size={27} color={CAMERA_TEAL} />
             </div>
 
             <h3 style={{ fontSize: 16.5, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
               {t('scanTitle')}
             </h3>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '0 auto 14px', maxWidth: 340, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '0 auto 14px', maxWidth: 300, lineHeight: 1.45 }}>
               {t('scanSubtitle')}
             </p>
 
-            {/* Clean Integrated Format Pills */}
+            {/* Clean Single-Row Format Pills */}
             <div
               style={{
                 display: 'flex',
-                flexWrap: 'wrap',
+                flexWrap: 'nowrap',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
@@ -745,8 +761,9 @@ export default function ScanTab() {
                     color: '#475569',
                     background: '#ffffff',
                     border: '1px solid #e2e8f0',
-                    padding: '4px 10px',
+                    padding: '3.5px 9px',
                     borderRadius: 999,
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {badge}
@@ -755,31 +772,32 @@ export default function ScanTab() {
             </div>
           </div>
 
-          {/* ─── 2. Side-by-Side Primary Actions: Open Camera | Upload File ─── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {/* ─── 2. Distinct Side-by-Side Primary Buttons: Open Camera (Teal) | Upload File (Indigo) ─── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <motion.button
               type="button"
               whileTap={{ scale: 0.98 }}
               onClick={() => cameraInputRef.current?.click()}
               style={{
-                padding: '14px 12px',
-                background: BRAND_TEAL,
+                height: 48,
+                padding: '0 10px',
+                background: CAMERA_TEAL,
                 color: '#ffffff',
-                border: `1.5px solid ${BRAND_TEAL}`,
+                border: 'none',
                 borderRadius: 14,
-                fontSize: 14.5,
+                fontSize: 13.5,
                 fontWeight: 600,
+                whiteSpace: 'nowrap',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8,
+                gap: 6,
                 fontFamily: FONT,
-                boxShadow: '0 6px 18px -6px rgba(13, 148, 136, 0.42)',
-                transition: 'background 0.18s ease',
+                boxShadow: '0 6px 16px -6px rgba(13, 148, 136, 0.45)',
               }}
             >
-              <Camera size={18} />
+              <Camera size={17} style={{ flexShrink: 0 }} />
               <span>{t('openCamera')}</span>
             </motion.button>
 
@@ -788,45 +806,27 @@ export default function ScanTab() {
               whileTap={{ scale: 0.98 }}
               onClick={() => fileInputRef.current?.click()}
               style={{
-                padding: '14px 12px',
-                background: '#ffffff',
-                color: '#0f172a',
-                border: '1.5px solid #e2e8f0',
+                height: 48,
+                padding: '0 10px',
+                background: UPLOAD_INDIGO,
+                color: '#ffffff',
+                border: 'none',
                 borderRadius: 14,
-                fontSize: 14.5,
+                fontSize: 13.5,
                 fontWeight: 600,
+                whiteSpace: 'nowrap',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8,
+                gap: 6,
                 fontFamily: FONT,
-                boxShadow: '0 2px 8px rgba(15, 23, 42, 0.03)',
-                transition: 'border-color 0.18s ease, background 0.18s ease',
+                boxShadow: '0 6px 16px -6px rgba(79, 70, 229, 0.42)',
               }}
             >
-              <Upload size={18} color={BRAND_TEAL} />
+              <Upload size={17} style={{ flexShrink: 0 }} />
               <span>{t('uploadFile')}</span>
             </motion.button>
-          </div>
-
-          {/* ─── 3. Compact Single-Line Helper Strip ─── */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              borderRadius: 12,
-              background: '#f0fdfa',
-              border: '1px solid #ccfbf1',
-              color: '#0f766e',
-              fontSize: 12,
-              lineHeight: 1.4,
-            }}
-          >
-            <Sparkles size={14} style={{ flexShrink: 0, color: BRAND_TEAL }} />
-            <span>{t('scanTip')}</span>
           </div>
         </>
       )}

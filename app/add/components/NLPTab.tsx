@@ -3,15 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { motion } from 'framer-motion'
-import {
-  Loader2,
-  Sparkles,
-  X,
-  UtensilsCrossed,
-  Zap,
-  Wallet,
-  ShoppingBag,
-} from 'lucide-react'
+import { Loader2, ArrowRight, X, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getCategoriesByType } from '@/lib/categories'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
@@ -22,6 +14,13 @@ import { ManualForm } from './ManualTab'
 import { aiParseText } from '@/lib/api-client'
 
 const BRAND_TEAL = '#0d9488'
+
+/* 1 English, 1 Hindi, 1 Bengali tap-to-fill examples */
+const MULTILINGUAL_NLP_EXAMPLES = [
+  { lang: 'EN', text: 'Spent 280 on lunch and 90 on auto' },
+  { lang: 'हिन्दी', text: 'आज बिजली बिल में 1,450 दिए' },
+  { lang: 'বাংলা', text: 'বাজারে 640 আর চায়ে 40 খরচ করলাম' },
+]
 
 export default function NLPTab() {
   const t = useTranslations('add')
@@ -262,80 +261,22 @@ export default function NLPTab() {
     )
   }
 
-  const examples = [
-    { text: t('nlpExample1'), Icon: UtensilsCrossed },
-    { text: t('nlpExample2'), Icon: Zap },
-    { text: t('nlpExample3'), Icon: Wallet },
-    { text: t('nlpExample4'), Icon: ShoppingBag },
-  ]
-
   const isDisabled = loading || !textInput.trim()
 
-  /* ── Clean Minimal Fintech Smart Text Entry UI ── */
+  /* ── Clean Minimal Fintech NLP Entry UI ── */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: FONT }}>
-      {/* ─── 1. Smart Text Input Card ─── */}
+      {/* ─── 1. Minimal Text Input Box ─── */}
       <div
         style={{
-          background: '#ffffff',
+          position: 'relative',
+          background: '#f8fafc',
           border: isFocused ? `1.5px solid ${BRAND_TEAL}` : '1.5px solid #e2e8f0',
-          borderRadius: 18,
-          boxShadow: isFocused
-            ? '0 0 0 3px rgba(13, 148, 136, 0.10)'
-            : '0 2px 10px rgba(15, 23, 42, 0.03)',
-          overflow: 'hidden',
+          borderRadius: 16,
+          boxShadow: isFocused ? '0 0 0 3px rgba(13, 148, 136, 0.10)' : 'none',
           transition: 'all 0.18s ease',
         }}
       >
-        {/* Card Header Bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 14px 4px',
-          }}
-        >
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 12,
-              fontWeight: 600,
-              color: BRAND_TEAL,
-            }}
-          >
-            <Sparkles size={14} />
-            <span>{t('nlpCardTitle')}</span>
-          </span>
-
-          {textInput.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setTextInput('')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '3px 8px',
-                borderRadius: 999,
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                color: '#64748b',
-                fontSize: 11.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: FONT,
-              }}
-            >
-              <X size={12} />
-              <span>{t('clear')}</span>
-            </button>
-          )}
-        </div>
-
-        {/* Clean Borderless Textarea */}
         <textarea
           rows={3}
           placeholder={t('nlpPlaceholder')}
@@ -351,7 +292,7 @@ export default function NLPTab() {
           }}
           style={{
             width: '100%',
-            padding: '8px 14px 12px',
+            padding: textInput.length > 0 ? '14px 40px 14px 14px' : '14px',
             border: 'none',
             fontSize: 15.5,
             lineHeight: 1.55,
@@ -364,21 +305,34 @@ export default function NLPTab() {
           }}
         />
 
-        {/* Subtle Helper Footer */}
-        <div
-          style={{
-            padding: '8px 14px',
-            background: '#f8fafc',
-            borderTop: '1px solid #f1f5f9',
-            fontSize: 11.5,
-            color: '#64748b',
-          }}
-        >
-          {t('nlpHint')}
-        </div>
+        {textInput.length > 0 && (
+          <button
+            type="button"
+            aria-label={t('clear')}
+            onClick={() => setTextInput('')}
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: '#e2e8f0',
+              border: 'none',
+              color: '#475569',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <X size={13} />
+          </button>
+        )}
       </div>
 
-      {/* ─── 2. Primary Parse Button (matches FinFlow Manual Save button) ─── */}
+      {/* ─── 2. Crisp Primary CTA Button ("Smart Add") ─── */}
       <motion.button
         type="button"
         whileTap={isDisabled ? undefined : { scale: 0.985 }}
@@ -386,7 +340,8 @@ export default function NLPTab() {
         disabled={isDisabled}
         style={{
           width: '100%',
-          padding: '15px 18px',
+          height: 50,
+          padding: '0 18px',
           background: isDisabled ? '#e5e7eb' : BRAND_TEAL,
           color: isDisabled ? '#94a3b8' : '#ffffff',
           border: 'none',
@@ -410,14 +365,14 @@ export default function NLPTab() {
           </>
         ) : (
           <>
-            <Sparkles size={18} />
             <span>{t('parseWithAI')}</span>
+            <ArrowRight size={17} />
           </>
         )}
       </motion.button>
 
-      {/* ─── 3. Quick Example Chips (1-tap fill) ─── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 2 }}>
+      {/* ─── 3. Multilingual Examples: 1 English, 1 Hindi, 1 Bengali ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 7, paddingTop: 2 }}>
         <span
           style={{
             fontSize: 11,
@@ -430,24 +385,24 @@ export default function NLPTab() {
           {t('quickExamples')}
         </span>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-          {examples.map(({ text, Icon }, idx) => {
-            const active = textInput === text
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {MULTILINGUAL_NLP_EXAMPLES.map((item) => {
+            const active = textInput === item.text
             return (
               <button
-                key={idx}
+                key={item.lang}
                 type="button"
-                onClick={() => setTextInput(text)}
+                onClick={() => setTextInput(item.text)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
-                  padding: '10px 12px',
+                  gap: 9,
+                  padding: '9px 11px',
                   borderRadius: 12,
                   background: active ? '#f0fdfa' : '#ffffff',
                   border: active ? `1px solid ${BRAND_TEAL}` : '1px solid #f1f5f9',
                   color: active ? '#0f766e' : '#334155',
-                  fontSize: 13,
+                  fontSize: 12.5,
                   fontWeight: active ? 600 : 400,
                   textAlign: 'left',
                   cursor: 'pointer',
@@ -457,20 +412,19 @@ export default function NLPTab() {
               >
                 <span
                   style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: 8,
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: '#0f766e',
                     background: '#f0fdfa',
-                    color: BRAND_TEAL,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    border: '1px solid #ccfbf1',
+                    borderRadius: 6,
+                    padding: '2px 6px',
                     flexShrink: 0,
                   }}
                 >
-                  <Icon size={14} />
+                  {item.lang}
                 </span>
-                <span style={{ lineHeight: 1.4 }}>&ldquo;{text}&rdquo;</span>
+                <span style={{ lineHeight: 1.4 }}>&ldquo;{item.text}&rdquo;</span>
               </button>
             )
           })}
