@@ -1,62 +1,113 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useTranslations } from 'next-intl'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Layout from '@/components/layout/Layout'
 import LoadingScreen from '@/components/ui/LoadingScreen'
-import { TEAL, GRAY, FONT, tabsConfig } from './constants'
+import { FONT, tabsConfig } from './constants'
 import ManualTab from './components/ManualTab'
 import NLPTab from './components/NLPTab'
 import VoiceTab from './components/VoiceTab'
 import ScanTab from './components/ScanTab'
 import FeatureGate from '@/components/subscription/FeatureGate'
 
+const BRAND_TEAL = '#0d9488'
+const INACTIVE_SLATE = '#94a3b8'
+
+function normalizeTab(raw: string | null): string {
+  const tab = raw || 'manual'
+  if (tab === 'text') return 'nlp'
+  if (tab === 'manual' || tab === 'nlp' || tab === 'voice' || tab === 'scan') return tab
+  return 'manual'
+}
+
 function AddTransactionContent() {
   const t = useTranslations('add')
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState(() => {
-    const tab = searchParams.get('tab') || 'manual'
-    return tab === 'text' ? 'nlp' : tab
-  })
+  const urlTab = normalizeTab(searchParams.get('tab'))
+  const [activeTab, setActiveTab] = useState(urlTab)
+
+  useEffect(() => {
+    setActiveTab(urlTab)
+  }, [urlTab])
+
+  const handleSelectTab = (tabId: string) => {
+    setActiveTab(tabId)
+    router.replace(`/add?tab=${tabId}`, { scroll: false })
+  }
 
   return (
     <Layout>
-      <div style={{ background: '#ffffff', minHeight: '100dvh', fontFamily: FONT }}>
-        <div style={{ padding: '16px 16px 100px' }}>
-
-          {/* ─── Tab Bar ─── */}
-          <div style={{
-            display: 'flex', position: 'relative',
-            borderBottom: '2px solid #f3f4f6', marginBottom: 24,
-          }}>
-            {tabsConfig.map(tab => {
+      <div
+        style={{
+          maxWidth: 540,
+          margin: '0 auto',
+          fontFamily: FONT,
+          paddingBottom: 56,
+        }}
+      >
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: 24,
+            border: '1px solid #f1f5f9',
+            boxShadow: '0 4px 24px -8px rgba(15, 23, 42, 0.06)',
+            padding: '6px 18px 24px',
+          }}
+        >
+          {/* ─── Clean Underline Tab Bar ─── */}
+          <div
+            style={{
+              display: 'flex',
+              position: 'relative',
+              borderBottom: '1.5px solid #f1f5f9',
+              marginBottom: 22,
+            }}
+          >
+            {tabsConfig.map((tab) => {
               const isActive = activeTab === tab.id
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  type="button"
+                  onClick={() => handleSelectTab(tab.id)}
                   style={{
-                    flex: 1, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', gap: 6,
-                    padding: '12px 0', background: 'none', border: 'none',
-                    color: isActive ? TEAL : GRAY,
-                    fontWeight: isActive ? 700 : 400,
-                    fontSize: 14, cursor: 'pointer', fontFamily: FONT,
-                    position: 'relative', paddingBottom: 14,
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    padding: '13px 4px 13px',
+                    background: 'none',
+                    border: 'none',
+                    color: isActive ? BRAND_TEAL : INACTIVE_SLATE,
+                    fontWeight: isActive ? 700 : 500,
+                    fontSize: 13.5,
+                    cursor: 'pointer',
+                    fontFamily: FONT,
+                    position: 'relative',
+                    transition: 'color 0.18s ease',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  <tab.Icon size={18} />
-                  {t(tab.labelKey as 'tabManual' | 'tabNlp' | 'tabVoice' | 'tabScan')}
+                  <tab.Icon size={16} />
+                  <span>{t(tab.labelKey as 'tabManual' | 'tabNlp' | 'tabVoice' | 'tabScan')}</span>
                   {isActive && (
                     <motion.div
                       layoutId="activeTabUnderline"
                       style={{
-                        position: 'absolute', bottom: -2, left: 0, right: 0,
-                        height: 3, background: TEAL, borderRadius: 2,
+                        position: 'absolute',
+                        bottom: -1.5,
+                        left: 8,
+                        right: 8,
+                        height: 2.5,
+                        background: BRAND_TEAL,
+                        borderRadius: 999,
                       }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                     />
                   )}
                 </button>
@@ -68,10 +119,10 @@ function AddTransactionContent() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
             >
               {activeTab === 'manual' && <ManualTab />}
               {activeTab === 'nlp' && (
@@ -91,7 +142,6 @@ function AddTransactionContent() {
               )}
             </motion.div>
           </AnimatePresence>
-
         </div>
       </div>
     </Layout>
