@@ -84,7 +84,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const userName = user?.userName || ''
   const avatarUrl = user?.avatarUrl || ''
-  const isPro = Boolean(user?.isPro) || userTier === 'pro' || userTier === 'premium'
+  const isPro = Boolean(user?.isPro) || userTier === 'pro' || userTier === 'max'
   const initial = userName ? userName.charAt(0).toUpperCase() : ''
 
   const AvatarCircle = ({ size = 40, className = '' }: { size?: number; className?: string }) => (

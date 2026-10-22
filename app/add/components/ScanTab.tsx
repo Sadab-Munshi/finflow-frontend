@@ -9,21 +9,20 @@ import {
   Upload,
   Check,
   FileText,
-  Image as ImageIcon,
   Sparkles,
   Receipt,
-  ShieldCheck,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
-import { BorderBeam } from 'border-beam'
 import { getCategoriesByType } from '@/lib/categories'
 import { validateTransactionDate } from '@/lib/validateTransactionDate'
-import { TEAL, FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
+import { FONT, ParsedTransaction, getTodayIST, resolveCategory } from '../constants'
 import { useTransaction } from '../hooks/useTransaction'
 import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
 import { aiParseReceipt } from '@/lib/api-client'
+
+const BRAND_TEAL = '#0d9488'
 
 /* ─── Scan Progress Steps ─── */
 const SCAN_STEPS = [
@@ -48,22 +47,20 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 16,
-        padding: '20px',
+        gap: 14,
+        padding: '18px 20px',
         background: '#ffffff',
-        borderRadius: 20,
-        border: '1.5px solid #e5e7eb',
-        boxShadow: '0 10px 30px -10px rgba(0, 184, 148, 0.12)',
+        borderRadius: 18,
+        border: '1.5px solid #e2e8f0',
         fontFamily: FONT,
       }}
     >
-      {/* Top status header + percentage */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <motion.p
           key={currentStep}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ color: '#0f172a', fontWeight: 700, fontSize: 15, margin: 0 }}
+          style={{ color: '#0f172a', fontWeight: 700, fontSize: 14.5, margin: 0 }}
         >
           {currentStep < SCAN_STEPS.length
             ? t(SCAN_STEPS[currentStep].label as 'readingImage' | 'extractingText' | 'parsingDetails' | 'scanDone')
@@ -73,9 +70,10 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
           style={{
             fontSize: 12,
             fontWeight: 700,
-            color: TEAL,
-            background: `${TEAL}15`,
-            padding: '3px 10px',
+            color: BRAND_TEAL,
+            background: '#f0fdfa',
+            border: '1px solid #ccfbf1',
+            padding: '2px 10px',
             borderRadius: 999,
           }}
         >
@@ -83,22 +81,20 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
         </span>
       </div>
 
-      {/* Progress bar */}
       <div style={{ width: '100%', height: 6, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
         <motion.div
           style={{
             height: '100%',
-            background: `linear-gradient(90deg, ${TEAL}, #10b981)`,
+            background: BRAND_TEAL,
             borderRadius: 999,
           }}
           initial={{ width: '0%' }}
           animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.45, ease: 'easeOut' }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
         />
       </div>
 
-      {/* Step Checklist */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 2 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%', marginTop: 2 }}>
         {SCAN_STEPS.map((step, i) => {
           const done = i < currentStep || (i === SCAN_STEPS.length - 1 && currentStep >= SCAN_STEPS.length - 1)
           const active = i === currentStep && currentStep < SCAN_STEPS.length - 1
@@ -106,36 +102,36 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div
                 style={{
-                  width: 24,
-                  height: 24,
+                  width: 22,
+                  height: 22,
                   borderRadius: '50%',
-                  background: done ? TEAL : active ? `${TEAL}18` : '#f3f4f6',
-                  border: active ? `2px solid ${TEAL}` : 'none',
+                  background: done ? BRAND_TEAL : active ? '#f0fdfa' : '#f8fafc',
+                  border: active ? `2px solid ${BRAND_TEAL}` : done ? 'none' : '1px solid #e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.3s',
+                  transition: 'all 0.25s',
                   flexShrink: 0,
                 }}
               >
                 {done ? (
-                  <Check size={13} color="#fff" />
+                  <Check size={12} color="#fff" />
                 ) : active ? (
                   <motion.div
-                    style={{ width: 8, height: 8, borderRadius: '50%', background: TEAL }}
+                    style={{ width: 7, height: 7, borderRadius: '50%', background: BRAND_TEAL }}
                     animate={{ scale: [1, 1.35, 1] }}
                     transition={{ duration: 0.8, repeat: Infinity }}
                   />
                 ) : (
-                  <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>{i + 1}</span>
+                  <span style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>{i + 1}</span>
                 )}
               </div>
               <span
                 style={{
-                  fontSize: 13.5,
+                  fontSize: 13,
                   fontWeight: done || active ? 600 : 400,
-                  color: done ? TEAL : active ? '#1e293b' : '#9ca3af',
-                  transition: 'all 0.3s',
+                  color: done ? BRAND_TEAL : active ? '#0f172a' : '#94a3b8',
+                  transition: 'all 0.25s',
                 }}
               >
                 {t(step.label as 'readingImage' | 'extractingText' | 'parsingDetails' | 'scanDone')}
@@ -186,10 +182,10 @@ export default function ScanTab() {
   const t = useTranslations('add')
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
   const cameraInputRef = useRef<HTMLInputElement>(null)
-  const galleryInputRef = useRef<HTMLInputElement>(null)
-  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [loading, setLoading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [scanStep, setScanStep] = useState(-1)
   const [scanPreviewUrl, setScanPreviewUrl] = useState<string | null>(null)
   const [scannedFileMeta, setScannedFileMeta] = useState<{ name: string; size: string; isPdf: boolean } | null>(null)
@@ -304,11 +300,11 @@ export default function ScanTab() {
     setCategoryError('')
     const parsedAmt = parseFloat(amount)
     if (!amount || isNaN(parsedAmt) || parsedAmt <= 0) {
-      setAmountError('Please enter an amount')
+      setAmountError(t('amountError'))
       valid = false
     }
     if (!category) {
-      setCategoryError('Please select a category')
+      setCategoryError(t('categoryError'))
       valid = false
     }
     if (!valid) return
@@ -388,26 +384,36 @@ export default function ScanTab() {
   /* ── Single transaction preview ── */
   if (parsedList.length === 1) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 520, margin: '0 auto', fontFamily: FONT }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontFamily: FONT }}>
         {scannedFileMeta && (
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '10px 14px',
-              borderRadius: 14,
-              background: '#f0fdf4',
-              border: '1px solid #bbf7d0',
+              padding: '9px 14px',
+              borderRadius: 12,
+              background: '#f0fdfa',
+              border: '1px solid #ccfbf1',
               fontSize: 12.5,
-              color: '#166534',
+              color: '#0f766e',
             }}
           >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontWeight: 600,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {scannedFileMeta.isPdf ? <FileText size={15} /> : <Receipt size={15} />}
               {scannedFileMeta.name}
             </span>
-            <span style={{ fontSize: 11, opacity: 0.8, flexShrink: 0 }}>{scannedFileMeta.size}</span>
+            <span style={{ fontSize: 11, opacity: 0.85, flexShrink: 0 }}>{scannedFileMeta.size}</span>
           </div>
         )}
         <PreviewCard
@@ -421,29 +427,30 @@ export default function ScanTab() {
     )
   }
 
-  /* ── Multiple transactions (e.g. from PDF statement or multi-item bill) ── */
+  /* ── Multiple transactions (PDF statement or multi-item bill) ── */
   if (parsedList.length > 1) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 520, margin: '0 auto', fontFamily: FONT }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: FONT }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '12px 16px',
+            padding: '12px 14px',
             borderRadius: 14,
             background: '#f8fafc',
             border: '1px solid #e2e8f0',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
               style={{
                 width: 32,
                 height: 32,
                 borderRadius: 10,
-                background: `${TEAL}18`,
-                color: TEAL,
+                background: '#f0fdfa',
+                border: '1px solid #ccfbf1',
+                color: BRAND_TEAL,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -452,8 +459,8 @@ export default function ScanTab() {
               {scannedFileMeta?.isPdf ? <FileText size={16} /> : <ScanLine size={16} />}
             </div>
             <div>
-              <p style={{ fontSize: 14, color: '#0f172a', fontWeight: 700, margin: 0 }}>
-                {parsedList.length} transactions extracted
+              <p style={{ fontSize: 13.5, color: '#0f172a', fontWeight: 700, margin: 0 }}>
+                {t('transactionsFound', { count: parsedList.length })}
               </p>
               {scannedFileMeta && (
                 <p style={{ fontSize: 11.5, color: '#64748b', margin: 0 }}>
@@ -463,13 +470,14 @@ export default function ScanTab() {
             </div>
           </div>
           <button
+            type="button"
             onClick={discardAll}
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
               color: '#ef4444',
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: 600,
               fontFamily: FONT,
             }}
@@ -490,20 +498,21 @@ export default function ScanTab() {
         ))}
 
         <button
+          type="button"
           onClick={handleConfirmAll}
           disabled={isSubmitting}
           style={{
             width: '100%',
-            padding: 15,
-            background: isSubmitting ? '#d1d5db' : `linear-gradient(135deg, ${TEAL}, #059669)`,
-            color: '#fff',
+            padding: '15px 18px',
+            background: isSubmitting ? '#e5e7eb' : BRAND_TEAL,
+            color: isSubmitting ? '#94a3b8' : '#ffffff',
             border: 'none',
-            borderRadius: 16,
-            fontSize: 16,
-            fontWeight: 700,
+            borderRadius: 14,
+            fontSize: 15.5,
+            fontWeight: 600,
             cursor: isSubmitting ? 'not-allowed' : 'pointer',
             fontFamily: FONT,
-            boxShadow: '0 10px 24px -6px rgba(0, 184, 148, 0.35)',
+            transition: 'all 0.2s',
           }}
         >
           {isSubmitting ? t('saving') : t('saveAll', { count: parsedList.length })}
@@ -512,31 +521,24 @@ export default function ScanTab() {
     )
   }
 
-  /* ── Scan Idle / Loading View ── */
+  /* ── Clean Minimal Fintech Scan Idle / Loading View ── */
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 18,
-        maxWidth: 520,
-        margin: '0 auto',
-        paddingTop: 4,
+        gap: 14,
         fontFamily: FONT,
       }}
     >
       <style>{`
-        @keyframes scannerLaser {
-          0%, 100% { top: 12%; opacity: 0.85; }
-          50% { top: 84%; opacity: 1; }
-        }
-        @keyframes subtleFloat {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-4px); }
+        @keyframes scannerSweep {
+          0%, 100% { top: 14%; opacity: 0.75; }
+          50% { top: 82%; opacity: 1; }
         }
       `}</style>
 
-      {/* Hidden File Inputs for Camera, Image Gallery, and PDF Document */}
+      {/* Hidden File Inputs: Camera (left action) & Unified Image/PDF Picker (right action + dropzone) */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -550,20 +552,9 @@ export default function ScanTab() {
         }}
       />
       <input
-        ref={galleryInputRef}
+        ref={fileInputRef}
         type="file"
-        accept=".jpg,.jpeg,.png,.webp,.heic,image/*"
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) handleFileUpload(f)
-          e.target.value = ''
-        }}
-      />
-      <input
-        ref={pdfInputRef}
-        type="file"
-        accept=".pdf,application/pdf"
+        accept="image/*,.pdf,application/pdf,.heic,.webp"
         style={{ display: 'none' }}
         onChange={(e) => {
           const f = e.target.files?.[0]
@@ -573,32 +564,30 @@ export default function ScanTab() {
       />
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Active Scanning Preview Window (Image OR PDF Card with sweeping laser) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div
             style={{
               position: 'relative',
-              borderRadius: 20,
+              borderRadius: 18,
               overflow: 'hidden',
-              border: `1.5px solid ${TEAL}45`,
+              border: '1.5px solid #cbd5e1',
               background: '#0f172a',
-              minHeight: 170,
+              minHeight: 164,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            {/* Sweeping Laser Line */}
             <div
               style={{
                 position: 'absolute',
-                left: 12,
-                right: 12,
-                height: 2.5,
-                background: 'linear-gradient(90deg, transparent, #2dd4bf, #10b981, transparent)',
-                boxShadow: '0 0 16px 3px rgba(45, 212, 191, 0.75)',
+                left: 14,
+                right: 14,
+                height: 2,
+                background: 'linear-gradient(90deg, transparent, #2dd4bf, #0d9488, transparent)',
+                boxShadow: '0 0 12px 2px rgba(45, 212, 191, 0.65)',
                 zIndex: 10,
-                animation: 'scannerLaser 2.2s ease-in-out infinite',
+                animation: 'scannerSweep 2s ease-in-out infinite',
               }}
             />
 
@@ -607,34 +596,33 @@ export default function ScanTab() {
                 src={scanPreviewUrl}
                 alt="Receipt preview"
                 width={480}
-                height={220}
+                height={200}
                 unoptimized
                 style={{
                   width: '100%',
-                  maxHeight: 220,
+                  maxHeight: 200,
                   objectFit: 'cover',
-                  opacity: 0.72,
+                  opacity: 0.74,
                 }}
               />
             ) : (
-              /* Dedicated PDF / Document Scanning Visual */
               <div
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: 10,
-                  padding: '28px 20px',
-                  color: '#fff',
+                  padding: '26px 20px',
+                  color: '#ffffff',
                   textAlign: 'center',
                 }}
               >
                 <div
                   style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 16,
-                    background: 'rgba(20, 184, 166, 0.18)',
+                    width: 50,
+                    height: 50,
+                    borderRadius: 14,
+                    background: 'rgba(13, 148, 136, 0.22)',
                     border: '1px solid rgba(45, 212, 191, 0.35)',
                     display: 'flex',
                     alignItems: 'center',
@@ -642,15 +630,17 @@ export default function ScanTab() {
                     color: '#2dd4bf',
                   }}
                 >
-                  <FileText size={28} />
+                  <FileText size={24} />
                 </div>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 700, margin: 0, color: '#f8fafc' }}>
-                    {scannedFileMeta?.name || 'Scanning Document...'}
+                  <p style={{ fontSize: 13.5, fontWeight: 600, margin: 0, color: '#f8fafc' }}>
+                    {scannedFileMeta?.name || t('scanning')}
                   </p>
-                  <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>
-                    {scannedFileMeta?.size ? `${scannedFileMeta.size} · PDF AI Extraction` : 'AI Vision Processing'}
-                  </p>
+                  {scannedFileMeta?.size && (
+                    <p style={{ fontSize: 11.5, color: '#94a3b8', margin: '3px 0 0' }}>
+                      {scannedFileMeta.size}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -660,303 +650,183 @@ export default function ScanTab() {
         </div>
       ) : (
         <>
-          {/* ─── 1. Interactive AI Viewfinder Hero Card ─── */}
-          <BorderBeam size="sm" colorVariant="ocean" strength={0.65} theme="light" borderRadius={24}>
+          {/* ─── 1. Clean Minimal Scanner Viewfinder / Dropzone Card ─── */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                fileInputRef.current?.click()
+              }
+            }}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setIsDragging(true)
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault()
+              setIsDragging(false)
+              const dropped = e.dataTransfer.files?.[0]
+              if (dropped) handleFileUpload(dropped)
+            }}
+            style={{
+              position: 'relative',
+              borderRadius: 20,
+              background: isDragging ? '#f0fdfa' : '#f8fafc',
+              border: isDragging ? `1.5px dashed ${BRAND_TEAL}` : '1.5px dashed #cbd5e1',
+              padding: '28px 20px 22px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {/* Subtle Viewfinder Corner Brackets */}
+            <div style={{ position: 'absolute', top: 13, left: 13, width: 14, height: 14, borderTop: `2px solid ${BRAND_TEAL}`, borderLeft: `2px solid ${BRAND_TEAL}`, borderTopLeftRadius: 5, opacity: 0.6 }} />
+            <div style={{ position: 'absolute', top: 13, right: 13, width: 14, height: 14, borderTop: `2px solid ${BRAND_TEAL}`, borderRight: `2px solid ${BRAND_TEAL}`, borderTopRightRadius: 5, opacity: 0.6 }} />
+            <div style={{ position: 'absolute', bottom: 13, left: 13, width: 14, height: 14, borderBottom: `2px solid ${BRAND_TEAL}`, borderLeft: `2px solid ${BRAND_TEAL}`, borderBottomLeftRadius: 5, opacity: 0.6 }} />
+            <div style={{ position: 'absolute', bottom: 13, right: 13, width: 14, height: 14, borderBottom: `2px solid ${BRAND_TEAL}`, borderRight: `2px solid ${BRAND_TEAL}`, borderBottomRightRadius: 5, opacity: 0.6 }} />
+
+            {/* Clean Centered Scanner Emblem */}
             <div
-              onClick={() => cameraInputRef.current?.click()}
               style={{
                 position: 'relative',
-                borderRadius: 24,
-                background: 'linear-gradient(145deg, #f0fdf9 0%, #ffffff 55%, #f0f9ff 100%)',
-                border: '1.5px solid #ccfbf1',
-                padding: '26px 20px 22px',
-                textAlign: 'center',
-                cursor: 'pointer',
+                width: 60,
+                height: 60,
+                borderRadius: 18,
+                background: '#ffffff',
+                border: '1px solid #ccfbf1',
+                boxShadow: '0 8px 20px -6px rgba(13, 148, 136, 0.22)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 14px',
                 overflow: 'hidden',
-                boxShadow: '0 12px 32px -12px rgba(13, 148, 136, 0.12)',
-              }}
-            >
-              {/* Viewfinder Corner Brackets */}
-              <div style={{ position: 'absolute', top: 14, left: 14, width: 18, height: 18, borderTop: `2.5px solid ${TEAL}`, borderLeft: `2.5px solid ${TEAL}`, borderTopLeftRadius: 6 }} />
-              <div style={{ position: 'absolute', top: 14, right: 14, width: 18, height: 18, borderTop: `2.5px solid ${TEAL}`, borderRight: `2.5px solid ${TEAL}`, borderTopRightRadius: 6 }} />
-              <div style={{ position: 'absolute', bottom: 14, left: 14, width: 18, height: 18, borderBottom: `2.5px solid ${TEAL}`, borderLeft: `2.5px solid ${TEAL}`, borderBottomLeftRadius: 6 }} />
-              <div style={{ position: 'absolute', bottom: 14, right: 14, width: 18, height: 18, borderBottom: `2.5px solid ${TEAL}`, borderRight: `2.5px solid ${TEAL}`, borderBottomRightRadius: 6 }} />
-
-              {/* Animated Visual Mockup inside Viewfinder */}
-              <div
-                style={{
-                  position: 'relative',
-                  width: 110,
-                  height: 88,
-                  margin: '0 auto 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  animation: 'subtleFloat 3.2s ease-in-out infinite',
-                }}
-              >
-                {/* Back PDF Card */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: 6,
-                    top: 6,
-                    width: 54,
-                    height: 68,
-                    borderRadius: 12,
-                    background: '#fff7ed',
-                    border: '1.5px solid #fed7aa',
-                    transform: 'rotate(10deg)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 3,
-                    boxShadow: '0 4px 12px rgba(249, 115, 22, 0.10)',
-                  }}
-                >
-                  <FileText size={20} color="#ea580c" />
-                  <span style={{ fontSize: 9, fontWeight: 800, color: '#c2410c', letterSpacing: 0.4 }}>PDF</span>
-                </div>
-
-                {/* Front Receipt Card */}
-                <div
-                  style={{
-                    position: 'relative',
-                    zIndex: 2,
-                    width: 64,
-                    height: 76,
-                    borderRadius: 14,
-                    background: '#ffffff',
-                    border: `1.5px solid ${TEAL}55`,
-                    transform: 'rotate(-4deg)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 5,
-                    boxShadow: '0 10px 24px -6px rgba(0, 184, 148, 0.22)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {/* Mini sweeping laser inside icon */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: 4,
-                      right: 4,
-                      height: 2,
-                      background: `linear-gradient(90deg, transparent, ${TEAL}, transparent)`,
-                      animation: 'scannerLaser 2.4s ease-in-out infinite',
-                    }}
-                  />
-                  <ScanLine size={28} color={TEAL} />
-                  <span style={{ fontSize: 9, fontWeight: 800, color: '#0f766e', letterSpacing: 0.4 }}>SCAN</span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  padding: '3px 10px',
-                  borderRadius: 999,
-                  background: '#ccfbf1',
-                  color: '#0f766e',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  marginBottom: 8,
-                }}
-              >
-                <Sparkles size={12} />
-                <span>AI Receipt &amp; PDF Scanner</span>
-              </div>
-
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>
-                Snap a bill or upload a PDF
-              </h3>
-              <p style={{ fontSize: 13, color: '#64748b', margin: '0 auto', maxWidth: 320, lineHeight: 1.45 }}>
-                Extracts merchant, date, category, and exact ₹ amount in seconds.
-              </p>
-            </div>
-          </BorderBeam>
-
-          {/* ─── 2. Primary Camera Action Button ─── */}
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
-            style={{
-              width: '100%',
-              padding: '15px 18px',
-              background: `linear-gradient(135deg, ${TEAL} 0%, #059669 100%)`,
-              color: '#fff',
-              border: 'none',
-              borderRadius: 16,
-              fontSize: 16,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              fontFamily: FONT,
-              boxShadow: '0 10px 24px -6px rgba(0, 184, 148, 0.4)',
-            }}
-          >
-            <Camera size={20} />
-            <span>{t('openCamera')}</span>
-          </button>
-
-          {/* ─── 3. Dedicated Split Cards: Gallery Photo vs PDF Document ─── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {/* Upload Receipt Image from Gallery */}
-            <button
-              type="button"
-              onClick={() => galleryInputRef.current?.click()}
-              style={{
-                padding: '14px 12px',
-                background: '#ffffff',
-                border: '1.5px solid #e2e8f0',
-                borderRadius: 16,
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: 8,
-                textAlign: 'left',
-                fontFamily: FONT,
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 8px rgba(15, 23, 42, 0.03)',
               }}
             >
               <div
                 style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  background: '#eef2ff',
-                  color: '#4f46e5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  position: 'absolute',
+                  left: 8,
+                  right: 8,
+                  height: 2,
+                  background: `linear-gradient(90deg, transparent, ${BRAND_TEAL}, transparent)`,
+                  animation: 'scannerSweep 2.6s ease-in-out infinite',
                 }}
-              >
-                <ImageIcon size={19} />
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
-                  {t('uploadGallery')}
-                </div>
-                <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
-                  JPG, PNG &amp; UPI screenshots
-                </div>
-              </div>
-            </button>
-
-            {/* Upload PDF Invoice / Statement */}
-            <button
-              type="button"
-              onClick={() => pdfInputRef.current?.click()}
-              style={{
-                padding: '14px 12px',
-                background: '#ffffff',
-                border: '1.5px solid #fed7aa',
-                borderRadius: 16,
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: 8,
-                textAlign: 'left',
-                fontFamily: FONT,
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 8px rgba(234, 88, 12, 0.04)',
-              }}
-            >
-              <div
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  background: '#fff7ed',
-                  color: '#ea580c',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <FileText size={19} />
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
-                  Upload PDF Bill
-                </div>
-                <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
-                  Invoices &amp; PDF statements
-                </div>
-              </div>
-            </button>
-          </div>
-
-          {/* ─── 4. What You Can Scan Strip (Helpful Context) ─── */}
-          <div
-            style={{
-              padding: '14px 16px',
-              borderRadius: 16,
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Supported Formats
-              </span>
-              <span style={{ fontSize: 11, color: '#0f766e', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <ShieldCheck size={13} />
-                {t('scanSupported')}
-              </span>
+              />
+              <ScanLine size={27} color={BRAND_TEAL} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {[
-                { title: 'Paper Bills', sub: 'Shops & dining', icon: Receipt, color: '#0d9488', bg: '#f0fdfa' },
-                { title: 'Screenshots', sub: 'UPI & food apps', icon: Upload, color: '#4f46e5', bg: '#eef2ff' },
-                { title: 'PDF Files', sub: 'Multi-item bills', icon: FileText, color: '#ea580c', bg: '#fff7ed' },
-              ].map((item) => (
-                <div
-                  key={item.title}
+            <h3 style={{ fontSize: 16.5, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
+              {t('scanTitle')}
+            </h3>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '0 auto 14px', maxWidth: 340, lineHeight: 1.5 }}>
+              {t('scanSubtitle')}
+            </p>
+
+            {/* Clean Integrated Format Pills */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
+              {[t('scanFormatImg'), t('scanFormatUpi'), t('scanFormatPdf')].map((badge) => (
+                <span
+                  key={badge}
                   style={{
-                    padding: '10px 8px',
-                    borderRadius: 12,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#475569',
                     background: '#ffffff',
-                    border: '1px solid #f1f5f9',
-                    textAlign: 'center',
+                    border: '1px solid #e2e8f0',
+                    padding: '4px 10px',
+                    borderRadius: 999,
                   }}
                 >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 8,
-                      background: item.bg,
-                      color: item.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 6px',
-                    }}
-                  >
-                    <item.icon size={15} />
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b' }}>{item.title}</div>
-                  <div style={{ fontSize: 10.5, color: '#64748b', marginTop: 1 }}>{item.sub}</div>
-                </div>
+                  {badge}
+                </span>
               ))}
             </div>
+          </div>
+
+          {/* ─── 2. Side-by-Side Primary Actions: Open Camera | Upload File ─── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => cameraInputRef.current?.click()}
+              style={{
+                padding: '14px 12px',
+                background: BRAND_TEAL,
+                color: '#ffffff',
+                border: `1.5px solid ${BRAND_TEAL}`,
+                borderRadius: 14,
+                fontSize: 14.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                fontFamily: FONT,
+                boxShadow: '0 6px 18px -6px rgba(13, 148, 136, 0.42)',
+                transition: 'background 0.18s ease',
+              }}
+            >
+              <Camera size={18} />
+              <span>{t('openCamera')}</span>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                padding: '14px 12px',
+                background: '#ffffff',
+                color: '#0f172a',
+                border: '1.5px solid #e2e8f0',
+                borderRadius: 14,
+                fontSize: 14.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                fontFamily: FONT,
+                boxShadow: '0 2px 8px rgba(15, 23, 42, 0.03)',
+                transition: 'border-color 0.18s ease, background 0.18s ease',
+              }}
+            >
+              <Upload size={18} color={BRAND_TEAL} />
+              <span>{t('uploadFile')}</span>
+            </motion.button>
+          </div>
+
+          {/* ─── 3. Compact Single-Line Helper Strip ─── */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              borderRadius: 12,
+              background: '#f0fdfa',
+              border: '1px solid #ccfbf1',
+              color: '#0f766e',
+              fontSize: 12,
+              lineHeight: 1.4,
+            }}
+          >
+            <Sparkles size={14} style={{ flexShrink: 0, color: BRAND_TEAL }} />
+            <span>{t('scanTip')}</span>
           </div>
         </>
       )}
