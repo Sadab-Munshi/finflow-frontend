@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { X, CheckCheck, Bell } from 'lucide-react'
+import { X, CheckCheck, Bell, Crown } from 'lucide-react'
 import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
 import type { Notification } from '@/lib/types'
 
@@ -20,6 +21,7 @@ export default function NotificationCenter({
   onClose,
 }: NotificationCenterProps) {
   const router = useRouter()
+  const [failedIcons, setFailedIcons] = useState<Record<string, boolean>>({})
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
@@ -57,17 +59,26 @@ export default function NotificationCenter({
               }`}
             >
               <div className="flex gap-3">
-                {(notification.icon || getNotificationIcon(notification.type))?.endsWith('.png') ? (
-                  <img
-                    src={`/icons-png/${notification.icon || getNotificationIcon(notification.type)}`}
-                    alt=""
-                    className="w-[28px] h-[28px] object-contain flex-shrink-0"
-                  />
-                ) : (notification.icon || getNotificationIcon(notification.type)) ? (
-                  <span className="text-base leading-none">{notification.icon || getNotificationIcon(notification.type)}</span>
-                ) : (
-                  <Bell className="w-5 h-5 text-slate-400" />
-                )}
+                {(() => {
+                  const icon = notification.icon || getNotificationIcon(notification.type)
+                  if (icon?.endsWith('.png')) {
+                    if (failedIcons[icon]) {
+                      return icon === 'star.png'
+                        ? <Crown className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                        : <Bell className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    }
+                    return (
+                      <img
+                        src={`/icons-png/${icon}`}
+                        alt=""
+                        onError={() => setFailedIcons((prev) => ({ ...prev, [icon]: true }))}
+                        className="w-[28px] h-[28px] object-contain flex-shrink-0"
+                      />
+                    )
+                  }
+                  if (icon) return <span className="text-base leading-none">{icon}</span>
+                  return <Bell className="w-5 h-5 text-slate-400" />
+                })()}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-800' : 'font-medium text-gray-600'}`}>
