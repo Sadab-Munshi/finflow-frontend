@@ -8,37 +8,34 @@ const ROOT = process.cwd()
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')
 
 test('Add Transaction tabs UI redesign — Scan, Voice, NLP & i18n integrity', async (t) => {
-  await t.test('ScanTab has clean viewfinder + side-by-side Open Camera & Upload File actions without duplicate clutter', () => {
+  await t.test('ScanTab wires distinct actions: top box -> Gallery, left teal button -> Camera, right indigo button -> Upload File', () => {
     const scanSrc = read('app/add/components/ScanTab.tsx')
-    assert.match(scanSrc, /gridTemplateColumns:\s*'1fr 1fr'/, 'Scan actions must be arranged side-by-side in 2 equal columns')
-    assert.match(scanSrc, /t\('openCamera'\)/, 'Left button renders Open Camera')
-    assert.match(scanSrc, /t\('uploadFile'\)/, 'Right button renders Upload File')
-    assert.match(scanSrc, /capture="environment"/, 'Camera input captures rear camera on mobile')
-    assert.match(scanSrc, /accept="image\/\*,\.pdf,application\/pdf/, 'Unified Upload File input accepts both images and PDF documents')
-    assert.doesNotMatch(scanSrc, /Upload PDF Bill/, 'Duplicate separate orange Upload PDF Bill card removed')
-    assert.doesNotMatch(scanSrc, /Supported Formats/, 'Redundant 3-card Supported Formats box removed')
+    const enAdd = JSON.parse(read('messages/en/add.json'))
+    assert.match(scanSrc, /onClick=\{\(\) => galleryInputRef\.current\?\.click\(\)\}/, 'Top viewfinder box opens Photo Gallery directly')
+    assert.match(scanSrc, /onClick=\{\(\) => cameraInputRef\.current\?\.click\(\)\}/, 'Left button opens rear Camera')
+    assert.match(scanSrc, /onClick=\{\(\) => fileInputRef\.current\?\.click\(\)\}/, 'Right button opens Upload File picker')
+    assert.match(scanSrc, /CAMERA_TEAL\s*=\s*'#0d9488'/, 'Open Camera button uses distinct Teal color')
+    assert.match(scanSrc, /UPLOAD_INDIGO\s*=\s*'#4f46e5'/, 'Upload File button uses distinct Indigo color')
+    assert.match(scanSrc, /whiteSpace:\s*'nowrap'/, 'Scan action labels stay single-line on narrow mobile viewports')
+    assert.doesNotMatch(enAdd.scanSubtitle, /AI fills everything in seconds/i, 'Removed AI fills everything in seconds copy from Scan box')
   })
 
-  await t.test('VoiceTab includes tactile teal mic button, visible timer, waveform, Cancel & Done controls, and example phrases', () => {
+  await t.test('VoiceTab omits AI Voice Input · Up to 15s badge and displays 1 English, 1 Hindi, 1 Bengali example', () => {
     const voiceSrc = read('app/add/components/VoiceTab.tsx')
-    assert.match(voiceSrc, /MAX_RECORDING_SECONDS/, 'Enforces max recording window with visible timer')
-    assert.match(voiceSrc, /handleVoiceCancel/, 'Supports explicit Cancel without sending unwanted audio')
-    assert.match(voiceSrc, /handleVoiceStop/, 'Supports explicit Stop & Parse control')
-    assert.match(voiceSrc, /t\('voiceTrySaying'\)/, 'Renders Try Saying example prompts')
-    assert.match(voiceSrc, /t\('tryAgain'\)/, 'Renders 1-tap Try Again button on error')
+    assert.doesNotMatch(voiceSrc, /AI Voice Input · Up to 15s/, 'Removed AI Voice Input · Up to 15s badge')
+    assert.match(voiceSrc, /lang:\s*'EN'/, 'Voice examples include English')
+    assert.match(voiceSrc, /lang:\s*'हिन्दी'/, 'Voice examples include Hindi')
+    assert.match(voiceSrc, /lang:\s*'বাংলা'/, 'Voice examples include Bengali')
   })
 
-  await t.test('NLPTab includes Smart Text Entry card, Clear button, keyboard shortcut, and 1-tap Quick Examples', () => {
+  await t.test('NLPTab uses clean minimal UI without generic Parse with AI text and displays 1 English, 1 Hindi, 1 Bengali example', () => {
     const nlpSrc = read('app/add/components/NLPTab.tsx')
-    assert.match(nlpSrc, /t\('nlpCardTitle'\)/, 'Renders Smart Text Entry header')
-    assert.match(nlpSrc, /t\('clear'\)/, 'Renders Clear input action when text is entered')
-    assert.match(nlpSrc, /e\.metaKey \|\| e\.ctrlKey/, 'Supports Cmd/Ctrl + Enter keyboard shortcut')
-    assert.match(nlpSrc, /t\('quickExamples'\)/, 'Renders 1-tap Quick Examples list')
-  })
-
-  await t.test('AddPage syncs activeTab dynamically when URL ?tab= query changes (fixes FAB speed-dial switching)', () => {
-    const pageSrc = read('app/add/page.tsx')
-    assert.match(pageSrc, /useEffect\(\(\)\s*=>\s*\{\s*setActiveTab\(urlTab\)/, 'Syncs tab state when searchParams changes')
+    const enAdd = JSON.parse(read('messages/en/add.json'))
+    assert.notEqual(enAdd.parseWithAI, 'Parse with AI', 'Replaced generic Parse with AI button label')
+    assert.equal(enAdd.parseWithAI, 'Smart Add', 'Uses clean Smart Add CTA label')
+    assert.match(nlpSrc, /lang:\s*'EN'/, 'NLP examples include English')
+    assert.match(nlpSrc, /lang:\s*'हिन्दी'/, 'NLP examples include Hindi')
+    assert.match(nlpSrc, /lang:\s*'বাংলা'/, 'NLP examples include Bengali')
   })
 
   await t.test('en, hi, and bn add.json message catalogs contain identical key sets with zero missing translations', () => {

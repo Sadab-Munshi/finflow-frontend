@@ -20,6 +20,13 @@ const VOICE_ERROR_MIC = 'mic'
 const SUPPORTED_LANGUAGES = ['English', 'हिन्दी', 'বাংলা', 'தமிழ்', 'తెలుగు']
 const WAVE_DELAYS = [0, 90, 180, 270, 360, 140, 40, 220, 320, 110, 250, 160, 70]
 
+/* 1 English, 1 Hindi, 1 Bengali natural spoken examples */
+const MULTILINGUAL_VOICE_EXAMPLES = [
+  { lang: 'EN', text: 'Spent 280 on lunch and 90 on auto' },
+  { lang: 'हिन्दी', text: 'आज बिजली बिल में 1,450 दिए' },
+  { lang: 'বাংলা', text: 'বাজারে 640 আর চায়ে 40 খরচ করলাম' },
+]
+
 export default function VoiceTab() {
   const t = useTranslations('add')
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
@@ -45,7 +52,7 @@ export default function VoiceTab() {
 
   const availableCategories = getCategoriesByType(type)
 
-  /* Recording timer with visible progress + 15s auto-stop */
+  /* Recording timer with 15s auto-stop */
   useEffect(() => {
     if (!isListening) {
       setRecordingTime(0)
@@ -336,9 +343,7 @@ export default function VoiceTab() {
     )
   }
 
-  const examplePrompts = [t('nlpExample1'), t('nlpExample2'), t('nlpExample3')]
-
-  /* ── Clean Minimal Fintech Voice Idle / Recording / Processing UI ── */
+  /* ── Clean Minimal Voice UI (No idle header badge, 1 EN + 1 HI + 1 BN examples) ── */
   return (
     <div
       style={{
@@ -365,54 +370,42 @@ export default function VoiceTab() {
           borderRadius: 20,
           background: isListening ? '#f0fdfa' : '#f8fafc',
           border: isListening ? `1.5px solid ${BRAND_TEAL}` : '1.5px solid #e2e8f0',
-          padding: '24px 20px 22px',
+          padding: '26px 16px 22px',
           textAlign: 'center',
           transition: 'all 0.2s ease',
         }}
       >
-        {/* Top Status Pill */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '4px 12px',
-            borderRadius: 999,
-            background: isListening ? '#ffffff' : '#ffffff',
-            border: isListening ? '1px solid #99f6e4' : '1px solid #e2e8f0',
-            color: isListening ? '#0f766e' : '#475569',
-            fontSize: 11.5,
-            fontWeight: 600,
-            marginBottom: 18,
-          }}
-        >
-          {isListening ? (
-            <>
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  background: '#ef4444',
-                  animation: 'livePulseDot 1s ease-in-out infinite',
-                }}
-              />
-              <span>
-                {t('listening')} · 0:{String(recordingTime).padStart(2, '0')} / 0:{MAX_RECORDING_SECONDS}
-              </span>
-            </>
-          ) : loading ? (
-            <>
-              <Loader2 size={12} className="animate-spin" style={{ color: BRAND_TEAL }} />
-              <span style={{ color: BRAND_TEAL }}>{t('processing')}</span>
-            </>
-          ) : (
-            <>
-              <Mic size={12} color={BRAND_TEAL} />
-              <span>{t('voiceBadge')}</span>
-            </>
-          )}
-        </div>
+        {/* Active Recording Timer Pill (shown only while actively recording) */}
+        {isListening && (
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 12px',
+              borderRadius: 999,
+              background: '#ffffff',
+              border: '1px solid #99f6e4',
+              color: '#0f766e',
+              fontSize: 11.5,
+              fontWeight: 600,
+              marginBottom: 14,
+            }}
+          >
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: '#ef4444',
+                animation: 'livePulseDot 1s ease-in-out infinite',
+              }}
+            />
+            <span>
+              0:{String(recordingTime).padStart(2, '0')} / 0:{MAX_RECORDING_SECONDS}
+            </span>
+          </div>
+        )}
 
         {/* Center Tactile Mic Control / Waveform */}
         <div
@@ -422,12 +415,11 @@ export default function VoiceTab() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: 16,
+            marginBottom: 14,
           }}
         >
           {isListening ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
-              {/* Smooth 13-bar audio waveform */}
               <div
                 style={{
                   display: 'flex',
@@ -452,7 +444,6 @@ export default function VoiceTab() {
                 ))}
               </div>
 
-              {/* Time progress track */}
               <div style={{ width: '100%', maxWidth: 220, height: 4, background: '#ccfbf1', borderRadius: 999, overflow: 'hidden' }}>
                 <div
                   style={{
@@ -465,7 +456,6 @@ export default function VoiceTab() {
                 />
               </div>
 
-              {/* Explicit Cancel / Stop & Parse Buttons */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <button
                   type="button"
@@ -592,7 +582,7 @@ export default function VoiceTab() {
                 color: '#475569',
                 background: '#ffffff',
                 border: '1px solid #e2e8f0',
-                padding: '3.5px 10px',
+                padding: '3.5px 9px',
                 borderRadius: 999,
               }}
             >
@@ -665,9 +655,9 @@ export default function VoiceTab() {
         </div>
       )}
 
-      {/* ─── Clean "Try Saying" Example Prompts ─── */}
+      {/* ─── Multilingual Examples: 1 English, 1 Hindi, 1 Bengali ─── */}
       {!isListening && !loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, paddingTop: 2 }}>
           <span
             style={{
               fontSize: 11,
@@ -680,23 +670,36 @@ export default function VoiceTab() {
             {t('voiceTrySaying')}
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {examplePrompts.map((phrase, idx) => (
+            {MULTILINGUAL_VOICE_EXAMPLES.map((item) => (
               <div
-                key={idx}
+                key={item.lang}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 9,
-                  padding: '9px 12px',
+                  padding: '9px 11px',
                   borderRadius: 12,
                   background: '#ffffff',
                   border: '1px solid #f1f5f9',
                   fontSize: 12.5,
-                  color: '#475569',
+                  color: '#334155',
                 }}
               >
-                <Mic size={13} color={BRAND_TEAL} style={{ flexShrink: 0, opacity: 0.8 }} />
-                <span>&ldquo;{phrase}&rdquo;</span>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: '#0f766e',
+                    background: '#f0fdfa',
+                    border: '1px solid #ccfbf1',
+                    borderRadius: 6,
+                    padding: '2px 6px',
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.lang}
+                </span>
+                <span style={{ lineHeight: 1.4 }}>&ldquo;{item.text}&rdquo;</span>
               </div>
             ))}
           </div>

@@ -55,7 +55,7 @@ function AddTransactionContent() {
             borderRadius: 24,
             border: '1px solid #f1f5f9',
             boxShadow: '0 4px 24px -8px rgba(15, 23, 42, 0.06)',
-            padding: '6px 18px 24px',
+            padding: '6px 14px 22px',
           }}
         >
           {/* ─── Clean Underline Tab Bar ─── */}
@@ -64,7 +64,7 @@ function AddTransactionContent() {
               display: 'flex',
               position: 'relative',
               borderBottom: '1.5px solid #f1f5f9',
-              marginBottom: 22,
+              marginBottom: 20,
             }}
           >
             {tabsConfig.map((tab) => {
@@ -79,8 +79,8 @@ function AddTransactionContent() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 6,
-                    padding: '13px 4px 13px',
+                    gap: 5,
+                    padding: '13px 2px 13px',
                     background: 'none',
                     border: 'none',
                     color: isActive ? BRAND_TEAL : INACTIVE_SLATE,
@@ -101,8 +101,8 @@ function AddTransactionContent() {
                       style={{
                         position: 'absolute',
                         bottom: -1.5,
-                        left: 8,
-                        right: 8,
+                        left: 6,
+                        right: 6,
                         height: 2.5,
                         background: BRAND_TEAL,
                         borderRadius: 999,
