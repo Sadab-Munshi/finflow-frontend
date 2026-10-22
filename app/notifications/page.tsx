@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  CheckCheck, Bell, Trash2, Loader2,
+  CheckCheck, Bell, Crown, Trash2, Loader2,
   CheckSquare, Square, X, ArrowRight,
   Search, MoreVertical
 } from 'lucide-react'
@@ -19,7 +19,8 @@ import { deleteNotification } from '@/lib/api-client'
 const PAGE_SIZE = 20
 
 /* ── Type icon config ───────────────────────────────────────────────── */
-function typeIconBg(type: string) {
+function typeIconBg(type: string, icon?: string | null) {
+  if (icon === 'star.png') return 'bg-amber-50 text-amber-600'
   switch (type) {
     case 'budget_alert': return 'bg-amber-50 text-amber-600'
     case 'report':       return 'bg-emerald-50 text-emerald-600'
@@ -66,6 +67,7 @@ export default function NotificationsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [menuOpen, setMenuOpen] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [failedIcons, setFailedIcons] = useState<Record<string, boolean>>({})
 
   /* ── Data loading ───────────────────────────────────────────────── */
   const loadNotifications = useCallback(async (offset = 0, append = false) => {
@@ -243,10 +245,16 @@ export default function NotificationsPage() {
   /* PNG → Emoji → Lucide fallback chain for notification icons */
   function renderNotificationIcon(icon: string | undefined, type: string) {
     if (icon?.endsWith('.png')) {
+      if (failedIcons[icon]) {
+        return icon === 'star.png'
+          ? <Crown className="w-5 h-5 text-amber-500" />
+          : getNotificationIcon(type)
+      }
       return (
         <img
           src={`/icons-png/${icon}`}
           alt=""
+          onError={() => setFailedIcons(prev => ({ ...prev, [icon]: true }))}
           className="w-[26px] h-[26px] object-contain"
           loading="lazy"
         />
@@ -469,7 +477,7 @@ export default function NotificationsPage() {
                 {/* Notifications */}
                 <div>
                   <AnimatePresence initial={false}>                    {grouped[group].map((notification, i) => {
-                      const iconBg = typeIconBg(notification.type)
+                      const iconBg = typeIconBg(notification.type, notification.icon)
                       const isSelected = selected.has(notification.id)
 
                       return (
