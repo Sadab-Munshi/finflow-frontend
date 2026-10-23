@@ -32,10 +32,15 @@ test('Responsive Landing Page Refactor — Navigation, CTA Hierarchy, Touch Targ
     assert.match(homeSrc, /bg-transparent border-0 shadow-none/, 'Login link has zero fill and zero border outline')
   })
 
-  await t.test('Responsive layout: md 2-column hero grid, expanded desktop preview card, exact container alignment & >=48px touch targets', () => {
+  await t.test('Responsive layout: md 2-column hero grid, 4:3 hero showcase video & exact container alignment', () => {
     assert.match(homeSrc, /grid grid-cols-1 md:grid-cols-12/, 'Transitions hero into balanced 2-column grid at tablet md breakpoint')
     assert.match(loopsSrc, /max-w-md md:max-w-none/, 'Removes narrow max-w-md cap on tablet/desktop preview card')
-    assert.match(loopsSrc, /min-w-\[48px\] min-h-\[48px\]/, 'Hero switcher buttons meet minimum 48px touch target')
+    assert.match(loopsSrc, /\/assets\/hero-preview\.webm/, 'Renders primary VP9 WebM showcase video')
+    assert.match(loopsSrc, /\/assets\/hero-preview\.mp4/, 'Renders H.264 MP4 fallback video for iOS Safari')
+    assert.match(loopsSrc, /\/assets\/hero-preview-poster\.webp/, 'Renders instant Frame-0 WebP poster')
+    assert.ok(fs.existsSync(path.join(ROOT, 'public/assets/hero-preview.webm')), 'WebM asset present')
+    assert.ok(fs.existsSync(path.join(ROOT, 'public/assets/hero-preview.mp4')), 'MP4 asset present')
+    assert.ok(fs.existsSync(path.join(ROOT, 'public/assets/hero-preview-poster.webp')), 'WebP poster present')
 
     const containerMatches = homeSrc.match(/max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8/g) || []
     assert.equal(
