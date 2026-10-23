@@ -10,7 +10,6 @@ import {
   FileText,
   PiggyBank,
   Shield,
-  ArrowRight,
   Sparkles,
 } from 'lucide-react'
 import { BorderBeam } from 'border-beam'
@@ -34,6 +33,9 @@ export default function LandingPage() {
   /* ── auth redirect ── */
   useEffect(() => {
     const check = async () => {
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        return
+      }
       const supabase = createClient()
       const {
         data: { session },
@@ -135,8 +137,8 @@ export default function LandingPage() {
 
   return (
     <div className="overflow-x-hidden">
-      {/* ── HERO ── */}
-      <section className="relative z-0 min-h-fit flex flex-col justify-center px-4 sm:px-6 pt-5 sm:pt-12 pb-14 sm:pb-24 bg-gradient-to-b from-[#f0f9f4] via-white to-[#e8f4fd]">
+      {/* ── HERO (Streamlined on mobile, 2-col on tablet, balanced full-width container on desktop) ── */}
+      <section className="relative z-0 min-h-fit flex flex-col justify-center pt-4 pb-10 md:py-14 lg:py-20 bg-gradient-to-b from-[#f0f9f4] via-white to-[#e8f4fd]">
         {/* Ambient multi-layered glow backdrop */}
         <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
           <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[520px] h-[340px] bg-gradient-to-tr from-teal-200/45 via-emerald-200/35 to-sky-200/40 rounded-full blur-3xl" />
@@ -144,17 +146,17 @@ export default function LandingPage() {
           <div className="absolute bottom-10 -right-24 w-80 h-80 bg-sky-300/20 rounded-full blur-3xl" />
         </div>
 
-        <div className="max-w-7xl mx-auto w-full px-2 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* Left 7 Columns: Headline + CTA */}
-            <div className="lg:col-span-7 text-center lg:text-left">
-              {/* Crisp single-line badge on both mobile and desktop */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-teal-200/90 shadow-2xs text-xs sm:text-sm font-semibold text-teal-800 mb-5 whitespace-nowrap">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 items-center">
+            {/* Left 6 Columns (Tablet & Desktop): Headline + Action Hierarchy */}
+            <div className="md:col-span-6 text-center md:text-left">
+              {/* Crisp single-line badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-teal-200/90 shadow-2xs text-xs sm:text-sm font-semibold text-teal-800 mb-3.5 sm:mb-4 whitespace-nowrap">
                 <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                 <span>Manage your money the smarter way</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12] mb-5">
+              <h1 className="text-[2rem] sm:text-4xl md:text-[2.55rem] lg:text-[3.35rem] xl:text-[3.65rem] font-extrabold text-slate-900 tracking-tight leading-[1.12] mb-3.5 sm:mb-4">
                 <BlurText text="Spend less time counting," delayStepMs={45} />
                 <br />
                 <span className="bg-gradient-to-r from-[#0F766E] via-[#059669] to-[#0284C7] bg-clip-text text-transparent">
@@ -163,12 +165,12 @@ export default function LandingPage() {
               </h1>
 
               {/* Static subtitle so lines never jump or reflow on mobile */}
-              <p className="text-base sm:text-xl text-slate-600 max-w-xl mx-auto lg:mx-0 mb-4 leading-relaxed">
+              <p className="text-[15px] sm:text-lg text-slate-600 max-w-xl mx-auto md:mx-0 mb-3.5 sm:mb-4 leading-relaxed">
                 Track every rupee effortlessly by voice, camera, or text — in your language, backed by a secured database.
               </p>
 
-              {/* Dedicated fixed-height pill row for RotatingText so mobile layout never shifts */}
-              <div className="h-9 flex items-center justify-center lg:justify-start mb-7">
+              {/* Fixed-height pill row for RotatingText */}
+              <div className="h-9 flex items-center justify-center md:justify-start mb-5 sm:mb-6">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-50/90 border border-teal-200/80 text-xs sm:text-sm font-semibold text-teal-800 whitespace-nowrap shadow-2xs">
                   <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse shrink-0" />
                   <RotatingText
@@ -183,7 +185,15 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="flex flex-row items-center justify-center lg:justify-start gap-3.5 flex-wrap">
+              {/* Action Hierarchy: Low-profile text-only Login on LEFT + Elevated Start Tracking CTA on RIGHT */}
+              <div className="flex flex-row items-center justify-center md:justify-start gap-3 sm:gap-5 flex-wrap">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center h-12 sm:h-[52px] px-4 bg-transparent border-0 shadow-none text-[15px] font-semibold text-slate-600 hover:text-teal-700 underline-offset-4 hover:underline transition-colors"
+                >
+                  Login
+                </Link>
+
                 <BorderBeam
                   size="sm"
                   colorVariant="colorful"
@@ -193,34 +203,29 @@ export default function LandingPage() {
                 >
                   <Link
                     href="/signup"
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-slate-900 via-[#0F766E] to-slate-900 text-white px-7 py-3.5 rounded-full text-sm font-semibold shadow-lg shadow-teal-900/15 hover:opacity-95 transition-all"
+                    className="inline-flex items-center justify-center h-12 sm:h-[52px] px-8 sm:px-9 rounded-full bg-gradient-to-b from-[#14B8A6] via-[#0D9488] to-[#0F766E] text-white text-[15px] font-bold tracking-tight shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_12px_28px_-6px_rgba(13,148,136,0.48),0_4px_12px_-2px_rgba(15,23,42,0.12)] hover:-translate-y-0.5 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_18px_36px_-6px_rgba(20,184,166,0.62),0_6px_16px_-2px_rgba(15,23,42,0.15)] active:translate-y-0 transition-all duration-200"
                   >
-                    <span>Get Started</span>
-                    <ArrowRight className="w-4 h-4" />
+                    Start Tracking
                   </Link>
                 </BorderBeam>
-
-                <Link
-                  href="/login"
-                  className="inline-flex items-center justify-center border border-slate-300/90 text-slate-800 px-7 py-3.5 rounded-full text-sm font-semibold hover:border-teal-600 hover:text-teal-800 transition-all bg-white/90 backdrop-blur-xs shadow-2xs"
-                >
-                  Login
-                </Link>
               </div>
             </div>
 
-            {/* Right 5 Columns: ReactBits 3D CardSwap + Voice Pill Loop */}
-            <div className="lg:col-span-5">
+            {/* Right 6 Columns (Tablet & Desktop): Prominent Interactive Dashboard Preview Card */}
+            <div className="md:col-span-6">
               <HeroCardSwapLoop />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── FEATURES (Each with its own unique visual format & color theme) ── */}
-      <section className="py-20 sm:py-24 bg-gradient-to-b from-[#e8f4fd] via-white to-[#f0f9f4]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14 sm:mb-16">
+      {/* ── FEATURES (Aligned to exact same max-w-7xl container width as Hero) ── */}
+      <section
+        id="features"
+        className="scroll-mt-20 py-16 sm:py-24 bg-gradient-to-b from-[#e8f4fd] via-white to-[#f0f9f4]"
+      >
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
             <span className="inline-block px-3.5 py-1 rounded-full bg-teal-100/80 text-teal-800 text-xs font-bold uppercase tracking-wider mb-3">
               Smart Capabilities
             </span>
@@ -267,9 +272,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="py-20 sm:py-24 bg-gradient-to-b from-[#f0f9f4] to-[#e8f4fd]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14 sm:mb-16">
+      <section
+        id="how-it-works"
+        className="scroll-mt-20 py-16 sm:py-24 bg-gradient-to-b from-[#f0f9f4] to-[#e8f4fd]"
+      >
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
             <span className="inline-block px-3.5 py-1 rounded-full bg-sky-100/90 text-sky-800 text-xs font-bold uppercase tracking-wider mb-3">
               Quick Setup
             </span>
@@ -311,7 +319,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="relative py-20 sm:py-24 bg-gradient-to-br from-[#042F2E] via-[#0F766E] to-[#0F172A] overflow-hidden">
+      <section className="relative py-16 sm:py-24 bg-gradient-to-br from-[#042F2E] via-[#0F766E] to-[#0F172A] overflow-hidden">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-24 -left-24 w-80 h-80 rounded-full bg-teal-400/20 blur-3xl"
@@ -338,10 +346,9 @@ export default function LandingPage() {
             >
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-[#0F766E] font-bold text-sm hover:bg-teal-50 shadow-xl transition-colors"
+                className="inline-flex items-center justify-center h-12 sm:h-[52px] px-9 rounded-full bg-white text-[#0F766E] font-bold text-[15px] shadow-[0_14px_32px_-6px_rgba(0,0,0,0.35),0_0_24px_rgba(45,212,191,0.32)] hover:-translate-y-0.5 hover:bg-teal-50 hover:shadow-[0_20px_40px_-6px_rgba(0,0,0,0.42),0_0_34px_rgba(45,212,191,0.52)] active:translate-y-0 transition-all duration-200"
               >
-                <span>Get Started</span>
-                <ArrowRight className="w-4 h-4" />
+                Start Tracking
               </Link>
             </BorderBeam>
           </div>

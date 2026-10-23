@@ -6,14 +6,21 @@ import Image from 'next/image'
 import {
   Menu,
   X,
-  LogIn,
-  UserPlus,
   HelpCircle,
   FileText,
   ShieldCheck,
   AlertCircle,
   BookOpen,
+  Sparkles,
+  Layers,
 } from 'lucide-react'
+
+const DESKTOP_NAV_LINKS = [
+  { href: '/#features', label: 'Features' },
+  { href: '/#how-it-works', label: 'How It Works' },
+  { href: '/user-guide', label: 'User Guide' },
+  { href: '/support', label: 'About Us' },
+]
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
   const [headerVisible, setHeaderVisible] = useState(true)
@@ -53,16 +60,16 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 selection:bg-teal-600 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 selection:bg-teal-600 selection:text-white scroll-smooth">
       {/* ── HEADER ── */}
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur-md transition-transform duration-300 ${
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 border-b border-slate-200/75 bg-white/90 backdrop-blur-md transition-transform duration-300 ${
           headerVisible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 py-2.5">
-          {/* Logo */}
-          <Link href="/" className="flex items-center shrink-0" aria-label="FinFlow home">
+        <div className="max-w-7xl mx-auto w-full h-[68px] flex items-center justify-between px-4 sm:px-6 lg:px-8">
+          {/* Brand Logo */}
+          <Link href="/" className="flex items-center shrink-0 min-h-[48px]" aria-label="FinFlow home">
             <Image
               src="/finflow-logo.png"
               alt="FinFlow"
@@ -75,55 +82,95 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             />
           </Link>
 
-          {/* Hamburger menu toggle (clean header without redundant CTA button) */}
-          <div ref={menuRef} className="relative">
+          {/* ── DESKTOP / TABLET HORIZONTAL NAVIGATION (replaces mobile hamburger) ── */}
+          <nav
+            aria-label="Primary navigation"
+            className="hidden md:flex items-center gap-5 lg:gap-8"
+          >
+            {DESKTOP_NAV_LINKS.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="inline-flex items-center min-h-[48px] text-sm font-medium text-slate-600 hover:text-teal-700 transition-colors whitespace-nowrap"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* ── DESKTOP / TABLET ANCHORED SECONDARY + PRIMARY ACTIONS ── */}
+          <div className="hidden md:flex items-center gap-4 lg:gap-5 shrink-0">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center min-h-[48px] px-3 bg-transparent border-0 shadow-none text-sm font-semibold text-slate-600 hover:text-teal-700 transition-colors whitespace-nowrap"
+            >
+              Login
+            </Link>
+            <Link
+              href="/signup"
+              className="hidden lg:inline-flex items-center justify-center h-12 px-6 rounded-full bg-gradient-to-b from-[#14B8A6] via-[#0D9488] to-[#0F766E] text-white text-sm font-semibold whitespace-nowrap shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_8px_20px_-4px_rgba(13,148,136,0.42),0_2px_6px_rgba(15,23,42,0.08)] hover:-translate-y-0.5 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_14px_28px_-4px_rgba(20,184,166,0.55),0_4px_10px_rgba(15,23,42,0.12)] active:translate-y-0 transition-all duration-200"
+            >
+              Start Tracking
+            </Link>
+          </div>
+
+          {/* ── MOBILE RIGHT CONTROLS: Low-profile Login + 48x48 Hamburger Menu Toggle ── */}
+          <div ref={menuRef} className="flex md:hidden items-center gap-2 relative">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center min-h-[48px] px-3 bg-transparent border-0 shadow-none text-sm font-semibold text-slate-600 hover:text-teal-700 transition-colors"
+            >
+              Login
+            </Link>
+
             <button
+              type="button"
               onClick={() => setMenuOpen((v) => !v)}
               aria-expanded={menuOpen}
               aria-label="Open menu"
-              className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200 ${
+              className={`flex items-center justify-center w-12 h-12 rounded-full border transition-all duration-200 ${
                 menuOpen
                   ? 'bg-slate-900 text-white border-slate-900'
                   : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400 hover:text-slate-950'
               }`}
             >
-              {menuOpen ? <X size={16} /> : <Menu size={16} />}
+              {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
 
-            {/* ── DROPDOWN PANEL ── */}
+            {/* ── MOBILE DROPDOWN PANEL ── */}
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50">
-                <div className="px-4 pt-4 pb-2">
-                  <p className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">
-                    Account
+              <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50">
+                <div className="px-3 pt-3 pb-2">
+                  <p className="px-3 text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-1">
+                    Explore
                   </p>
                   <Link
-                    href="/login"
+                    href="/#features"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                    className="flex items-center gap-2.5 px-3 min-h-[48px] rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
                   >
-                    <LogIn size={15} className="text-slate-400" />
-                    Login
+                    <Sparkles size={15} className="text-teal-600" />
+                    Features
                   </Link>
                   <Link
-                    href="/signup"
+                    href="/#how-it-works"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                    className="flex items-center gap-2.5 px-3 min-h-[48px] rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
                   >
-                    <UserPlus size={15} className="text-slate-400" />
-                    Sign Up
+                    <Layers size={15} className="text-teal-600" />
+                    How It Works
                   </Link>
                 </div>
 
-                <div className="h-px bg-slate-100 mx-4 my-2" />
+                <div className="h-px bg-slate-100 mx-4 my-1" />
 
-                <div className="px-4 pb-4">
-                  <p className="text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-2">
-                    Info
+                <div className="px-3 pb-3">
+                  <p className="px-3 pt-1 text-[10px] font-semibold tracking-widest text-slate-400 uppercase mb-1">
+                    Resources
                   </p>
                   {[
-                    { href: '/support', label: 'Support', Icon: HelpCircle },
                     { href: '/user-guide', label: 'User Guide', Icon: BookOpen },
+                    { href: '/support', label: 'About Us & Support', Icon: HelpCircle },
                     { href: '/privacy', label: 'Privacy', Icon: ShieldCheck },
                     { href: '/terms', label: 'Terms', Icon: FileText },
                     { href: '/disclaimer', label: 'Disclaimer', Icon: AlertCircle },
@@ -132,7 +179,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                       key={href}
                       href={href}
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
+                      className="flex items-center gap-2.5 px-3 min-h-[48px] rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors"
                     >
                       <Icon size={15} className="text-slate-400" />
                       {label}
@@ -143,14 +190,14 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             )}
           </div>
         </div>
-      </nav>
+      </header>
 
       {/* ── PAGE CONTENT ── */}
-      <main className="flex-1 pt-14">{children}</main>
+      <main className="flex-1 pt-[68px]">{children}</main>
 
-      {/* ── FOOTER ── */}
-      <footer className="bg-[#0B132B] text-slate-300 pt-14 pb-8 px-6 border-t border-slate-800">
-        <div className="max-w-6xl mx-auto">
+      {/* ── FOOTER (aligned to exact max-w-7xl container width) ── */}
+      <footer id="about" className="bg-[#0B132B] text-slate-300 pt-14 pb-8 border-t border-slate-800">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 mb-10">
             <div className="col-span-2 sm:col-span-1 space-y-3">
               <Image
@@ -169,22 +216,22 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               <p className="text-white font-semibold text-sm mb-3">Navigate</p>
               <ul className="space-y-1 text-sm">
                 <li>
-                  <Link href="/support" className="inline-flex items-center min-h-[40px] text-slate-400 hover:text-white transition-colors">
-                    Support
+                  <Link href="/support" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                    About Us &amp; Support
                   </Link>
                 </li>
                 <li>
-                  <Link href="/user-guide" className="inline-flex items-center min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link href="/user-guide" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
                     User Guide
                   </Link>
                 </li>
                 <li>
-                  <a href="https://status.app.sadabmunshi.me" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <a href="https://status.app.sadabmunshi.me" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
                     System Status
                   </a>
                 </li>
                 <li>
-                  <a href="https://sadabmunshi.me/blog/" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <a href="https://sadabmunshi.me/blog/" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
                     Blog
                   </a>
                 </li>
@@ -194,17 +241,17 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               <p className="text-white font-semibold text-sm mb-3">Legal</p>
               <ul className="space-y-1 text-sm">
                 <li>
-                  <Link href="/privacy" className="inline-flex items-center min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link href="/privacy" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="inline-flex items-center min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link href="/terms" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
                     Terms of Service
                   </Link>
                 </li>
                 <li>
-                  <Link href="/disclaimer" className="inline-flex items-center min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link href="/disclaimer" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
                     Disclaimer
                   </Link>
                 </li>
