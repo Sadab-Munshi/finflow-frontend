@@ -54,10 +54,17 @@ test('Responsive Landing Page Refactor — Navigation, CTA Hierarchy, Touch Targ
       /<footer[^>]*bg-\[#F8FAFC\][^>]*border-t border-slate-200/,
       'Footer uses light off-white background with subtle top border'
     )
+    const logoMatches = layoutSrc.match(/src="\/finflow-logo\.png"/g) || []
+    assert.equal(logoMatches.length, 2, 'Header and Footer both render identical /finflow-logo.png asset')
+    assert.equal(
+      layoutSrc.includes('AES-256 Encrypted'),
+      false,
+      'Removed AES-256 Encrypted · English · हिंदी · বাংলা string from footer bottom bar'
+    )
     assert.match(
       layoutSrc,
-      /<span className="text-xl font-extrabold tracking-tight text-slate-950">\s*FinFlow\s*<\/span>/,
-      'Footer renders high-contrast FinFlow wordmark typography'
+      /<p className="italic">© 2026 Sadab Munshi\. All rights reserved\.<\/p>/,
+      'Footer copyright text is cleanly aligned and styled in italic'
     )
     assert.ok(
       layoutSrc.includes('Smart expense tracking built for effortless daily finances.'),

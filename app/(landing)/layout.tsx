@@ -57,11 +57,10 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             <Image
               src="/finflow-logo.png"
               alt="FinFlow"
-              width={160}
-              height={51}
-              sizes="160px"
-              quality={80}
-              className="h-8 w-auto object-contain"
+              width={126}
+              height={40}
+              unoptimized
+              className="h-9 w-auto object-contain"
               priority
             />
           </Link>
@@ -187,20 +186,17 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             <div className="col-span-2 md:col-span-6 space-y-3">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2.5 min-h-[48px] sm:min-h-[40px] group"
+                className="inline-flex items-center shrink-0 min-h-[48px] sm:min-h-[40px]"
                 aria-label="FinFlow home"
               >
                 <Image
-                  src="/android-chrome-192x192.png"
-                  alt="FinFlow mark"
-                  width={36}
-                  height={36}
-                  sizes="36px"
-                  className="h-8 w-8 object-contain shrink-0"
+                  src="/finflow-logo.png"
+                  alt="FinFlow"
+                  width={126}
+                  height={40}
+                  unoptimized
+                  className="h-9 w-auto object-contain"
                 />
-                <span className="text-xl font-extrabold tracking-tight text-slate-950">
-                  FinFlow
-                </span>
               </Link>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Smart expense tracking built for effortless daily finances.
@@ -288,11 +284,8 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
             </div>
           </div>
 
-          <div className="border-t border-slate-200/80 pt-6 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>© 2026 Sadab Munshi. All rights reserved.</span>
-            <span className="font-mono font-medium text-teal-700">
-              AES-256 Encrypted · English · हिंदी · বাংলা
-            </span>
+          <div className="border-t border-slate-200/80 pt-6 text-xs text-slate-500 flex items-center justify-center sm:justify-start">
+            <p className="italic">© 2026 Sadab Munshi. All rights reserved.</p>
           </div>
         </div>
       </footer>
