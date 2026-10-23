@@ -13,6 +13,7 @@ import {
   BookOpen,
   Sparkles,
   Layers,
+  Cookie,
 } from 'lucide-react'
 
 const DESKTOP_NAV_LINKS = [
@@ -23,21 +24,8 @@ const DESKTOP_NAV_LINKS = [
 ]
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
-  const [headerVisible, setHeaderVisible] = useState(true)
-  const [lastScrollY, setLastScrollY] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-
-  /* ── hide header on scroll down ── */
-  useEffect(() => {
-    const onScroll = () => {
-      const cur = window.scrollY
-      setHeaderVisible(cur < lastScrollY || cur < 60)
-      setLastScrollY(cur)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [lastScrollY])
 
   /* ── close menu on outside click ── */
   useEffect(() => {
@@ -60,13 +48,9 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 selection:bg-teal-600 selection:text-white scroll-smooth">
-      {/* ── HEADER ── */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 border-b border-slate-200/75 bg-white/90 backdrop-blur-md transition-transform duration-300 ${
-          headerVisible ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 selection:bg-teal-600 selection:text-white">
+      {/* ── HEADER (Static instant visibility, zero scroll listeners) ── */}
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/75 bg-white/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto w-full h-[68px] flex items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center shrink-0 min-h-[48px]" aria-label="FinFlow home">
@@ -171,8 +155,9 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                   {[
                     { href: '/user-guide', label: 'User Guide', Icon: BookOpen },
                     { href: '/support', label: 'About Us & Support', Icon: HelpCircle },
-                    { href: '/privacy', label: 'Privacy', Icon: ShieldCheck },
-                    { href: '/terms', label: 'Terms', Icon: FileText },
+                    { href: '/privacy', label: 'Privacy Policy', Icon: ShieldCheck },
+                    { href: '/terms', label: 'Terms of Service', Icon: FileText },
+                    { href: '/cookies', label: 'Cookie Policy', Icon: Cookie },
                     { href: '/disclaimer', label: 'Disclaimer', Icon: AlertCircle },
                   ].map(({ href, label, Icon }) => (
                     <Link
@@ -195,72 +180,119 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
       {/* ── PAGE CONTENT ── */}
       <main className="flex-1 pt-[68px]">{children}</main>
 
-      {/* ── FOOTER (aligned to exact max-w-7xl container width) ── */}
-      <footer id="about" className="bg-[#0B132B] text-slate-300 pt-14 pb-8 border-t border-slate-800">
+      {/* ── CLEAN LIGHT FOOTER (Aligned to site's light off-white aesthetic & max-w-7xl container) ── */}
+      <footer id="about" className="bg-[#F8FAFC] text-slate-600 pt-14 pb-8 border-t border-slate-200/90">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 mb-10">
-            <div className="col-span-2 sm:col-span-1 space-y-3">
-              <Image
-                src="/finflow-logo.png"
-                alt="FinFlow"
-                width={140}
-                height={44}
-                sizes="140px"
-                className="h-7 w-auto object-contain brightness-110"
-              />
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xs">
-                Smart rupee tracking by voice, camera, and Telegram. Encrypted and built for India.
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-8 mb-10">
+            <div className="col-span-2 md:col-span-6 space-y-3">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2.5 min-h-[48px] sm:min-h-[40px] group"
+                aria-label="FinFlow home"
+              >
+                <Image
+                  src="/android-chrome-192x192.png"
+                  alt="FinFlow mark"
+                  width={36}
+                  height={36}
+                  sizes="36px"
+                  className="h-8 w-8 object-contain shrink-0"
+                />
+                <span className="text-xl font-extrabold tracking-tight text-slate-950">
+                  FinFlow
+                </span>
+              </Link>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Smart expense tracking built for effortless daily finances.
               </p>
             </div>
-            <div>
-              <p className="text-white font-semibold text-sm mb-3">Navigate</p>
+
+            <div className="col-span-1 md:col-span-3">
+              <p className="text-slate-900 font-semibold text-sm mb-3">Navigate</p>
               <ul className="space-y-1 text-sm">
                 <li>
-                  <Link href="/support" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link
+                    href="/support"
+                    className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-600 hover:text-teal-700 transition-colors"
+                  >
                     About Us &amp; Support
                   </Link>
                 </li>
                 <li>
-                  <Link href="/user-guide" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link
+                    href="/user-guide"
+                    className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-600 hover:text-teal-700 transition-colors"
+                  >
                     User Guide
                   </Link>
                 </li>
                 <li>
-                  <a href="https://status.app.sadabmunshi.me" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <a
+                    href="https://status.app.sadabmunshi.me"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-600 hover:text-teal-700 transition-colors"
+                  >
                     System Status
                   </a>
                 </li>
                 <li>
-                  <a href="https://sadabmunshi.me/blog/" target="_blank" rel="noreferrer" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <a
+                    href="https://sadabmunshi.me/blog/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-600 hover:text-teal-700 transition-colors"
+                  >
                     Blog
                   </a>
                 </li>
               </ul>
             </div>
-            <div>
-              <p className="text-white font-semibold text-sm mb-3">Legal</p>
+
+            <div className="col-span-1 md:col-span-3">
+              <p className="text-slate-900 font-semibold text-sm mb-3">Legal</p>
               <ul className="space-y-1 text-sm">
                 <li>
-                  <Link href="/privacy" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link
+                    href="/privacy"
+                    className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-600 hover:text-teal-700 transition-colors"
+                  >
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link
+                    href="/terms"
+                    className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-600 hover:text-teal-700 transition-colors"
+                  >
                     Terms of Service
                   </Link>
                 </li>
                 <li>
-                  <Link href="/disclaimer" className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-400 hover:text-white transition-colors">
+                  <Link
+                    href="/cookies"
+                    className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-600 hover:text-teal-700 transition-colors"
+                  >
+                    Cookie Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/disclaimer"
+                    className="inline-flex items-center min-h-[48px] sm:min-h-[40px] text-slate-600 hover:text-teal-700 transition-colors"
+                  >
                     Disclaimer
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-slate-800 pt-6 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+
+          <div className="border-t border-slate-200/80 pt-6 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>© 2026 Sadab Munshi. All rights reserved.</span>
-            <span className="font-mono text-teal-400">AES-256 Encrypted · English · हिंदी · বাংলা</span>
+            <span className="font-mono font-medium text-teal-700">
+              AES-256 Encrypted · English · हिंदी · বাংলা
+            </span>
           </div>
         </div>
       </footer>

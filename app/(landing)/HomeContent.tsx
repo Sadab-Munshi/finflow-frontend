@@ -14,8 +14,6 @@ import {
 } from 'lucide-react'
 import { BorderBeam } from 'border-beam'
 import { createClient } from '@/lib/supabase/client'
-import { BlurText } from '@/components/landing/reactbits/BlurText'
-import { RotatingText } from '@/components/landing/reactbits/RotatingText'
 import { SpotlightCard } from '@/components/landing/reactbits/SpotlightCard'
 import {
   HeroCardSwapLoop,
@@ -137,7 +135,7 @@ export default function LandingPage() {
 
   return (
     <div className="overflow-x-hidden">
-      {/* ── HERO (Streamlined on mobile, 2-col on tablet, balanced full-width container on desktop) ── */}
+      {/* ── HERO (Instant static text rendering, 2-col on tablet, balanced full-width container on desktop) ── */}
       <section className="relative z-0 min-h-fit flex flex-col justify-center pt-4 pb-10 md:py-14 lg:py-20 bg-gradient-to-b from-[#f0f9f4] via-white to-[#e8f4fd]">
         {/* Ambient multi-layered glow backdrop */}
         <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
@@ -148,40 +146,34 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 items-center">
-            {/* Left 6 Columns (Tablet & Desktop): Headline + Action Hierarchy */}
+            {/* Left 6 Columns (Tablet & Desktop): Static Headline + Action Hierarchy */}
             <div className="md:col-span-6 text-center md:text-left">
-              {/* Crisp single-line badge */}
+              {/* Crisp static badge */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-teal-200/90 shadow-2xs text-xs sm:text-sm font-semibold text-teal-800 mb-3.5 sm:mb-4 whitespace-nowrap">
                 <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                 <span>Manage your money the smarter way</span>
               </div>
 
               <h1 className="text-[2rem] sm:text-4xl md:text-[2.55rem] lg:text-[3.35rem] xl:text-[3.65rem] font-extrabold text-slate-900 tracking-tight leading-[1.12] mb-3.5 sm:mb-4">
-                <BlurText text="Spend less time counting," delayStepMs={45} />
+                Spend less time counting,
                 <br />
                 <span className="bg-gradient-to-r from-[#0F766E] via-[#059669] to-[#0284C7] bg-clip-text text-transparent">
                   more time living
                 </span>
               </h1>
 
-              {/* Static subtitle so lines never jump or reflow on mobile */}
+              {/* Static main tagline with zero delay */}
               <p className="text-[15px] sm:text-lg text-slate-600 max-w-xl mx-auto md:mx-0 mb-3.5 sm:mb-4 leading-relaxed">
-                Track every rupee effortlessly by voice, camera, or text — in your language, backed by a secured database.
+                Track every rupee effortlessly by voice, camera, or text in your language, backed by a secured database.
               </p>
 
-              {/* Fixed-height pill row for RotatingText */}
+              {/* Static multilingual capability pill (zero timed reveal or text cycling) */}
               <div className="h-9 flex items-center justify-center md:justify-start mb-5 sm:mb-6">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-50/90 border border-teal-200/80 text-xs sm:text-sm font-semibold text-teal-800 whitespace-nowrap shadow-2xs">
-                  <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse shrink-0" />
-                  <RotatingText
-                    items={[
-                      'English · “₹340 Coffee”',
-                      'हिंदी · “₹480 किराना”',
-                      'বাংলা · “₹৪৫০ বাজার”',
-                      'Camera · “₹1,450 Receipt”',
-                    ]}
-                    className="font-mono"
-                  />
+                  <span className="h-2 w-2 rounded-full bg-teal-600 shrink-0" />
+                  <span className="font-mono">
+                    English · हिंदी · বাংলা · Receipt Scan
+                  </span>
                 </div>
               </div>
 
@@ -244,12 +236,12 @@ export default function LandingPage() {
                 <SpotlightCard
                   key={feature.title}
                   spotlightColor={feature.spotlight}
-                  className={`group rounded-3xl border border-slate-200/80 ${feature.cardAccent} bg-white p-6 sm:p-7 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between`}
+                  className={`group rounded-3xl border border-slate-200/80 ${feature.cardAccent} bg-white p-6 sm:p-7 shadow-xs hover:shadow-xl transition-shadow duration-200 flex flex-col justify-between`}
                 >
                   <div>
                     <div className="flex items-center gap-3.5 mb-4">
                       <div
-                        className={`w-11 h-11 flex items-center justify-center rounded-2xl bg-gradient-to-br ${feature.iconGradient} text-white shadow-md shrink-0 group-hover:scale-105 transition-transform`}
+                        className={`w-11 h-11 flex items-center justify-center rounded-2xl bg-gradient-to-br ${feature.iconGradient} text-white shadow-md shrink-0`}
                       >
                         <feature.icon className="w-5 h-5" />
                       </div>
@@ -299,7 +291,7 @@ export default function LandingPage() {
                 theme="light"
                 borderRadius={24}
               >
-                <div className="relative h-full rounded-3xl bg-white/95 backdrop-blur-xs border border-slate-200/80 p-6 sm:p-8 text-center shadow-sm hover:shadow-md transition-all">
+                <div className="relative h-full rounded-3xl bg-white/95 backdrop-blur-xs border border-slate-200/80 p-6 sm:p-8 text-center shadow-sm hover:shadow-md transition-shadow">
                   <div
                     className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br ${step.gradient} text-white text-xl font-black flex items-center justify-center shadow-md mb-5`}
                   >
@@ -318,7 +310,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
+      {/* ── PRE-FOOTER CTA BANNER (Clean em-dash-free copy) ── */}
       <section className="relative py-16 sm:py-24 bg-gradient-to-br from-[#042F2E] via-[#0F766E] to-[#0F172A] overflow-hidden">
         <div
           aria-hidden="true"
@@ -334,7 +326,7 @@ export default function LandingPage() {
             Ready to take control of your finances?
           </h2>
           <p className="text-base sm:text-lg text-teal-100/90 mb-9 max-w-2xl mx-auto leading-relaxed">
-            Start tracking your finances smarter — effortlessly, in your language, with your data securely stored.
+            Start tracking your finances smarter, effortlessly in your language, with your data securely stored.
           </p>
           <div className="inline-block">
             <BorderBeam
