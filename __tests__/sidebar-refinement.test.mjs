@@ -120,7 +120,10 @@ test('Mobile drawer — simplified, pinned and orientation safe', async t => {
     assert.ok(!drawer.includes('href="/add'), 'no second entry to /add in the overlay')
     assert.match(read(PANEL), /href="\/add\?tab=manual"/, 'desktop keeps its Add button')
     const account = read(ACCOUNT)
-    const inline = account.slice(account.indexOf("variant === 'inline'"), account.indexOf('return (\n    <div className="ff-account"'))
+    // The inline block ends where `const menuItems` begins — the popup's own
+    // items (which do include Edit Profile / Sign Out) are shared by the
+    // expanded panel and the portalled rail menu, and are not the drawer's.
+    const inline = account.slice(account.indexOf("variant === 'inline'"), account.indexOf('const menuItems'))
     assert.ok(!inline.includes('ff-inline-actions'), 'no action list in the inline block')
     assert.ok(!inline.includes('editProfile'), 'no Edit Profile row')
     assert.ok(!inline.includes('signOut'), 'no Sign Out row')
@@ -151,15 +154,20 @@ test('Mobile drawer — simplified, pinned and orientation safe', async t => {
 
   await t.test('the desktop panel is glued to the visible viewport, not the ICB', () => {
     const panel = css.slice(css.indexOf('.ff-sidebar {'), css.indexOf('/* ── Brand header'))
-    assert.match(panel, /height: 100dvh/, 'dynamic viewport height')
+    // The dvh box now belongs to the shell, which the panel fills as a flex
+    // child; either way the panel cannot drift from the visible viewport.
+    assert.match(css, /\.ff-shell \{[\s\S]{0,300}height: 100dvh/, 'shell tracks the dynamic viewport')
+    assert.match(panel, /height: 100%/, 'panel fills the shell')
+    assert.ok(!/position: fixed/.test(panel), 'panel is not a fixed overlay any more')
     assert.ok(!/bottom: 0/.test(panel), 'no stale bottom-anchored ICB sizing')
     assert.match(panel, /transform: translateZ\(0\)/, 'own compositor layer: no scroll repaint lag')
     assert.match(panel, /transition: width var\(--ff-dur\)/, 'width transition preserved')
   })
 
   await t.test('page-level bounce contained inside the shell only', () => {
-    assert.match(css, /html:has\(\.ff-shell\),\s*body:has\(\.ff-shell\) \{\s*overscroll-behavior-y: none;/, 'scoped overscroll containment')
-    assert.match(read(LAYOUT), /'ff-shell min-h-screen'/, 'shell carries the hook class')
+    assert.match(css, /html:has\(\.ff-shell\),\s*body:has\(\.ff-shell\) \{[\s\S]{0,120}overscroll-behavior: none/, 'scoped root containment')
+    assert.match(css, /\.ff-canvas \{[\s\S]{0,400}overscroll-behavior: contain/, 'and containment on the scroll canvas')
+    assert.match(read(LAYOUT), /'ff-shell',/, 'shell carries the hook class')
     assert.ok(!/^body \{[^}]*overflow: hidden/m.test(css), 'global scrolling never disabled')
   })
 
@@ -173,14 +181,13 @@ test('Mobile drawer — simplified, pinned and orientation safe', async t => {
 
   await t.test('FAB and notification bell do not collide in landscape', () => {
     const layout = read(LAYOUT)
-    assert.match(layout, /bottom-20 min-\[900px\]:bottom-6 right-6 z-\[55\]/, 'FAB stack sits above the bell')
-    assert.match(layout, /z-\[52\]/, 'bell layer unchanged relative to the drawer')
+    assert.match(layout, /fixed bottom-20 right-5 z-\[55\] no-print min-\[900px\]:hidden/, 'FAB is phone-only, above the drawer backdrop')
     assert.match(layout, /max-h-\[calc\(100dvh-9\.5rem\)\][^"]*overflow-y-auto/, 'dial capped to the visible height')
     assert.match(css, /@media \(max-height: 480px\) \{\s*\.ff-fab-menu \{\s*display: grid;/, 'short landscape folds the dial into two columns')
     assert.match(css, /\.ff-fab-menu > button \{ flex: 0 0 auto; \}/, 'dial rows never shrink below 44px')
     assert.ok(!/top-4 right-4 z-\[51\]/.test(layout), 'old hard-coded bell offsets gone')
-    assert.match(layout, /env\(safe-area-inset-top\)/, 'bell respects the notch')
-    assert.match(read('components/notifications/NotificationBell.tsx'), /className="relative w-11 h-11/, '44px touch target')
+    assert.match(css, /\.ff-topbar \{[\s\S]{0,240}env\(safe-area-inset-top\)/, 'header respects the notch')
+    assert.match(read('components/notifications/NotificationBell.tsx'), /className="ff-icon-btn relative"/, '44px touch target via the shared control')
     assert.match(read('components/notifications/NotificationCenter.tsx'), /ff-notif-panel/, 'dropdown capped on short viewports')
     assert.match(css, /\.ff-notif-panel \{[\s\S]{0,160}max-height: calc\(100dvh - 5rem\)/, 'dropdown scrolls inside itself')
   })

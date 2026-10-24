@@ -170,8 +170,8 @@ test('Sidebar — motion', async t => {
     assert.match(css, /--ff-dur: 240ms/, 'duration inside 220-260ms')
     assert.match(css, /--ff-ease: cubic-bezier\(0\.2, 0\.8, 0\.2, 1\)/, 'smooth ease-out')
     assert.match(css, /\.ff-sidebar \{[\s\S]{0,400}transition: width var\(--ff-dur\)/, 'panel animates width')
-    assert.match(css, /\.ff-main \{[\s\S]{0,200}padding-left: var\(--ff-sidebar-w\)/, 'content offset reads the same variable')
-    assert.match(css, /\.ff-main[\s\S]{0,120}transition: padding-left var\(--ff-dur\)/, 'offset animates in sync')
+    assert.match(css, /\.ff-shell \{[\s\S]{0,200}display: flex/, 'canvas and panel share one flex row')
+    assert.match(css, /\.ff-main \{[\s\S]{0,80}flex: 1 1 auto/, 'content takes the leftover width instead of mirroring a padding value')
   })
 
   await t.test('labels fade and translate, never reflow', () => {
@@ -240,7 +240,11 @@ test('Sidebar — accessibility', async t => {
     assert.match(read(BRAND), /aria-label=\{t\('collapseNav'\)\}/, 'toggle labelled Collapse navigation')
     assert.match(read(BRAND), /aria-label=\{t\('expandNav'\)\}/, 'toggle labelled Expand navigation')
     assert.match(read(BRAND), /aria-controls="ff-sidebar-nav"/, 'toggle points at the nav')
-    assert.ok(!/outline:\s*none/.test(css), 'focus outlines never suppressed')
+    const withoutRing = css
+      .replace(/\.ff-search:focus-within \{[\s\S]{0,160}\}/, '')
+      .replace(/\.ff-search input \{[\s\S]{0,700}\}/, '')
+    assert.ok(!/outline:\s*none/.test(withoutRing), 'focus outlines never suppressed')
+    assert.match(css, /\.ff-search:focus-within \{[\s\S]{0,160}box-shadow: 0 0 0 3px/, 'the search field paints its own focus ring')
   })
 
   await t.test('drawer focus management', () => {
@@ -257,7 +261,7 @@ test('Sidebar — app behaviour preserved', async t => {
     assert.match(read('components/auth/SignOutDialog.tsx'), /auth\.signOut\(\{ scope: 'local' \}\)/, 'sign out preserved behind the confirmation')
     assert.match(layout, /onSignOut=\{requestSignOut\}/, 'shell delegates to the shared confirmation')
     assert.match(layout, /useSubscriptionGate\(\)/, 'subscription gate preserved')
-    assert.match(layout, /<NotificationBell \/>/, 'notification bell preserved')
+    assert.match(read('components/layout/AppTopBar.tsx'), /<NotificationBell \/>/, 'notification bell preserved in the global header')
     assert.match(layout, /checkFeature\(method\.feature\)/, 'FAB feature gating preserved')
     assert.match(layout, /isSubscriptionRoute/, 'subscription route treatment preserved')
   })

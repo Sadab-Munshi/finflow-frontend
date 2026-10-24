@@ -47,7 +47,8 @@ function HistoryContent() {
   const [loading, setLoading] = useState(true)
   const [typeFilter, setTypeFilter] = useState<'all'|'income'|'expense'>((searchParams.get('type') as 'all'|'income'|'expense'|null) || 'all')
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || 'all')
-  const [searchQuery, setSearchQuery] = useState('')
+  // Deep-linkable search: the global header routes /history?q=… here.
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [page, setPage] = useState(1)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -92,7 +93,20 @@ function HistoryContent() {
   const filtered = transactions.filter(tx => {
     if (typeFilter !== 'all' && tx.type !== typeFilter) return false
     if (categoryFilter !== 'all' && tx.category.trim().toLowerCase() !== categoryFilter.trim().toLowerCase()) return false
-    if (searchQuery && !tx.note.toLowerCase().includes(searchQuery.toLowerCase())) return false
+    if (searchQuery) {
+      // Search the text the user can actually see. It used to match `note`
+      // only, so a row could be on screen with "Coffee at Blue Tokai" and still
+      // return nothing for "coffee" — and the global header's search box now
+      // lands straight in this field, so it has to match the visible data.
+      const needle = searchQuery.trim().toLowerCase()
+      // `Transaction` exposes note + category; searching both keeps the match
+              // on real typed fields instead of casting the row to anything.
+      const haystack = [tx.note, tx.category]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      if (!haystack.includes(needle)) return false
+    }
     if (appliedFromDate || appliedToDate) {
       const txDate = normalizeDateToYMD(tx.date)
       if (appliedFromDate && txDate < appliedFromDate) return false

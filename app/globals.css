@@ -335,35 +335,40 @@ html[data-ff-sidebar="collapsed"] {
 
 /* ── Panel ───────────────────────────────────────────────────────────────── */
 
-/* Height: `100vh` is the fallback, `100dvh` the real value. The panel used to
-   be pinned with top+bottom insets, which sizes it against the initial
-   containing block — the *large* viewport. On a tablet in landscape the account
-   block therefore sat under the browser's address bar while it was showing and
-   slid into view as the bar collapsed during a scroll: the sidebar looked like
-   it was moving on its own. Tracking the dynamic viewport keeps the three
-   regions glued to the visible screen, and no height transition is declared
-   because the box has to resize instantly with the viewport.
+/* The panel is a FLEX CHILD of the shell, not a fixed overlay.
+   `.ff-shell` is exactly one dynamic viewport tall and clips its overflow, and
+   `.ff-canvas` beside the panel is the only element that scrolls. The sidebar
+   therefore never shares a scroll container with the dashboard, so document
+   momentum can no longer drag it, and no scroll listener or JS positioning is
+   involved anywhere. Because its height comes from flex stretching rather than
+   `100vh`/insets, the three regions cannot drift from the visible viewport
+   when a mobile address bar expands or collapses.
 
-   `translateZ(0)` promotes the panel to its own compositor layer. A fixed
-   element sharing a layer with a long, fast-scrolling document gets repainted
-   in step with it, which reads as the sidebar lagging across the content.
-   Paint hint only — no positioning happens in JavaScript. */
+   `contain: layout paint` isolates the panel completely: the dashboard's
+   scroll-driven recalculation cannot reach its layout, and its paint can never
+   spill into the canvas. `transform: translateZ(0)` promotes it to its own GPU
+   compositor layer, so scrolling the canvas never repaints it at all.
+   Paint containment also clips descendants to the panel's padding box, which is
+   why the rail's account menu renders through a portal — a 208px menu cannot
+   live inside a 68px rail, and tooltips were already portalled for the same
+   reason. */
 .ff-sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: relative;
   z-index: 40;
   display: none;
+  flex: 0 0 auto;
   flex-direction: column;
   width: var(--ff-sidebar-w);
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
+  min-height: 0;
   padding: 0 var(--ff-pad);
   background: var(--ff-bg);
   border-right: 1px solid var(--ff-line);
   transition: width var(--ff-dur) var(--ff-ease);
+  contain: layout paint;
   transform: translateZ(0);
   backface-visibility: hidden;
+  isolation: isolate;
 }
 
 @media (min-width: 900px) {
@@ -491,6 +496,13 @@ html[data-ff-sidebar="collapsed"] {
   padding: 2px 0 8px;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Paint + layout containment on the scrolling region: this is the only part
+     of the panel whose contents can change size, so isolating it there keeps
+     dashboard repaints entirely out of the sidebar.
+     Containment is applied here rather than to `.ff-sidebar` as a whole
+     because the collapsed rail's account popup deliberately overflows the 68px
+     panel and would be clipped by paint containment on the outer box. */
+  contain: layout paint;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -695,6 +707,18 @@ html[data-ff-sidebar="collapsed"] {
 .ff-profile-pop-item--danger { color: #c0392b; }
 .ff-profile-pop-item--danger:hover { background: #fdf2f1; color: #a5301f; }
 
+/* Rail variant, rendered in a portal because the panel is paint-contained and
+   a 208px menu cannot live inside 68px. Coordinates arrive inline from the
+   trigger's rect; this rule only supplies the parts that are always true. */
+.ff-profile-pop--floating {
+  position: fixed;
+  left: auto;
+  right: auto;
+  bottom: 0;
+  width: 208px;
+  z-index: 70;
+}
+
 /* ── Collapsed rail ──────────────────────────────────────────────────────── */
 
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-brand-link,
@@ -745,12 +769,7 @@ html[data-ff-sidebar="collapsed"] {
   margin-inline: auto;
   padding: 0;
 }
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-pop {
-  left: calc(100% + 8px);
-  right: auto;
-  bottom: 0;
-  width: 208px;
-}
+
 
 /* ── Tooltip (portalled so the scrolling nav can never clip it) ──────────── */
 
@@ -772,40 +791,155 @@ html[data-ff-sidebar="collapsed"] {
 .ff-tooltip[data-state="instant-open"] { animation: ff-tooltip-in 110ms ease-out both; }
 @keyframes ff-tooltip-in { from { opacity: 0; } to { opacity: 1; } }
 
-/* ── Menu trigger (phone / tablet) ───────────────────────────────────────── */
+/* ── Global utility header ───────────────────────────────────────────────── */
 
-.ff-menu-trigger {
-  position: fixed;
-  top: 20px;
-  left: 14px;
-  z-index: 45;
+/* One bar inside the scrolling canvas. Because it is sticky *within* the
+   canvas, it scrolls away only when the whole page does and otherwise stays
+   put without a scroll listener.
+
+   It exists to separate global chrome from page chrome: previously the bell
+   and the drawer trigger floated over the content, which is why the bell sat
+   on top of the dashboard's "This Month / All Time" toggle at every width. */
+.ff-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  height: calc(64px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-left: max(16px, env(safe-area-inset-left));
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid var(--ff-line);
+}
+
+.ff-topbar-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ff-topbar-side--end { flex: 0 0 auto; }
+
+@media (min-width: 900px) {
+  .ff-topbar {
+    height: calc(60px + env(safe-area-inset-top));
+    padding-right: max(24px, env(safe-area-inset-right));
+    padding-left: max(24px, env(safe-area-inset-left));
+  }
+}
+
+/* One control style for every icon button in the header.
+   The hamburger and the notification bell share size, radius, surface, border,
+   shadow, hover and focus ring by construction, so the two ends of the phone
+   header are visually symmetric. 44px on touch, 38px on a pointer. */
+.ff-icon-btn {
   display: grid;
   place-items: center;
+  flex: 0 0 auto;
   width: 44px;
   height: 44px;
-  border-radius: 11px;
+  border-radius: 12px;
   color: var(--ff-text);
   background: #ffffff;
   border: 1px solid var(--ff-line);
-  box-shadow: 0 1px 2px rgba(23, 43, 42, 0.06);
-  transition: background-color 150ms ease, box-shadow 150ms ease;
+  box-shadow: 0 1px 2px rgba(23, 43, 42, 0.05);
+  transition: background-color 150ms ease, border-color 150ms ease,
+              box-shadow 150ms ease, color 150ms ease;
 }
-.ff-menu-trigger:hover { background: var(--ff-bg); box-shadow: 0 2px 6px -2px rgba(23, 43, 42, 0.14); }
-.ff-menu-trigger:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: 2px; }
+.ff-icon-btn:hover {
+  background: var(--ff-hover);
+  border-color: #dbe4e1;
+  box-shadow: 0 2px 6px -2px rgba(23, 43, 42, 0.14);
+}
+.ff-icon-btn:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: 2px; }
 
+@media (min-width: 900px) {
+  .ff-icon-btn { width: 38px; height: 38px; border-radius: 11px; }
+}
+
+/* The drawer trigger keeps its class name (the drawer restores focus to it)
+   but is now an ordinary control in the header rather than a fixed overlay.
+   Visibility is declared here rather than with a `hidden` utility: the
+   component rules in this file load after the Tailwind import, so a utility
+   carrying the same specificity would lose the cascade. */
+.ff-menu-trigger { position: static; }
 @media (min-width: 900px) {
   .ff-menu-trigger { display: none; }
 }
 
-/* ── Main content offset ─────────────────────────────────────────────────── */
+.ff-topbar-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  transition: box-shadow 150ms ease;
+}
+.ff-topbar-avatar:hover { box-shadow: 0 0 0 3px var(--ff-hover); }
+.ff-topbar-avatar:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: 3px; }
 
-.ff-main { padding-left: 0; }
+/* Transaction search — desktop and tablet only; the phone keeps just the two
+   icon controls so the header stays a single clean row. */
+.ff-search {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, 40vw);
+  height: 38px;
+  padding: 0 11px;
+  border-radius: 11px;
+  background: #ffffff;
+  border: 1px solid var(--ff-line);
+  color: var(--ff-muted);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.ff-search:focus-within {
+  border-color: #b9d8d1;
+  box-shadow: 0 0 0 3px rgba(8, 127, 114, 0.10);
+}
+.ff-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  /* The default UA outline is dropped only because the wrapper paints a 3px
+     focus ring on `:focus-within` below — focus stays obvious, it just belongs
+     to the whole field instead of the naked input box. */
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--ff-text);
+}
+.ff-search input::placeholder { color: var(--ff-label); }
+.ff-search input::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 @media (min-width: 900px) {
-  .ff-main {
-    padding-left: var(--ff-sidebar-w);
-    transition: padding-left var(--ff-dur) var(--ff-ease);
-  }
+  .ff-search { display: flex; }
+}
+
+/* Settings and the account avatar only join the header once the sidebar is
+   visible; on a phone the bar stays a two-control row. */
+@media (max-width: 899px) {
+  .ff-topbar-settings,
+  .ff-topbar-avatar { display: none; }
+}
+
+/* ── Main content ────────────────────────────────────────────────────────── */
+
+/* No offset any more: the panel occupies real flex space beside the canvas, so
+   the content area is simply what is left over. That also means expanding or
+   collapsing the panel reflows the canvas by one flex calculation instead of
+   animating a matching padding value in lockstep. */
+.ff-main {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* ── Overlay drawer (phone / tablet portrait) ────────────────────────────── */
@@ -957,17 +1091,48 @@ html[data-ff-sidebar="collapsed"] {
 .ff-inline-action--danger:hover { background: #fdf2f1; color: #a5301f; }
 .ff-inline-action--danger:hover svg { color: #a5301f; }
 
-/* ── App shell: document-level overscroll ───────────────────────────────── */
+/* ── App shell: viewport lock and the single scroll canvas ──────────────── */
 
-/* Inside the dashboard shell the document is the scroll container for the
-   page, while the sidebar and the drawer own theirs. `overscroll-behavior`
-   stops a fast swipe at the end of the page from rubber-banding the document
-   behind the (fixed) panel, which is what "the sidebar bounced" feels like at
-   the top and bottom of a long list. Scoped with `:has()` so the marketing
-   pages keep their normal pull-to-refresh and bounce. */
+/* Root viewport locking.
+   Scoped with `:has()` to the authenticated shell so the landing page, auth
+   screens and legal pages keep their normal document scrolling. Inside the
+   app, the document is pinned to the viewport and forbidden from scrolling:
+   every pixel of vertical movement happens in `.ff-canvas`. */
 html:has(.ff-shell),
 body:has(.ff-shell) {
-  overscroll-behavior-y: none;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* The shell IS the viewport: one dynamic viewport tall, clipped, and a flex
+   row that hands the remaining width to the canvas. `100dvh` absorbs the
+   mobile address bar without a reflow, and no height transition is declared
+   because the box must resize instantly with the viewport. */
+.ff-shell {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* The only scroll container in the app. `overscroll-behavior: contain` keeps
+   momentum at either end from chaining out to the shell, so the page can never
+   rubber-band the sidebar or the bottom navigation. Nested scrollers (the
+   drawer's nav) declare their own containment. */
+.ff-canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── Short / landscape viewports ─────────────────────────────────────────── */

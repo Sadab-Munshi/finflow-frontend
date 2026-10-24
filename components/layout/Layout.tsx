@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard, History, BarChart2, User, Menu, Plus, Mic, Camera,
+  LayoutDashboard, History, BarChart2, User, Plus, Mic, Camera,
   Sparkles, FileText, PenLine
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -12,7 +12,7 @@ import { cn, getTodayIndianDate } from '@/lib/utils'
 import { useTranslations } from 'next-intl'
 import { useUser } from '@/context/UserContext'
 import { useSubscriptionGate } from '@/hooks/useSubscriptionGate'
-import NotificationBell from '@/components/notifications/NotificationBell'
+import AppTopBar from '@/components/layout/AppTopBar'
 import { useSignOutConfirm } from '@/components/auth/SignOutDialog'
 import PremiumSidebar from '@/components/layout/sidebar/PremiumSidebar'
 import MobileNavDrawer from '@/components/layout/sidebar/MobileNavDrawer'
@@ -34,13 +34,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { checkFeature, userTier } = useSubscriptionGate()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
+  // The one scroll container in the app. Route changes used to reset the
+  // window's scroll position for free; now that the document never scrolls,
+  // the canvas has to do it explicitly or a new page opens mid-list.
+  const canvasRef = useRef<HTMLDivElement>(null)
   // One confirmation dialog for the whole shell; the sidebar only triggers it.
   const { requestSignOut, signOutDialog } = useSignOutConfirm()
 
-  // Close drawers / overlays on route change
+  // Close drawers / overlays on route change, and start the new page at the top.
   useEffect(() => {
     setDrawerOpen(false)
     setFabOpen(false)
+    if (canvasRef.current) canvasRef.current.scrollTop = 0
   }, [pathname])
 
   // A rotated or resized viewport must never keep a stale drawer (and its scroll
@@ -76,15 +81,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const isSubscriptionRoute = pathname?.startsWith('/subscription')
 
   return (
+    /*
+     * The shell is the viewport. It is exactly one dynamic viewport tall and
+     * clips, so the document itself never scrolls; the canvas beside the
+     * sidebar is the only scroll container in the app. Before this the page
+     * scrolled behind a `position: fixed` sidebar, which is what made the panel
+     * lag, bounce and appear to move during fast momentum scrolling.
+     *
+     * The sidebar is a flex child, not a fixed overlay, so its three regions
+     * (header / nav / profile) are laid out by flexbox against a height that
+     * cannot drift from the visible viewport.
+     */
     <div
       className={cn(
-        'ff-shell min-h-screen',
+        'ff-shell',
         isSubscriptionRoute
           ? 'bg-[#F8FAFC]'
           : 'bg-gradient-to-br from-teal-50/40 via-white to-amber-50/30'
       )}
     >
-      {/* Desktop navigation: expanded panel -> icon rail */}
+      {/* Desktop navigation: expanded panel -> icon rail (flex child) */}
       <PremiumSidebar
         name={userName}
         avatarUrl={avatarUrl}
@@ -94,7 +110,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         onSignOut={requestSignOut}
       />
 
-      {/* Phone / tablet navigation drawer */}
+      {/* Phone / tablet navigation drawer (portalled overlay) */}
       <MobileNavDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
@@ -105,35 +121,41 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         loading={loading}
       />
 
-      {/* Fixed Notification Bell — hidden on subscription/payment screens per UX spec */}
-      {!isSubscriptionRoute && (
-        <div
-          className="fixed z-[52] no-print"
-          style={{
-            // Safe-area aware: on a notched phone in landscape the bell must not
-            // slide under the rounded corner, and it keeps a 44px hit area.
-            top: 'max(14px, env(safe-area-inset-top))',
-            right: 'max(16px, env(safe-area-inset-right))',
-          }}
-        >
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-600/25">
-            <NotificationBell />
-          </div>
-        </div>
-      )}
+      {/* The one scrolling region. `overscroll-behavior: contain` keeps
+          momentum at the top/bottom edge from chaining to the shell. */}
+      <div className="ff-canvas" ref={canvasRef}>
+        {/* Global utility header — hidden on subscription/payment screens,
+            which ship their own top app bar with Back navigation. */}
+        {!isSubscriptionRoute && (
+          <AppTopBar
+            onOpenMenu={() => setDrawerOpen(true)}
+            menuOpen={drawerOpen}
+            name={userName}
+            avatarUrl={avatarUrl}
+            isPro={isPro}
+            loading={loading}
+          />
+        )}
 
-      {/* Drawer trigger — hidden on subscription/payment screens where the top app bar has Back navigation */}
-      {!isSubscriptionRoute && (
-        <button
-          onClick={() => setDrawerOpen(true)}
-          aria-label={t('openNav')}
-          aria-haspopup="dialog"
-          aria-expanded={drawerOpen}
-          className="ff-menu-trigger no-print"
+        <main
+          className={cn(
+            'ff-main',
+            isSubscriptionRoute
+              ? 'pb-[calc(5rem+env(safe-area-inset-bottom))] min-[900px]:pb-8'
+              : 'pb-20 min-[900px]:pb-0'
+          )}
         >
-          <Menu className="w-5 h-5" aria-hidden="true" />
-        </button>
-      )}
+          <motion.div
+            key={pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
+            className={cn(isSubscriptionRoute ? 'p-0' : 'p-4 md:p-6 lg:p-8')}
+          >
+            {children}
+          </motion.div>
+        </main>
+      </div>
 
       {/* FAB Speed Dial Backdrop */}
       <AnimatePresence>
@@ -143,7 +165,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 bg-black/25 z-40 no-print"
+            className="fixed inset-0 bg-black/25 z-40 no-print min-[900px]:hidden"
             onClick={() => setFabOpen(false)}
           />
         )}
@@ -153,7 +175,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* EXACT DEMO FAB - FAST ANIMATION & THUMB-FRIENDLY ORDER */}
       {/* ======================================================= */}
       {!isSubscriptionRoute && (
-      <div className="fixed bottom-20 min-[900px]:bottom-6 right-6 z-[55] no-print">
+      <div className="fixed bottom-20 right-5 z-[55] no-print min-[900px]:hidden">
         {/* Input Method Options. The list is capped to the visible viewport so a
             five-item dial on a 360px-tall landscape phone stays fully reachable
             instead of growing under the notification bell and off the screen. */}
@@ -232,26 +254,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <span className={cn('text-xs font-medium transition-colors', pathname === '/profile' ? 'text-teal-600' : 'text-gray-400')}>{t('profile')}</span>
         </Link>
       </nav>
-
-      {/* Main Content — offset follows the live sidebar width */}
-      <main
-        className={cn(
-          'ff-main min-h-screen',
-          isSubscriptionRoute
-            ? 'pt-0 pb-[calc(5rem+env(safe-area-inset-bottom))] min-[900px]:pb-8'
-            : 'pt-14 pb-20 min-[900px]:pt-0 min-[900px]:pb-0'
-        )}
-      >
-        <motion.div
-          key={pathname}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
-          className={cn(isSubscriptionRoute ? 'p-0' : 'p-4 md:p-6 lg:p-8')}
-        >
-          {children}
-        </motion.div>
-      </main>
 
       {signOutDialog}
 

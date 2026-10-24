@@ -77,6 +77,7 @@ export default function PremiumSidebar({
             isPro={isPro}
             loading={loading}
             onSignOut={onSignOut}
+            portalled={collapsed}
           />
         </div>
       </aside>
