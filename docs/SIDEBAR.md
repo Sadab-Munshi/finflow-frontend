@@ -140,3 +140,78 @@ desktop menu and the Profile screen. The close control is the same
 - the FAB stack paints above the bell but below the drawer, and the dial is
   capped to the visible viewport;
 - every light-theme token, breakpoint and geometry value is untouched.
+
+## Layout architecture — viewport lock and a single scroll canvas
+
+The shell was rebuilt around one rule: **the document never scrolls inside the
+app.** Everything below follows from it.
+
+```
+.ff-shell          height: 100dvh; overflow: hidden; display: flex
+├── .ff-sidebar    flex: 0 0 auto  →  header / nav / profile
+└── .ff-canvas     flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain
+    ├── .ff-topbar  global utility header (sticky inside the canvas)
+    └── main.ff-main ─ page content
+```
+
+**Why the sidebar was wobbly.** It used to be `position: fixed` while the
+*document* scrolled behind it. A fixed element and a scrolling document share a
+compositor layer; mobile browsers repaint both together, so the panel visibly
+lagged and shifted during fast momentum scrolling — worst in landscape, where
+the address bar also changes the viewport mid-scroll. The panel is now an
+ordinary flex child of a clipped viewport, so it and the dashboard never share
+a scroll container and cannot scroll relative to each other.
+
+**Root locking is scoped.** `html:has(.ff-shell)` / `body:has(.ff-shell)`
+receive `height: 100%; overflow: hidden`. The landing page, auth screens and
+legal pages keep normal document scrolling — pull-to-refresh on the marketing
+site still works.
+
+**Height comes from flex, not from the viewport.** `.ff-shell` is `100dvh`
+(`100vh` fallback). The panel fills it at `height: 100%`, so an expanding or
+collapsing address bar resizes the shell and both children together with no
+reflow of the panel's internal structure.
+
+**Three regions, by flexbox.** `.ff-head` and `.ff-foot` are `flex: 0 0 auto`;
+`.ff-nav` is `flex: 1 1 auto; min-height: 0; overflow-y: auto`. The profile card
+is pinned by layout, never by `position: absolute` or a viewport rule. Settings
+staying behind a scroll in the nav is intended, not a bug.
+
+**Paint isolation.** `.ff-sidebar` carries `contain: layout` plus
+`transform: translateZ(0)` for its own GPU layer; `.ff-nav` — the only region
+whose contents can change size — carries `contain: layout paint`. Paint
+containment is deliberately *not* on the outer panel: the collapsed rail's
+account popup intentionally overflows the 68px box and would be clipped.
+
+**No scroll JavaScript.** There is no `scroll` listener, no `scrollY` read and
+no scroll-driven style anywhere in the app (`__tests__/layout-architecture.test.mjs`
+enforces this). The utility header is `position: sticky` inside the canvas.
+The one imperative line is `canvas.scrollTop = 0` on route change, replacing
+what the browser used to do for free when the window was the scroller.
+
+## Global utility header
+
+`components/layout/AppTopBar.tsx` sits at the top of the canvas, so global
+controls can never cover page controls again — the notification bell used to
+float over the dashboard's "This Month / All Time" toggle at every width.
+
+| Viewport | Contents |
+|---|---|
+| < 900px | hamburger + notifications (both `.ff-icon-btn`, 44px) |
+| ≥ 900px | transaction search + settings + notifications + avatar (38px) |
+
+The bell is no longer on a teal primary fill: it is a neutral surface with the
+same border, radius and hover as the hamburger, so the two ends of the phone
+header are symmetric and the icon no longer competes with the page title. The
+red unread counter keeps its size, colour and position, with a white ring so it
+stays legible on the neutral surface.
+
+Search routes to `/history?q=…`, and history now matches the visible fields
+(`note`, `category`) rather than `note` alone — before this, searching a
+merchant name that was plainly on screen returned nothing.
+
+## Action deduplication
+
+The floating action button is phone-only (`min-[900px]:hidden`), along with its
+backdrop. From 900px up, the sidebar's Add control — full-width in the panel,
+icon + tooltip in the rail — is the single creation entry point.

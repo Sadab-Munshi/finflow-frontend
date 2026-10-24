@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
@@ -29,6 +30,7 @@ function getToastStyle(type: string) {
 
 export default function NotificationBell() {
   const router = useRouter()
+  const t = useTranslations('nav')
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
@@ -237,15 +239,24 @@ export default function NotificationBell() {
 
   return (
     <div ref={bellRef} className="relative">
+      {/*
+        The trigger uses the same `.ff-icon-btn` surface as the drawer button, so
+        the header reads as one symmetric control group. The bell is deliberately
+        NOT on a high-contrast primary fill any more: a saturated teal disc at
+        the top of every screen competed with the page title and the balance
+        card. Attention now lives in the red unread counter alone, which keeps
+        its size, position and contrast.
+      */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative w-11 h-11 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
-        aria-label="Notifications"
+        className="ff-icon-btn relative"
+        aria-label={t('notifications')}
         aria-haspopup="dialog"
+        aria-expanded={isOpen}
       >
-        <Bell className="w-5 h-5 text-white" />
+        <Bell className="w-[18px] h-[18px]" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+          <span className="absolute -right-1 -top-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 ring-2 ring-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

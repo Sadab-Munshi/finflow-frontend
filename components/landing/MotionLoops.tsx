@@ -111,8 +111,15 @@ export function HeroCardSwapLoop() {
           </div>
         </div>
 
-        {/* 3D Card Swap Stack — compact height on mobile, expanded scale on desktop */}
-        <div className="relative h-[186px] sm:h-[206px] lg:h-[224px] w-full">
+        {/* 3D Card Swap Stack.
+            Every card is a grid item in the same cell, so the stack is exactly
+            as tall as the tallest card at any breakpoint instead of a
+            hard-coded 186/206/224px box. The old fixed heights left ~47px of
+            dead white air under the card on a phone (the card itself is only
+            ~139px), which read as a broken, half-empty panel. The bottom
+            padding reserves the room the two cards behind peek into, so the
+            offsets never collide with the pager dots below. */}
+        <div className="relative grid w-full pb-7">
           {cards.map((card, index) => {
             const offset = (index - activeIndex + cards.length) % cards.length
             const translateY = offset === 0 ? 0 : offset === 1 ? 12 : 24
@@ -132,7 +139,7 @@ export function HeroCardSwapLoop() {
                   transition:
                     'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), opacity 500ms cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
-                className="absolute inset-x-0 top-0 cursor-pointer"
+                className="col-start-1 row-start-1 cursor-pointer"
               >
                 <BorderBeam
                   size="sm"
@@ -142,7 +149,7 @@ export function HeroCardSwapLoop() {
                   theme="light"
                   borderRadius={20}
                 >
-                  <div className="rounded-2xl bg-gradient-to-br from-white via-white to-slate-50/80 border border-slate-200/90 p-4 sm:p-5 lg:p-6 shadow-[0_14px_34px_-12px_rgba(15,23,42,0.12)]">
+                  <div className="rounded-2xl bg-gradient-to-br from-white via-white to-slate-50 border border-slate-200/90 p-4 sm:p-5 lg:p-6 shadow-[0_14px_34px_-12px_rgba(15,23,42,0.12)]">
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold border whitespace-nowrap ${card.badgeColor}`}

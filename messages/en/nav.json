@@ -30,5 +30,8 @@
   "signOutConfirmCancel": "Cancel",
   "signOutConfirmPending": "Signing out…",
   "signOutConfirmError": "We couldn't sign you out. Check your connection and try again.",
-  "proBadge": "Pro"
+  "proBadge": "Pro",
+  "searchPlaceholder": "Search transactions…",
+  "searchTransactions": "Search transactions",
+  "notifications": "Notifications"
 }

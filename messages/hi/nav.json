@@ -30,5 +30,8 @@
   "signOutConfirmCancel": "रद्द करें",
   "signOutConfirmPending": "साइन आउट हो रहा है…",
   "signOutConfirmError": "साइन आउट नहीं हो सका। कनेक्शन जाँचें और फिर कोशिश करें।",
-  "proBadge": "प्रो"
+  "proBadge": "प्रो",
+  "searchPlaceholder": "लेन-देन खोजें…",
+  "searchTransactions": "लेन-देन खोजें",
+  "notifications": "सूचनाएँ"
 }

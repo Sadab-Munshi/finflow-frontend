@@ -30,5 +30,8 @@
   "signOutConfirmCancel": "বাতিল করুন",
   "signOutConfirmPending": "সাইন আউট হচ্ছে…",
   "signOutConfirmError": "সাইন আউট করা যায়নি। কানেকশন দেখে আবার চেষ্টা করুন।",
-  "proBadge": "প্রো"
+  "proBadge": "প্রো",
+  "searchPlaceholder": "লেনদেন খুঁজুন…",
+  "searchTransactions": "লেনদেন খুঁজুন",
+  "notifications": "বিজ্ঞপ্তি"
 }
