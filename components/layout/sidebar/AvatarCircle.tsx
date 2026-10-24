@@ -1,53 +1,81 @@
 'use client'
 
 import Image from 'next/image'
-import { Crown } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface AvatarCircleProps {
   name?: string
   avatarUrl?: string
-  isPro?: boolean
   size?: number
   className?: string
 }
 
 /**
- * Shared profile avatar. Preserves the existing FinFlow treatment: teal
- * gradient, uploaded photo when available, and the amber Pro crown badge.
+ * Circular user avatar.
+ *
+ * Two decisions here are load-bearing:
+ *
+ * 1. The element that clips the photo carries BOTH `overflow: hidden` and
+ *    `position: relative`/`absolute` itself. `next/image` renders with an
+ *    inline `position: absolute`, so when the rounded box is `position: static`
+ *    the image's containing block becomes the nearest *positioned* ancestor —
+ *    an un-rounded wrapper — and the photo escapes the circular clip and paints
+ *    as a square. Keeping the rounded, clipping box positioned is what makes
+ *    the crop actually circular.
+ * 2. `object-fit: cover` + centred `object-position` (set inline, so no class
+ *    purge/override can drop it) means any aspect ratio fills the circle
+ *    instead of being letterboxed.
  */
-export default function AvatarCircle({
-  name,
-  avatarUrl,
-  isPro = false,
-  size = 36,
-  className,
-}: AvatarCircleProps) {
+export default function AvatarCircle({ name, avatarUrl, size = 32, className }: AvatarCircleProps) {
   const initial = name ? name.charAt(0).toUpperCase() : ''
+  const box = { width: size, height: size }
 
   return (
-    <span className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <span
-        className={cn(
-          'flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-teal-500 to-teal-600',
-          isPro && 'ring-2 ring-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.55)]',
-          className
-        )}
-      >
-        {avatarUrl ? (
-          <Image src={avatarUrl} alt="" fill sizes={`${size}px`} className="object-cover" />
-        ) : (
-          <span className="font-bold text-white" style={{ fontSize: size * 0.36 }}>
-            {initial}
-          </span>
-        )}
-      </span>
-      {isPro && (
+    <span
+      aria-hidden="true"
+      className={className}
+      style={{
+        ...box,
+        position: 'relative',
+        display: 'block',
+        flex: '0 0 auto',
+        borderRadius: '9999px',
+        overflow: 'hidden',
+        backgroundColor: '#0d9488',
+      }}
+    >
+      {avatarUrl ? (
+        <Image
+          src={avatarUrl}
+          alt=""
+          width={size}
+          height={size}
+          sizes={`${size}px`}
+          className="h-full w-full rounded-full"
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            borderRadius: '9999px',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
+      ) : (
         <span
-          aria-hidden="true"
-          className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-[#082F2D] bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 shadow-sm"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+            borderRadius: '9999px',
+            color: '#ffffff',
+            fontWeight: 600,
+            fontSize: Math.round(size * 0.4),
+            lineHeight: 1,
+          }}
         >
-          <Crown className="h-2.5 w-2.5 fill-slate-950 text-slate-950" />
+          {initial}
         </span>
       )}
     </span>

@@ -11,10 +11,7 @@ import { isNavActive, type SidebarNavItem } from './sidebar-nav'
 interface SidebarNavListProps {
   items: SidebarNavItem[]
   onNavigate?: () => void
-  /**
-   * Wrap each row in a portalled tooltip. Only enabled while the desktop rail
-   * is collapsed — in the expanded panel the label is already visible.
-   */
+  /** Wrap rows in portalled tooltips — only while the desktop rail is collapsed. */
   tooltips?: boolean
 }
 
@@ -35,8 +32,7 @@ export default function SidebarNavList({ items, onNavigate, tooltips = false }: 
             aria-current={active ? 'page' : undefined}
             className={cn('ff-nav-row', active && 'ff-nav-row--active')}
           >
-            <span className="ff-nav-bar" aria-hidden="true" />
-            <item.icon className="ff-nav-icon" size={20} strokeWidth={1.9} aria-hidden="true" />
+            <item.icon className="ff-nav-icon" size={18} strokeWidth={1.85} aria-hidden="true" />
             <span className="ff-nav-label">{label}</span>
           </Link>
         )
@@ -47,7 +43,7 @@ export default function SidebarNavList({ items, onNavigate, tooltips = false }: 
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>{row}</Tooltip.Trigger>
                 <Tooltip.Portal>
-                  <Tooltip.Content side="right" sideOffset={12} collisionPadding={8} className="ff-tooltip">
+                  <Tooltip.Content side="right" sideOffset={10} collisionPadding={8} className="ff-tooltip">
                     {label}
                   </Tooltip.Content>
                 </Tooltip.Portal>

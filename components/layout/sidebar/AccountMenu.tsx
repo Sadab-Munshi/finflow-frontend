@@ -11,14 +11,15 @@ import AvatarCircle from './AvatarCircle'
 interface AccountMenuProps {
   name: string
   avatarUrl: string
+  planName: string
   isPro: boolean
   loading: boolean
   onSignOut: () => void | Promise<void>
   /**
-   * `popup` is the desktop footer (avoids pushing the panel's height around).
-   * `inline` is used inside the mobile drawer, where a nested popover would
-   * fight the dialog's own Escape handling and can be clipped by the drawer's
-   * scroll container — so the same actions are simply laid out in the flow.
+   * `popup` is the desktop footer. `inline` is used inside the mobile drawer,
+   * where actions are laid out in the flow instead of a nested popover — that
+   * keeps them reachable while the drawer scrolls and avoids fighting the
+   * dialog's own Escape handling.
    */
   variant?: 'popup' | 'inline'
 }
@@ -26,6 +27,7 @@ interface AccountMenuProps {
 export default function AccountMenu({
   name,
   avatarUrl,
+  planName,
   isPro,
   loading,
   onSignOut,
@@ -36,10 +38,43 @@ export default function AccountMenu({
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
-  // Navigating anywhere should dismiss the menu.
+  // Navigating anywhere dismisses the menu.
   useEffect(() => {
     setOpen(false)
   }, [pathname])
+
+  const inlineMenu = (
+      <div className="ff-account ff-account--inline">
+        <div className="ff-inline-user">
+          {loading ? (
+            <>
+              <span className="ff-profile-skeleton" aria-hidden="true" />
+              <span className="ff-profile-skeleton ff-profile-skeleton--text" aria-hidden="true" />
+            </>
+          ) : (
+            <>
+              <AvatarCircle name={name} avatarUrl={avatarUrl} size={32} />
+              <span className="ff-inline-identity">
+                <span className="ff-inline-name">{name}</span>
+                {planName && (
+                  <span className={`ff-inline-plan${isPro ? ' ff-inline-plan--pro' : ''}`}>{planName}</span>
+                )}
+              </span>
+            </>
+          )}
+        </div>
+        <div className="ff-inline-actions">
+          <Link href="/profile" className="ff-inline-action">
+            <PenLine size={16} strokeWidth={1.9} aria-hidden="true" />
+            <span>{t('editProfile')}</span>
+          </Link>
+          <button type="button" className="ff-inline-action ff-inline-action--danger" onClick={() => void onSignOut()}>
+            <LogOut size={16} strokeWidth={1.9} aria-hidden="true" />
+            <span>{t('signOut')}</span>
+          </button>
+        </div>
+      </div>
+  )
 
   useEffect(() => {
     if (!open) return
@@ -54,8 +89,6 @@ export default function AccountMenu({
     }
   }, [open])
 
-  // Escape closes the menu only. stopPropagation keeps the mobile drawer (which
-  // also closes on Escape) open, because the menu lives inside it.
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'Escape' && open) {
@@ -66,40 +99,7 @@ export default function AccountMenu({
     [open]
   )
 
-  const identity = loading ? (
-    <>
-      <span className="ff-profile-skeleton" aria-hidden="true" />
-      <span className="ff-profile-skeleton ff-profile-skeleton--text" aria-hidden="true" />
-    </>
-  ) : (
-    <AvatarCircle name={name} avatarUrl={avatarUrl} isPro={isPro} size={34} />
-  )
-
-  if (variant === 'inline') {
-    return (
-      <div className="ff-account ff-account--inline">
-        <div className="ff-inline-user">
-          {identity}
-          {!loading && (
-            <span className="ff-inline-identity">
-              <span className="ff-inline-name">{name}</span>
-              {isPro && <span className="ff-inline-pro">PRO</span>}
-            </span>
-          )}
-        </div>
-        <div className="ff-inline-actions">
-          <Link href="/profile" className="ff-inline-action" onClick={() => setOpen(false)}>
-            <PenLine size={16} strokeWidth={1.9} aria-hidden="true" />
-            <span>{t('editProfile')}</span>
-          </Link>
-          <button type="button" className="ff-inline-action ff-inline-action--danger" onClick={() => void onSignOut()}>
-            <LogOut size={16} strokeWidth={1.9} aria-hidden="true" />
-            <span>{t('signOut')}</span>
-          </button>
-        </div>
-      </div>
-    )
-  }
+  if (variant === 'inline') return inlineMenu
 
   return (
     <div className="ff-account" ref={wrapRef} onKeyDown={handleKeyDown}>
@@ -143,15 +143,22 @@ export default function AccountMenu({
         onClick={() => setOpen(v => !v)}
         aria-haspopup="true"
         aria-expanded={open}
-        aria-label={name || t('profile')}
+        aria-label={name ? `${name} — account menu` : t('profile')}
         className="ff-profile"
       >
-        {identity}
-        {!loading && (
+        {loading ? (
           <>
+            <span className="ff-profile-skeleton" aria-hidden="true" />
+            <span className="ff-profile-skeleton ff-profile-skeleton--text" aria-hidden="true" />
+          </>
+        ) : (
+          <>
+            <AvatarCircle name={name} avatarUrl={avatarUrl} size={32} />
             <span className="ff-profile-name">
               <span className="ff-profile-name-text">{name}</span>
-              {isPro && <span className="ff-profile-pro">PRO</span>}
+              {planName && (
+                <span className={`ff-profile-plan${isPro ? ' ff-profile-plan--pro' : ''}`}>{planName}</span>
+              )}
             </span>
             <ChevronUp
               size={15}

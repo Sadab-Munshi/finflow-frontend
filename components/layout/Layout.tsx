@@ -81,8 +81,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <PremiumSidebar
         name={userName}
         avatarUrl={avatarUrl}
-        isPro={isPro}
         planName={planName}
+        isPro={isPro}
         loading={loading}
         onSignOut={handleSignOut}
       />
@@ -93,8 +93,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         onOpenChange={setDrawerOpen}
         name={userName}
         avatarUrl={avatarUrl}
-        isPro={isPro}
         planName={planName}
+        isPro={isPro}
         loading={loading}
         onSignOut={handleSignOut}
       />
