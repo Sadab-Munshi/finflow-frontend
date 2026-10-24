@@ -23,5 +23,12 @@
   "collapseNav": "নেভিগেশন সংকুচিত করুন",
   "expandNav": "নেভিগেশন প্রসারিত করুন",
   "openNav": "নেভিগেশন খুলুন",
-  "closeNav": "নেভিগেশন বন্ধ করুন"
+  "closeNav": "নেভিগেশন বন্ধ করুন",
+  "signOutConfirmTitle": "FinFlow থেকে সাইন আউট করবেন?",
+  "signOutConfirmBody": "আপনি কি সত্যিই আপনার অ্যাকাউন্ট থেকে সাইন আউট করতে চান?",
+  "signOutConfirm": "সাইন আউট",
+  "signOutConfirmCancel": "বাতিল করুন",
+  "signOutConfirmPending": "সাইন আউট হচ্ছে…",
+  "signOutConfirmError": "সাইন আউট করা যায়নি। কানেকশন দেখে আবার চেষ্টা করুন।",
+  "proBadge": "প্রো"
 }
