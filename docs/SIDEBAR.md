@@ -177,11 +177,22 @@ reflow of the panel's internal structure.
 is pinned by layout, never by `position: absolute` or a viewport rule. Settings
 staying behind a scroll in the nav is intended, not a bug.
 
-**Paint isolation.** `.ff-sidebar` carries `contain: layout` plus
-`transform: translateZ(0)` for its own GPU layer; `.ff-nav` — the only region
-whose contents can change size — carries `contain: layout paint`. Paint
-containment is deliberately *not* on the outer panel: the collapsed rail's
-account popup intentionally overflows the 68px box and would be clipped.
+**Paint isolation.** `.ff-sidebar` carries `contain: layout paint` plus
+`transform: translateZ(0)` for its own GPU layer, so nothing inside it can be
+recalculated or repainted by the canvas scrolling. `.ff-nav` — the only region
+whose contents can change size — carries the same pair.
+
+Paint containment clips every descendant to the panel's padding box. Two
+overlays legitimately live outside that box, and both are portalled rather than
+clipped:
+
+- **Tooltips** (rail icon hints) are portalled by Radix.
+- **The rail account menu** is 208px wide and cannot fit inside a 68px rail.
+  `AccountMenu` takes a `portalled` flag that `PremiumSidebar` sets only when
+  collapsed; the popup renders into `<body>`, anchored to the panel's right
+  edge from the trigger's rect. Because the shell is viewport-locked and the
+  panel never moves relative to it, the anchor is measured once on open — no
+  scroll listener. A *width* change closes the menu rather than tracking it.
 
 **No scroll JavaScript.** There is no `scroll` listener, no `scrollY` read and
 no scroll-driven style anywhere in the app (`__tests__/layout-architecture.test.mjs`

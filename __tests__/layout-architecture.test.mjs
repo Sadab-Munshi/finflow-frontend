@@ -63,9 +63,18 @@ test('Sidebar — flex layout, containment and GPU promotion', async t => {
   })
 
   await t.test('paint and layout isolation', () => {
-    assert.match(panel, /contain: layout/, 'layout containment')
+    assert.match(panel, /contain: layout paint/, 'layout + paint containment on the container')
     assert.match(panel, /transform: translateZ\(0\)/, 'own GPU layer')
     assert.match(css, /\.ff-nav \{[\s\S]{0,700}contain: layout paint/, 'scrolling region paints in isolation')
+  })
+
+  await t.test('paint containment cannot swallow the rail popup', () => {
+    // `contain: paint` clips descendants to the panel box, so the 208px account
+    // menu is portalled out of a 68px rail instead of being clipped by it.
+    assert.match(read('components/layout/sidebar/AccountMenu.tsx'), /createPortal/, 'menu escapes the painted box')
+    assert.match(read('components/layout/sidebar/PremiumSidebar.tsx'), /portalled=\{collapsed\}/, 'only the rail needs the portal')
+    assert.match(css, /\.ff-profile-pop--floating \{[\s\S]{0,120}position: fixed/, 'floating variant is viewport-anchored')
+    assert.ok(!/\[data-ff-sidebar="collapsed"\] \.ff-sidebar \.ff-profile-pop/.test(css), 'the old in-panel rail override is gone')
   })
 
   await t.test('three regions: pinned header, scrolling nav, pinned profile', () => {

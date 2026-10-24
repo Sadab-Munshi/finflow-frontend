@@ -344,9 +344,14 @@ html[data-ff-sidebar="collapsed"] {
    `100vh`/insets, the three regions cannot drift from the visible viewport
    when a mobile address bar expands or collapses.
 
-   `contain: layout` isolates the panel's internal layout from the dashboard's
-   scroll-driven recalculation; `transform: translateZ(0)` promotes it to its
-   own GPU compositor layer so scrolling the canvas never repaints it. */
+   `contain: layout paint` isolates the panel completely: the dashboard's
+   scroll-driven recalculation cannot reach its layout, and its paint can never
+   spill into the canvas. `transform: translateZ(0)` promotes it to its own GPU
+   compositor layer, so scrolling the canvas never repaints it at all.
+   Paint containment also clips descendants to the panel's padding box, which is
+   why the rail's account menu renders through a portal — a 208px menu cannot
+   live inside a 68px rail, and tooltips were already portalled for the same
+   reason. */
 .ff-sidebar {
   position: relative;
   z-index: 40;
@@ -360,7 +365,7 @@ html[data-ff-sidebar="collapsed"] {
   background: var(--ff-bg);
   border-right: 1px solid var(--ff-line);
   transition: width var(--ff-dur) var(--ff-ease);
-  contain: layout;
+  contain: layout paint;
   transform: translateZ(0);
   backface-visibility: hidden;
   isolation: isolate;
@@ -702,6 +707,18 @@ html[data-ff-sidebar="collapsed"] {
 .ff-profile-pop-item--danger { color: #c0392b; }
 .ff-profile-pop-item--danger:hover { background: #fdf2f1; color: #a5301f; }
 
+/* Rail variant, rendered in a portal because the panel is paint-contained and
+   a 208px menu cannot live inside 68px. Coordinates arrive inline from the
+   trigger's rect; this rule only supplies the parts that are always true. */
+.ff-profile-pop--floating {
+  position: fixed;
+  left: auto;
+  right: auto;
+  bottom: 0;
+  width: 208px;
+  z-index: 70;
+}
+
 /* ── Collapsed rail ──────────────────────────────────────────────────────── */
 
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-brand-link,
@@ -752,12 +769,7 @@ html[data-ff-sidebar="collapsed"] {
   margin-inline: auto;
   padding: 0;
 }
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-pop {
-  left: calc(100% + 8px);
-  right: auto;
-  bottom: 0;
-  width: 208px;
-}
+
 
 /* ── Tooltip (portalled so the scrolling nav can never clip it) ──────────── */
 

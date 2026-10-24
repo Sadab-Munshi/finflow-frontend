@@ -120,7 +120,10 @@ test('Mobile drawer — simplified, pinned and orientation safe', async t => {
     assert.ok(!drawer.includes('href="/add'), 'no second entry to /add in the overlay')
     assert.match(read(PANEL), /href="\/add\?tab=manual"/, 'desktop keeps its Add button')
     const account = read(ACCOUNT)
-    const inline = account.slice(account.indexOf("variant === 'inline'"), account.indexOf('return (\n    <div className="ff-account"'))
+    // The inline block ends where `const menuItems` begins — the popup's own
+    // items (which do include Edit Profile / Sign Out) are shared by the
+    // expanded panel and the portalled rail menu, and are not the drawer's.
+    const inline = account.slice(account.indexOf("variant === 'inline'"), account.indexOf('const menuItems'))
     assert.ok(!inline.includes('ff-inline-actions'), 'no action list in the inline block')
     assert.ok(!inline.includes('editProfile'), 'no Edit Profile row')
     assert.ok(!inline.includes('signOut'), 'no Sign Out row')
