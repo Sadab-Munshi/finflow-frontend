@@ -16,5 +16,12 @@
   "fabPdf": "PDF",
   "viewProfile": "View Profile",
   "editProfile": "Edit Profile",
-  "signOut": "Sign Out"
+  "signOut": "Sign Out",
+  "primaryNav": "Primary navigation",
+  "sectionMain": "Workspace",
+  "sectionAccount": "Account",
+  "collapseNav": "Collapse navigation",
+  "expandNav": "Expand navigation",
+  "openNav": "Open navigation",
+  "closeNav": "Close navigation"
 }

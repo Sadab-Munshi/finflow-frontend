@@ -114,6 +114,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <WebsiteJsonLd />
         <OrganizationJsonLd />
+        {/*
+          Sidebar geometry bootstrap. Runs before the first paint so a stored
+          "collapsed" preference (or a compact 900–1199px viewport) renders the
+          rail immediately instead of flashing an expanded 272px panel. The
+          logic is mirrored in components/layout/sidebar/useSidebarRail.ts.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                var state = 'expanded';
+                try {
+                  var w = window.innerWidth;
+                  if (w >= 900) {
+                    var stored = window.localStorage.getItem('finflow:sidebar');
+                    state = (w < 1200 || stored === 'collapsed') ? 'collapsed' : 'expanded';
+                  }
+                } catch (e) {}
+                document.documentElement.setAttribute('data-ff-sidebar', state);
+              })();
+            `,
+          }}
+        />
         {/* Service Worker Registration */}
         <script
           dangerouslySetInnerHTML={{

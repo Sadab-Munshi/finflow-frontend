@@ -16,5 +16,12 @@
   "fabPdf": "PDF",
   "viewProfile": "প্রোফাইল দেখুন",
   "editProfile": "প্রোফাইল সম্পাদনা করুন",
-  "signOut": "সাইন আউট"
+  "signOut": "সাইন আউট",
+  "primaryNav": "প্রধান নেভিগেশন",
+  "sectionMain": "ওয়ার্কস্পেস",
+  "sectionAccount": "অ্যাকাউন্ট",
+  "collapseNav": "নেভিগেশন সংকুচিত করুন",
+  "expandNav": "নেভিগেশন প্রসারিত করুন",
+  "openNav": "নেভিগেশন খুলুন",
+  "closeNav": "নেভিগেশন বন্ধ করুন"
 }

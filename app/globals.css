@@ -287,3 +287,700 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FinFlow premium sidebar
+   ───────────────────────────────────────────────────────────────────────────
+   Geometry is driven entirely by `[data-ff-sidebar]` on <html>, written before
+   the first paint by the bootstrap script in app/layout.tsx. That means a saved
+   "collapsed" preference never flashes an expanded panel, and the expand /
+   collapse transition is a single attribute flip rather than a React re-render.
+   Every collapsed-state rule is scoped to `.ff-sidebar` so the mobile drawer
+   always renders the fully labelled layout.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ff-sidebar-expanded: 272px;
+  --ff-sidebar-rail: 72px;
+  --ff-sidebar-w: var(--ff-sidebar-expanded);
+  --ff-dur: 260ms;
+  --ff-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --ff-surface: #082f2d;
+  --ff-surface-hi: #0b3c38;
+  --ff-ink: #e9f6f2;
+  --ff-ink-dim: #93b7af;
+  --ff-mint: #72e2bf;
+  --ff-line: rgba(255, 255, 255, 0.08);
+  --ff-nav-row-h: 44px;
+}
+
+html[data-ff-sidebar="collapsed"] {
+  --ff-sidebar-w: var(--ff-sidebar-rail);
+}
+
+/* ── Panel shell ─────────────────────────────────────────────────────────── */
+
+.ff-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  display: none;
+  flex-direction: column;
+  width: var(--ff-sidebar-w);
+  padding: 0 14px;
+  color: var(--ff-ink);
+  background: linear-gradient(178deg, var(--ff-surface-hi) 0%, var(--ff-surface) 46%, #062a28 100%);
+  border-right: 1px solid var(--ff-line);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.03), 24px 0 60px -46px rgba(2, 22, 20, 0.95);
+  transition: width var(--ff-dur) var(--ff-ease);
+  /* faint top highlight so the panel edge does not read as a flat block */
+  background-image:
+    radial-gradient(120% 60% at 0% 0%, rgba(114, 226, 191, 0.09) 0%, rgba(114, 226, 191, 0) 58%),
+    linear-gradient(178deg, var(--ff-surface-hi) 0%, var(--ff-surface) 46%, #062a28 100%);
+}
+
+@media (min-width: 900px) {
+  .ff-sidebar { display: flex; }
+}
+
+/* ── Brand header ────────────────────────────────────────────────────────── */
+
+.ff-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  flex: 0 0 auto;
+}
+
+.ff-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+.ff-brand-link:focus-visible,
+.ff-toggle:focus-visible,
+.ff-brand-rail:focus-visible,
+.ff-drawer-close:focus-visible,
+.ff-drawer-brand:focus-visible {
+  outline: 2px solid var(--ff-mint);
+  outline-offset: 2px;
+}
+
+.ff-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 62%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 16px -10px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+.ff-mark--sm { width: 36px; height: 36px; }
+.ff-mark--pro {
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.6), 0 0 18px -2px rgba(251, 191, 36, 0.35);
+}
+
+.ff-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  overflow: hidden;
+  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+}
+.ff-wordmark {
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #f2fffb;
+  white-space: nowrap;
+}
+.ff-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(147, 183, 175, 0.86);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ff-subtitle-text { overflow: hidden; text-overflow: ellipsis; }
+.ff-subtitle-pro { color: #fbbf24; font-weight: 800; flex: 0 0 auto; }
+
+.ff-toggle {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: rgba(147, 183, 175, 0.9);
+  background: transparent;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.ff-toggle:hover { background: rgba(255, 255, 255, 0.06); color: var(--ff-ink); }
+
+.ff-brand-rail {
+  position: relative;
+  display: none;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: transparent;
+}
+.ff-brand-rail-glyph {
+  position: absolute;
+  inset: 2px;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  opacity: 0;
+  color: var(--ff-mint);
+  background: rgba(6, 42, 38, 0.82);
+  transition: opacity 140ms ease;
+}
+.ff-brand-rail:hover .ff-brand-rail-glyph,
+.ff-brand-rail:focus-visible .ff-brand-rail-glyph { opacity: 1; }
+
+/* ── Add-transaction CTA ─────────────────────────────────────────────────── */
+
+.ff-cta-wrap { flex: 0 0 auto; padding: 4px 0 10px; }
+
+.ff-cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  color: #052b26;
+  background: linear-gradient(135deg, #8ff0d6 0%, #62ddbb 55%, #4fd1ac 100%);
+  box-shadow: 0 10px 22px -16px rgba(20, 184, 166, 1), inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  transition: filter 160ms ease, box-shadow 160ms ease;
+}
+.ff-cta:hover { filter: brightness(1.04); box-shadow: 0 12px 24px -14px rgba(20, 184, 166, 1), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+.ff-cta:focus-visible { outline: 2px solid #e9f6f2; outline-offset: 2px; }
+.ff-cta-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+
+.ff-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.ff-nav::-webkit-scrollbar { width: 0; height: 0; }
+
+.ff-section-label {
+  flex: 0 0 auto;
+  height: 14px;
+  margin: 14px 0 4px;
+  padding: 0 12px;
+  overflow: hidden;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(147, 183, 175, 0.85);
+  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+}
+
+.ff-nav-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex: 0 0 auto;
+  height: var(--ff-nav-row-h);
+  padding: 0 12px;
+  border-radius: 11px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  color: var(--ff-ink-dim);
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+.ff-nav-row:hover { background: rgba(255, 255, 255, 0.06); color: var(--ff-ink); }
+.ff-nav-row:focus-visible { outline: 2px solid var(--ff-mint); outline-offset: 2px; }
+
+.ff-nav-row--active,
+.ff-nav-row--active:hover {
+  background: rgba(114, 226, 191, 0.12);
+  color: #f4fffb;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(114, 226, 191, 0.16);
+}
+.ff-nav-row--active .ff-nav-icon { color: var(--ff-mint); }
+
+.ff-nav-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 18px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ff-mint);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 160ms ease;
+}
+.ff-nav-row--active .ff-nav-bar { opacity: 1; }
+
+.ff-nav-icon { flex: 0 0 auto; width: 20px; height: 20px; color: inherit; }
+
+.ff-nav-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+}
+
+/* ── Account footer ──────────────────────────────────────────────────────── */
+
+.ff-foot {
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding: 8px 0 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ff-account { position: relative; }
+
+.ff-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  padding: 0 6px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ff-ink);
+  text-align: left;
+  transition: background-color 160ms ease;
+}
+.ff-profile:hover { background: rgba(255, 255, 255, 0.06); }
+.ff-profile:focus-visible { outline: 2px solid var(--ff-mint); outline-offset: 2px; }
+
+.ff-profile-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+}
+.ff-profile-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ff-ink);
+}
+.ff-profile-pro {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #0b1f1c;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+.ff-profile-caret {
+  flex: 0 0 auto;
+  opacity: 0.55;
+  transition: transform 160ms var(--ff-ease), opacity 160ms ease;
+}
+.ff-profile-caret.is-open { transform: rotate(180deg); opacity: 0.95; }
+
+.ff-profile-skeleton {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: rgba(114, 226, 191, 0.22);
+  animation: ff-pulse 1.4s ease-in-out infinite;
+}
+.ff-profile-skeleton--text { width: 84px; height: 10px; border-radius: 5px; }
+@keyframes ff-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+.ff-profile-pop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 60;
+  padding: 6px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 48px -20px rgba(6, 30, 28, 0.6), 0 2px 10px rgba(6, 30, 28, 0.08);
+  overflow: hidden;
+}
+.ff-profile-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  text-align: left;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.ff-profile-pop-item:hover { background: #f1f5f9; color: #0f172a; }
+.ff-profile-pop-item:focus-visible { outline: 2px solid #0f766e; outline-offset: -2px; }
+.ff-profile-pop-item--danger { color: #dc2626; }
+.ff-profile-pop-item--danger:hover { background: #fef2f2; color: #b91c1c; }
+
+/* ── Collapsed rail ──────────────────────────────────────────────────────── */
+
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-brand-link,
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-toggle { display: none; }
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-brand-rail { display: grid; }
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-head { justify-content: center; }
+
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-brand-text,
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-nav-label,
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta-label,
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-name,
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-section-label {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition-duration: 110ms;
+  transition-delay: 0s;
+}
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-caret { opacity: 0; transition-duration: 110ms; transition-delay: 0s; }
+
+/* Labels leave the flow instead of just fading: the row keeps a 44px content
+   box, so the icon stays optically centred on x=26 in both states and the rail
+   never looks nudged to one side. */
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-nav-label,
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta-label,
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-name {
+  position: absolute;
+  left: 40px;
+  right: 0;
+}
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-caret {
+  position: absolute;
+  right: 4px;
+}
+
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-nav-row,
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta {
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+}
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta {
+  width: 44px;
+  margin-inline: auto;
+  background: rgba(114, 226, 191, 0.14);
+  color: var(--ff-mint);
+  box-shadow: inset 0 0 0 1px rgba(114, 226, 191, 0.22);
+}
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta:hover {
+  background: rgba(114, 226, 191, 0.2);
+  filter: none;
+}
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile {
+  justify-content: center;
+  padding: 0;
+}
+
+/* A hairline replaces each section title so the rail keeps its grouping
+   without the invisible-label gap reading as a stray hole. */
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-section-label::after {
+  content: "";
+  display: block;
+  width: 20px;
+  height: 1px;
+  margin: 6px auto 0;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-pop {
+  left: calc(100% + 10px);
+  right: auto;
+  bottom: 0;
+  width: 216px;
+}
+
+/* ── Tooltip (portalled, so the scrolling nav can never clip it) ─────────── */
+
+.ff-tooltip {
+  z-index: 70;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(114, 226, 191, 0.22);
+  background: #0b3c38;
+  color: var(--ff-ink);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  user-select: none;
+  box-shadow: 0 12px 28px -12px rgba(3, 26, 24, 0.8);
+}
+.ff-tooltip[data-state="delayed-open"],
+.ff-tooltip[data-state="instant-open"] { animation: ff-tooltip-in 120ms ease-out both; }
+@keyframes ff-tooltip-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Drawer trigger ──────────────────────────────────────────────────────── */
+
+.ff-menu-trigger {
+  position: fixed;
+  top: 20px;
+  left: 14px;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  color: var(--ff-ink);
+  background: linear-gradient(160deg, var(--ff-surface-hi), var(--ff-surface));
+  box-shadow: 0 10px 22px -12px rgba(4, 40, 36, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.ff-menu-trigger:hover { transform: translateY(-1px); box-shadow: 0 14px 26px -12px rgba(4, 40, 36, 0.75), inset 0 0 0 1px rgba(255, 255, 255, 0.14); }
+.ff-menu-trigger:active { transform: none; }
+.ff-menu-trigger:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+
+@media (min-width: 900px) {
+  .ff-menu-trigger { display: none; }
+}
+
+/* ── Main content offset ─────────────────────────────────────────────────── */
+
+.ff-main { padding-left: 0; }
+
+@media (min-width: 900px) {
+  .ff-main {
+    padding-left: var(--ff-sidebar-w);
+    transition: padding-left var(--ff-dur) var(--ff-ease);
+  }
+}
+
+/* ── Mobile / tablet drawer (Radix Dialog) ───────────────────────────────── */
+
+.ff-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(3, 22, 20, 0.46);
+}
+.ff-drawer-overlay[data-state="open"] { animation: ff-fade-in 240ms ease both; }
+.ff-drawer-overlay[data-state="closed"] { animation: ff-fade-out 200ms ease both; }
+@keyframes ff-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ff-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+.ff-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  width: min(288px, calc(100vw - 48px));
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: env(safe-area-inset-top) 14px calc(14px + env(safe-area-inset-bottom));
+  color: var(--ff-ink);
+  border-right: 1px solid var(--ff-line);
+  box-shadow: 28px 0 70px -34px rgba(2, 20, 18, 0.85);
+  background-image:
+    radial-gradient(120% 60% at 0% 0%, rgba(114, 226, 191, 0.09) 0%, rgba(114, 226, 191, 0) 58%),
+    linear-gradient(178deg, var(--ff-surface-hi) 0%, var(--ff-surface) 46%, #062a28 100%);
+}
+.ff-drawer[data-state="open"] { animation: ff-drawer-in var(--ff-dur) var(--ff-ease) both; }
+.ff-drawer[data-state="closed"] { animation: ff-drawer-out 210ms var(--ff-ease) both; }
+@keyframes ff-drawer-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes ff-drawer-out { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+
+.ff-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding: 12px 0;
+}
+.ff-drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+.ff-drawer-brand-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
+.ff-drawer-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: rgba(147, 183, 175, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.ff-drawer-close:hover { background: rgba(255, 255, 255, 0.1); color: var(--ff-ink); }
+
+.ff-drawer .ff-nav { flex: 0 0 auto; overflow: visible; }
+.ff-drawer .ff-section-label { margin-top: 18px; }
+.ff-drawer .ff-foot { padding-bottom: 4px; }
+
+/* Drawer account block: actions are laid out in the flow rather than in a
+   nested popover, so they never fight the dialog's Escape handling, never get
+   clipped by the scroll container, and keep 44px touch rows. */
+.ff-inline-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 6px;
+}
+.ff-inline-identity { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ff-inline-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ff-ink);
+}
+.ff-inline-pro {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #0b1f1c;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+.ff-inline-actions { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+.ff-inline-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ff-ink-dim);
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.ff-inline-action:hover { background: rgba(255, 255, 255, 0.06); color: var(--ff-ink); }
+.ff-inline-action:focus-visible { outline: 2px solid var(--ff-mint); outline-offset: 2px; }
+.ff-inline-action--danger { color: #fca5a5; }
+.ff-inline-action--danger:hover { background: rgba(248, 113, 113, 0.12); color: #fecaca; }
+
+/* ── Short / landscape viewports ─────────────────────────────────────────── */
+
+@media (min-width: 900px) and (max-height: 640px) {
+  .ff-sidebar .ff-head { padding-block: 8px; }
+  .ff-sidebar .ff-cta-wrap { padding: 2px 0 8px; }
+  .ff-sidebar .ff-section-label { margin-top: 8px; }
+  .ff-sidebar .ff-foot { padding-bottom: 10px; }
+  .ff-sidebar .ff-profile { height: 44px; }
+}
+
+@media (max-height: 560px) {
+  .ff-drawer .ff-head { padding-block: 8px; }
+  .ff-drawer .ff-cta-wrap { padding-bottom: 8px; }
+  .ff-drawer .ff-section-label { margin-top: 10px; }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-sidebar,
+  .ff-main,
+  .ff-brand-text,
+  .ff-nav-label,
+  .ff-cta-label,
+  .ff-profile-name,
+  .ff-profile-caret,
+  .ff-section-label,
+  .ff-brand-rail-glyph,
+  .ff-nav-row,
+  .ff-nav-bar,
+  .ff-profile,
+  .ff-toggle,
+  .ff-menu-trigger {
+    transition-duration: 1ms !important;
+    transition-delay: 0s !important;
+  }
+  .ff-drawer,
+  .ff-drawer-overlay,
+  .ff-tooltip,
+  .ff-profile-skeleton {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
