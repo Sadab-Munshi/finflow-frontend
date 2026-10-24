@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Dialog } from 'radix-ui'
-import { Plus, X } from 'lucide-react'
+import { PanelLeftClose } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import AccountMenu from './AccountMenu'
 import SidebarNavList from './SidebarNavList'
@@ -17,7 +17,6 @@ interface MobileNavDrawerProps {
   planName: string
   isPro: boolean
   loading: boolean
-  onSignOut: () => void | Promise<void>
 }
 
 /**
@@ -25,6 +24,16 @@ interface MobileNavDrawerProps {
  * focus restore, `aria-modal` and background scroll locking come from a
  * dependency that is already installed, and it mirrors the desktop panel's
  * light surface exactly so the two never feel like different products.
+ *
+ * Structure follows the desktop panel instead of scrolling as one sheet: the
+ * brand row and the account block are pinned, and only the nav list between
+ * them scrolls. On a 360px-tall landscape phone the whole drawer used to be a
+ * single scroll container, so a fast swipe dragged the logo and the account
+ * block off screen and the panel felt like it was sliding under the finger.
+ *
+ * The Add button is intentionally absent here — the floating action button is
+ * always on screen behind the drawer, and a second primary action inside the
+ * overlay only competed with it.
  */
 export default function MobileNavDrawer({
   open,
@@ -34,7 +43,6 @@ export default function MobileNavDrawer({
   planName,
   isPro,
   loading,
-  onSignOut,
 }: MobileNavDrawerProps) {
   const t = useTranslations('nav')
 
@@ -70,16 +78,11 @@ export default function MobileNavDrawer({
             </Link>
             <Dialog.Close asChild>
               <button type="button" className="ff-drawer-close" aria-label={t('closeNav')}>
-                <X size={17} strokeWidth={2} aria-hidden="true" />
+                {/* Same panel-toggle glyph the desktop header uses, so closing
+                    the drawer reads as the same action as collapsing the panel. */}
+                <PanelLeftClose size={17} strokeWidth={1.9} aria-hidden="true" />
               </button>
             </Dialog.Close>
-          </div>
-
-          <div className="ff-cta-wrap">
-            <Link href="/add?tab=manual" className="ff-cta" onClick={() => onOpenChange(false)}>
-              <Plus strokeWidth={2.1} aria-hidden="true" />
-              <span className="ff-cta-label">{t('add')}</span>
-            </Link>
           </div>
 
           <nav id="ff-drawer-nav" className="ff-nav" aria-label={t('primaryNav')}>
@@ -97,7 +100,6 @@ export default function MobileNavDrawer({
               planName={planName}
               isPro={isPro}
               loading={loading}
-              onSignOut={onSignOut}
             />
           </div>
         </Dialog.Content>

@@ -23,5 +23,12 @@
   "collapseNav": "नेविगेशन संकुचित करें",
   "expandNav": "नेविगेशन विस्तृत करें",
   "openNav": "नेविगेशन खोलें",
-  "closeNav": "नेविगेशन बंद करें"
+  "closeNav": "नेविगेशन बंद करें",
+  "signOutConfirmTitle": "FinFlow से साइन आउट करें?",
+  "signOutConfirmBody": "क्या आप वाकई अपने खाते से साइन आउट करना चाहते हैं?",
+  "signOutConfirm": "साइन आउट",
+  "signOutConfirmCancel": "रद्द करें",
+  "signOutConfirmPending": "साइन आउट हो रहा है…",
+  "signOutConfirmError": "साइन आउट नहीं हो सका। कनेक्शन जाँचें और फिर कोशिश करें।",
+  "proBadge": "प्रो"
 }

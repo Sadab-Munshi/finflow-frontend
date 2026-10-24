@@ -62,6 +62,48 @@ animate from one variable and can never drift apart.
 A script in `app/layout.tsx` resolves the initial state before `<body>` parses,
 so a remembered "collapsed" state never flashes an expanded panel.
 
+## Refinement pass — stability, PRO, and the drawer's three regions
+
+The visual system above is unchanged. What changed is behaviour and a few
+missing states.
+
+**Landscape scroll stability.** The panel used to be pinned with `top: 0;
+bottom: 0`, which sizes a fixed box against the *initial containing block* — the
+large viewport. On a tablet in landscape the account block therefore sat below
+the fold while the browser's address bar was showing, then jumped into view as
+the bar collapsed during a scroll. It is now `height: 100dvh` (with a `100vh`
+fallback), so the three regions track the visible viewport. `translateZ(0)`
+gives the panel its own compositor layer so a long, fast-scrolling document
+cannot drag its repaint with it, and the resize handler ignores height-only
+viewport changes (address-bar collapse) — only a width change re-evaluates the
+layout. No scroll listeners, no JS positioning.
+
+**The drawer is three regions, not one sheet.** `.ff-drawer` is
+`overflow: hidden`; the brand row and account block are `flex: 0 0 auto`, and
+only `.ff-nav` scrolls (`flex: 1 1 auto; min-height: 0; overscroll-behavior:
+contain`). At 360px of height the whole sheet used to scroll, so a fast swipe
+carried the logo and the account block off screen.
+
+**PRO avatar.** `AvatarCircle` takes `isPro` and paints
+`outline: 1.5px solid #C9A45C; outline-offset: 2px`. An `outline` is the only
+mechanism that adds a ring *outside* the crop with a real gap: a border would
+eat into the 32px photo, and a nested element would either be clipped by
+`overflow: hidden` or sit on top of the image. Free accounts get
+`box-shadow: 0 0 0 1px var(--ff-line)` instead, and the `PRO` chip next to the
+name is rendered only while the entitlement is live. Both read the same
+`isPro` as the rest of the shell.
+
+**One sign-out dialog.** `components/auth/SignOutDialog.tsx` is the only code
+path that calls `supabase.auth.signOut` for a user-initiated sign-out. The
+sidebar menu, the dashboard button and the profile screen all open it; it
+`preventDefault()`s Radix's auto-close so the dialog survives the request, and
+an `inFlight` ref stops a double tap from firing twice.
+
+**The mobile drawer is identity only.** No Add button (the floating action is
+always behind the drawer), no Edit Profile, no Sign Out — those stay on the
+desktop menu and the Profile screen. The close control is the same
+`PanelLeftClose` glyph as the desktop toggle, labelled "Close navigation".
+
 ## Two things that are easy to break
 
 1. **The avatar must stay circular.** `next/image` renders with an inline
@@ -84,3 +126,17 @@ so a remembered "collapsed" state never flashes an expanded panel.
   lock) plus explicit focus restore to the menu trigger.
 - 2px offset focus rings; `outline: none` never appears.
 - `prefers-reduced-motion: reduce` collapses every transition to `1ms`.
+
+## Post-Phase-C test coverage
+
+`__tests__/sidebar-refinement.test.mjs` asserts, against source:
+
+- the confirmation dialog's exact copy, that it is the only user-initiated
+  `signOut` caller, and that duplicates and in-flight dismissal are blocked;
+- the PRO ring is entitlement-driven, `#C9A45C`, and never a border;
+- the drawer has no Add button and no account actions, uses `PanelLeftClose`
+  with "Close navigation", and pins brand/nav/account as three regions;
+- the panel uses `100dvh`, no ICB sizing, and its own compositor layer;
+- the FAB stack paints above the bell but below the drawer, and the dial is
+  capped to the visible viewport;
+- every light-theme token, breakpoint and geometry value is untouched.

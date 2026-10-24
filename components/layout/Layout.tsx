@@ -12,8 +12,8 @@ import { cn, getTodayIndianDate } from '@/lib/utils'
 import { useTranslations } from 'next-intl'
 import { useUser } from '@/context/UserContext'
 import { useSubscriptionGate } from '@/hooks/useSubscriptionGate'
-import { createClient } from '@/lib/supabase/client'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import { useSignOutConfirm } from '@/components/auth/SignOutDialog'
 import PremiumSidebar from '@/components/layout/sidebar/PremiumSidebar'
 import MobileNavDrawer from '@/components/layout/sidebar/MobileNavDrawer'
 
@@ -34,6 +34,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { checkFeature, userTier } = useSubscriptionGate()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [fabOpen, setFabOpen] = useState(false)
+  // One confirmation dialog for the whole shell; the sidebar only triggers it.
+  const { requestSignOut, signOutDialog } = useSignOutConfirm()
 
   // Close drawers / overlays on route change
   useEffect(() => {
@@ -41,25 +43,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setFabOpen(false)
   }, [pathname])
 
-  // A rotated or resized viewport that now has room for the desktop rail must
-  // never keep a stale drawer (and its scroll lock) on screen.
+  // A rotated or resized viewport must never keep a stale drawer (and its scroll
+  // lock) on screen. Two things are deliberate here:
+  //
+  // 1. Only a *width* change counts. Mobile browsers fire `resize` continuously
+  //    while the address bar collapses during a scroll; reacting to those would
+  //    run state updates mid-scroll for a layout that has not changed.
+  // 2. Crossing down to the phone layout closes the FAB too, so an expanded
+  //    speed dial can never be left floating over a portrait page with its
+  //    backdrop still darkening the dashboard.
   useEffect(() => {
-    const onResize = () => {
+    let lastWidth = window.innerWidth
+    const onViewportChange = () => {
+      if (window.innerWidth === lastWidth) return
+      lastWidth = window.innerWidth
+      setFabOpen(false)
       if (window.innerWidth >= 900) setDrawerOpen(false)
     }
-    window.addEventListener('resize', onResize)
-    window.addEventListener('orientationchange', onResize)
+    window.addEventListener('resize', onViewportChange)
+    window.addEventListener('orientationchange', onViewportChange)
     return () => {
-      window.removeEventListener('resize', onResize)
-      window.removeEventListener('orientationchange', onResize)
+      window.removeEventListener('resize', onViewportChange)
+      window.removeEventListener('orientationchange', onViewportChange)
     }
   }, [])
-
-  const handleSignOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut({ scope: 'local' })
-    router.push('/login')
-  }
 
   const userName = user?.userName || ''
   const avatarUrl = user?.avatarUrl || ''
@@ -71,7 +78,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={cn(
-        'min-h-screen',
+        'ff-shell min-h-screen',
         isSubscriptionRoute
           ? 'bg-[#F8FAFC]'
           : 'bg-gradient-to-br from-teal-50/40 via-white to-amber-50/30'
@@ -84,7 +91,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         planName={planName}
         isPro={isPro}
         loading={loading}
-        onSignOut={handleSignOut}
+        onSignOut={requestSignOut}
       />
 
       {/* Phone / tablet navigation drawer */}
@@ -96,13 +103,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         planName={planName}
         isPro={isPro}
         loading={loading}
-        onSignOut={handleSignOut}
       />
 
       {/* Fixed Notification Bell — hidden on subscription/payment screens per UX spec */}
       {!isSubscriptionRoute && (
-        <div className="fixed top-4 right-4 z-[51] no-print">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-600/25">
+        <div
+          className="fixed z-[52] no-print"
+          style={{
+            // Safe-area aware: on a notched phone in landscape the bell must not
+            // slide under the rounded corner, and it keeps a 44px hit area.
+            top: 'max(14px, env(safe-area-inset-top))',
+            right: 'max(16px, env(safe-area-inset-right))',
+          }}
+        >
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-600/25">
             <NotificationBell />
           </div>
         </div>
@@ -139,11 +153,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* EXACT DEMO FAB - FAST ANIMATION & THUMB-FRIENDLY ORDER */}
       {/* ======================================================= */}
       {!isSubscriptionRoute && (
-      <div className="fixed bottom-20 min-[900px]:bottom-6 right-6 z-50 no-print">
-        {/* Input Method Options */}
+      <div className="fixed bottom-20 min-[900px]:bottom-6 right-6 z-[55] no-print">
+        {/* Input Method Options. The list is capped to the visible viewport so a
+            five-item dial on a 360px-tall landscape phone stays fully reachable
+            instead of growing under the notification bell and off the screen. */}
         <div
           className={cn(
-            "absolute bottom-16 right-0 flex flex-col-reverse gap-3 transition-all duration-200",
+            "ff-fab-menu absolute bottom-16 right-0 max-h-[calc(100dvh-9.5rem)] overflow-y-auto overscroll-contain",
+            "flex flex-col-reverse gap-3 pr-0.5 transition-all duration-200",
             fabOpen
               ? "opacity-100 translate-y-0"
               : "opacity-0 -translate-y-4 pointer-events-none"
@@ -235,6 +252,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {children}
         </motion.div>
       </main>
+
+      {signOutDialog}
 
       {/* Print Header */}
       <div className="print-only fixed top-0 left-0 right-0 p-4 bg-white border-b">

@@ -107,7 +107,7 @@ test('Sidebar — user avatar is a true circular crop', async t => {
   })
 
   await t.test('used identically in every surface', () => {
-    assert.match(read(ACCOUNT), /<AvatarCircle name=\{name\} avatarUrl=\{avatarUrl\} size=\{32\} \/>/, 'shared component in panel + drawer')
+    assert.match(read(ACCOUNT), /<AvatarCircle name=\{name\} avatarUrl=\{avatarUrl\} size=\{32\} isPro=\{isPro\} \/>/, 'shared component in panel + drawer')
     assert.ok(!read(ACCOUNT).includes('Crown'), 'no oversized gold crown badge remains')
     assert.ok(!css.includes('ring-2 ring-amber-400'), 'no amber ring treatment remains')
   })
@@ -254,7 +254,8 @@ test('Sidebar — app behaviour preserved', async t => {
   const layout = read(LAYOUT)
 
   await t.test('auth, gating, notifications and FAB intact', () => {
-    assert.match(layout, /auth\.signOut\(\{ scope: 'local' \}\)/, 'sign out preserved')
+    assert.match(read('components/auth/SignOutDialog.tsx'), /auth\.signOut\(\{ scope: 'local' \}\)/, 'sign out preserved behind the confirmation')
+    assert.match(layout, /onSignOut=\{requestSignOut\}/, 'shell delegates to the shared confirmation')
     assert.match(layout, /useSubscriptionGate\(\)/, 'subscription gate preserved')
     assert.match(layout, /<NotificationBell \/>/, 'notification bell preserved')
     assert.match(layout, /checkFeature\(method\.feature\)/, 'FAB feature gating preserved')

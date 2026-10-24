@@ -34,7 +34,7 @@ export default function NotificationCenter({
   }
 
   return (
-    <div className="absolute right-0 top-12 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+    <div className="ff-notif-panel absolute right-0 top-12 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
         <h3 className="font-semibold text-gray-800 text-sm">Notifications</h3>

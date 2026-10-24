@@ -23,5 +23,12 @@
   "collapseNav": "Collapse navigation",
   "expandNav": "Expand navigation",
   "openNav": "Open navigation",
-  "closeNav": "Close navigation"
+  "closeNav": "Close navigation",
+  "signOutConfirmTitle": "Sign out of FinFlow?",
+  "signOutConfirmBody": "Are you sure you want to sign out of your account?",
+  "signOutConfirm": "Sign Out",
+  "signOutConfirmCancel": "Cancel",
+  "signOutConfirmPending": "Signing out…",
+  "signOutConfirmError": "We couldn't sign you out. Check your connection and try again.",
+  "proBadge": "Pro"
 }
