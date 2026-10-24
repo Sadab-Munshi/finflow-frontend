@@ -13,23 +13,22 @@ import { useSidebarRail } from './useSidebarRail'
 interface PremiumSidebarProps {
   name: string
   avatarUrl: string
-  isPro: boolean
   planName: string
+  isPro: boolean
   loading: boolean
   onSignOut: () => void | Promise<void>
 }
 
 /**
- * Desktop navigation: a 272px labelled panel that compresses into a 72px icon
- * rail. Width, padding, label opacity and every collapsed-state rule live in
- * globals.css behind `[data-ff-sidebar]`, so the transition is one class flip
- * instead of a React re-render of the whole shell.
+ * Desktop navigation: a 248px labelled panel that compresses to a 68px icon
+ * rail. All geometry lives in `globals.css` behind `[data-ff-sidebar]`, so the
+ * transition is one attribute flip rather than a React re-render of the shell.
  */
 export default function PremiumSidebar({
   name,
   avatarUrl,
-  isPro,
   planName,
+  isPro,
   loading,
   onSignOut,
 }: PremiumSidebarProps) {
@@ -38,7 +37,7 @@ export default function PremiumSidebar({
 
   const addLink = (
     <Link href="/add?tab=manual" className="ff-cta">
-      <Plus size={18} strokeWidth={2.1} aria-hidden="true" />
+      <Plus strokeWidth={2.1} aria-hidden="true" />
       <span className="ff-cta-label">{t('add')}</span>
     </Link>
   )
@@ -46,14 +45,14 @@ export default function PremiumSidebar({
   return (
     <Tooltip.Provider delayDuration={180} skipDelayDuration={250}>
       <aside className="ff-sidebar no-print">
-        <BrandHeader isPro={isPro} planName={planName} toggle={toggle} />
+        <BrandHeader toggle={toggle} />
 
         <div className="ff-cta-wrap">
           {collapsed ? (
             <Tooltip.Root>
               <Tooltip.Trigger asChild>{addLink}</Tooltip.Trigger>
               <Tooltip.Portal>
-                <Tooltip.Content side="right" sideOffset={12} collisionPadding={8} className="ff-tooltip">
+                <Tooltip.Content side="right" sideOffset={10} collisionPadding={8} className="ff-tooltip">
                   {t('add')}
                 </Tooltip.Content>
               </Tooltip.Portal>
@@ -74,6 +73,7 @@ export default function PremiumSidebar({
           <AccountMenu
             name={name}
             avatarUrl={avatarUrl}
+            planName={planName}
             isPro={isPro}
             loading={loading}
             onSignOut={onSignOut}

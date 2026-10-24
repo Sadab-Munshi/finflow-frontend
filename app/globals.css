@@ -289,37 +289,51 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FinFlow premium sidebar
+   FinFlow sidebar — light, restrained navigation surface
    ───────────────────────────────────────────────────────────────────────────
-   Geometry is driven entirely by `[data-ff-sidebar]` on <html>, written before
-   the first paint by the bootstrap script in app/layout.tsx. That means a saved
-   "collapsed" preference never flashes an expanded panel, and the expand /
-   collapse transition is a single attribute flip rather than a React re-render.
-   Every collapsed-state rule is scoped to `.ff-sidebar` so the mobile drawer
-   always renders the fully labelled layout.
+   Design notes
+   · The panel is a calm neutral (#F8FAF9) with a hairline right border. It is
+     deliberately quieter than the dashboard's teal cards so it never competes.
+   · `[data-ff-sidebar]` on <html> is the only state input. Widths, label
+     visibility and the main-content offset all derive from `--ff-sidebar-w`,
+     so a single attribute flip animates everything in lockstep (no React
+     re-render, no layout thrash).
+   · Expanded and rail share one 34px icon axis, so icons never shift when the
+     panel opens or closes.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --ff-sidebar-expanded: 272px;
-  --ff-sidebar-rail: 72px;
+  --ff-sidebar-expanded: 248px;
+  --ff-sidebar-rail: 68px;
   --ff-sidebar-w: var(--ff-sidebar-expanded);
-  --ff-dur: 260ms;
+
+  --ff-dur: 240ms;
   --ff-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  --ff-surface: #082f2d;
-  --ff-surface-hi: #0b3c38;
-  --ff-ink: #e9f6f2;
-  --ff-ink-dim: #93b7af;
-  --ff-mint: #72e2bf;
-  --ff-line: rgba(255, 255, 255, 0.08);
-  --ff-nav-row-h: 44px;
+  --ff-bg: #f8faf9;
+  --ff-text: #172b2a;        /* 14.2:1 on --ff-bg */
+  --ff-muted: #5f736f;       /*  4.8:1 on --ff-bg, 4.5:1 on --ff-hover */
+  --ff-icon: #6f8681;        /*  3.7:1 — graphical object minimum is 3:1 */
+  --ff-label: #627772;       /*  4.6:1 at 9.5px uppercase */
+  --ff-line: #e5ebe9;
+  --ff-hover: #eff4f2;
+  --ff-active-bg: #e5f2ee;
+  --ff-active-bg-hover: #dcece7;
+  --ff-active-fg: #077569;   /*  4.9:1 on --ff-active-bg */
+  --ff-primary: #087f72;
+  --ff-primary-hover: #06695f;
+
+  --ff-pad: 14px;      /* panel horizontal padding                 */
+  --ff-row-h: 42px;    /* navigation row height                   */
+  --ff-icon-px: 18px;  /* icon box, identical in both states      */
+  --ff-row-pad: 11px;  /* row inset; 14 + 11 + 9 = icon centre 34 */
 }
 
 html[data-ff-sidebar="collapsed"] {
   --ff-sidebar-w: var(--ff-sidebar-rail);
 }
 
-/* ── Panel shell ─────────────────────────────────────────────────────────── */
+/* ── Panel ───────────────────────────────────────────────────────────────── */
 
 .ff-sidebar {
   position: fixed;
@@ -330,16 +344,10 @@ html[data-ff-sidebar="collapsed"] {
   display: none;
   flex-direction: column;
   width: var(--ff-sidebar-w);
-  padding: 0 14px;
-  color: var(--ff-ink);
-  background: linear-gradient(178deg, var(--ff-surface-hi) 0%, var(--ff-surface) 46%, #062a28 100%);
+  padding: 0 var(--ff-pad);
+  background: var(--ff-bg);
   border-right: 1px solid var(--ff-line);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.03), 24px 0 60px -46px rgba(2, 22, 20, 0.95);
   transition: width var(--ff-dur) var(--ff-ease);
-  /* faint top highlight so the panel edge does not read as a flat block */
-  background-image:
-    radial-gradient(120% 60% at 0% 0%, rgba(114, 226, 191, 0.09) 0%, rgba(114, 226, 191, 0) 58%),
-    linear-gradient(178deg, var(--ff-surface-hi) 0%, var(--ff-surface) 46%, #062a28 100%);
 }
 
 @media (min-width: 900px) {
@@ -351,147 +359,109 @@ html[data-ff-sidebar="collapsed"] {
 .ff-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 0;
+  gap: 8px;
   flex: 0 0 auto;
+  padding: 14px 0 10px;
 }
 
 .ff-brand-link {
   display: flex;
   align-items: center;
-  gap: 10px;
   flex: 1 1 auto;
   min-width: 0;
-  height: 44px;
-  border-radius: 12px;
+  height: 40px;
+  /* Optical alignment: the lockup's emblem is 29px wide, wider than the 18px
+     nav glyphs, so it is pulled left until its centre — not its edge — lands on
+     the shared 34px icon axis. */
+  padding-left: calc(var(--ff-row-pad) - 6px);
+  border-radius: 9px;
   text-decoration: none;
   color: inherit;
 }
-.ff-brand-link:focus-visible,
-.ff-toggle:focus-visible,
-.ff-brand-rail:focus-visible,
-.ff-drawer-close:focus-visible,
-.ff-drawer-brand:focus-visible {
-  outline: 2px solid var(--ff-mint);
-  outline-offset: 2px;
-}
 
-.ff-mark {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  border-radius: 9999px;
-  background: radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 62%);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 16px -10px rgba(0, 0, 0, 0.8);
-  overflow: hidden;
+/* The real logo artwork, never stretched: height is fixed, width follows. */
+.ff-logo {
+  height: 30px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
 }
-.ff-mark--sm { width: 36px; height: 36px; }
-.ff-mark--pro {
-  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.6), 0 0 18px -2px rgba(251, 191, 36, 0.35);
-}
-
-.ff-brand-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  overflow: hidden;
-  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
-}
-.ff-wordmark {
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  color: #f2fffb;
-  white-space: nowrap;
-}
-.ff-subtitle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 9.5px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: rgba(147, 183, 175, 0.86);
-  white-space: nowrap;
-  overflow: hidden;
-}
-.ff-subtitle-text { overflow: hidden; text-overflow: ellipsis; }
-.ff-subtitle-pro { color: #fbbf24; font-weight: 800; flex: 0 0 auto; }
 
 .ff-toggle {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  color: rgba(147, 183, 175, 0.9);
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  color: var(--ff-icon);
   background: transparent;
-  transition: background-color 160ms ease, color 160ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
-.ff-toggle:hover { background: rgba(255, 255, 255, 0.06); color: var(--ff-ink); }
+.ff-toggle:hover { background: var(--ff-hover); color: var(--ff-text); }
 
+/* Rail brand control: the emblem alone, centred on the same axis as the icons. */
 .ff-brand-rail {
-  position: relative;
   display: none;
   place-items: center;
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  border-radius: 9999px;
+  width: 40px;
+  height: 40px;
+  margin-inline: auto;
+  border-radius: 9px;
   background: transparent;
+  transition: background-color 150ms ease;
 }
-.ff-brand-rail-glyph {
-  position: absolute;
-  inset: 2px;
-  display: grid;
-  place-items: center;
-  border-radius: 9999px;
-  opacity: 0;
-  color: var(--ff-mint);
-  background: rgba(6, 42, 38, 0.82);
-  transition: opacity 140ms ease;
+.ff-brand-rail:hover { background: var(--ff-hover); }
+
+.ff-mark {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  user-select: none;
 }
-.ff-brand-rail:hover .ff-brand-rail-glyph,
-.ff-brand-rail:focus-visible .ff-brand-rail-glyph { opacity: 1; }
+.ff-brand-rail .ff-mark { width: 30px; height: 30px; }
 
-/* ── Add-transaction CTA ─────────────────────────────────────────────────── */
+.ff-brand-link:focus-visible,
+.ff-toggle:focus-visible,
+.ff-brand-rail:focus-visible,
+.ff-drawer-close:focus-visible,
+.ff-drawer-brand:focus-visible {
+  outline: 2px solid var(--ff-primary);
+  outline-offset: 2px;
+}
 
-.ff-cta-wrap { flex: 0 0 auto; padding: 4px 0 10px; }
+/* ── Primary Add action ──────────────────────────────────────────────────── */
+
+.ff-cta-wrap { flex: 0 0 auto; padding: 2px 0 4px; }
 
 .ff-cta {
-  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 44px;
+  gap: 8px;
+  height: 38px;
   padding: 0 12px;
-  border-radius: 12px;
+  border-radius: 9px;
   overflow: hidden;
   white-space: nowrap;
-  font-size: 13.5px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: -0.005em;
   text-decoration: none;
-  color: #052b26;
-  background: linear-gradient(135deg, #8ff0d6 0%, #62ddbb 55%, #4fd1ac 100%);
-  box-shadow: 0 10px 22px -16px rgba(20, 184, 166, 1), inset 0 1px 0 rgba(255, 255, 255, 0.34);
-  transition: filter 160ms ease, box-shadow 160ms ease;
+  color: #ffffff;
+  background: var(--ff-primary);
+  transition: background-color 150ms ease;
 }
-.ff-cta:hover { filter: brightness(1.04); box-shadow: 0 12px 24px -14px rgba(20, 184, 166, 1), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
-.ff-cta:focus-visible { outline: 2px solid #e9f6f2; outline-offset: 2px; }
+.ff-cta:hover { background: var(--ff-primary-hover); }
+.ff-cta:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: 2px; }
+.ff-cta svg { flex: 0 0 auto; width: 16px; height: 16px; }
 .ff-cta-label {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+  transition: opacity 120ms ease 60ms, transform 160ms var(--ff-ease) 60ms;
 }
 
 /* ── Navigation ──────────────────────────────────────────────────────────── */
@@ -499,9 +469,10 @@ html[data-ff-sidebar="collapsed"] {
 .ff-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex: 1 1 auto;
   min-height: 0;
+  padding: 2px 0 8px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -511,72 +482,65 @@ html[data-ff-sidebar="collapsed"] {
 
 .ff-section-label {
   flex: 0 0 auto;
-  height: 14px;
-  margin: 14px 0 4px;
-  padding: 0 12px;
+  margin: 16px 0 6px;
+  padding: 0 var(--ff-row-pad);
   overflow: hidden;
   font-size: 9.5px;
-  font-weight: 700;
-  line-height: 14px;
-  letter-spacing: 0.13em;
+  font-weight: 600;
+  line-height: 12px;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: rgba(147, 183, 175, 0.85);
-  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+  color: var(--ff-label);
+  transition: opacity 120ms ease 60ms, transform 160ms var(--ff-ease) 60ms;
 }
 
 .ff-nav-row {
-  position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   flex: 0 0 auto;
-  height: var(--ff-nav-row-h);
-  padding: 0 12px;
-  border-radius: 11px;
+  height: var(--ff-row-h);
+  padding: 0 var(--ff-row-pad);
+  border-radius: 10px;
   overflow: hidden;
   white-space: nowrap;
   font-size: 13.5px;
   font-weight: 500;
   letter-spacing: -0.005em;
   text-decoration: none;
-  color: var(--ff-ink-dim);
-  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  color: var(--ff-muted);
+  transition: background-color 150ms ease, color 150ms ease;
 }
-.ff-nav-row:hover { background: rgba(255, 255, 255, 0.06); color: var(--ff-ink); }
-.ff-nav-row:focus-visible { outline: 2px solid var(--ff-mint); outline-offset: 2px; }
+.ff-nav-row:hover { background: var(--ff-hover); color: var(--ff-text); }
+.ff-nav-row:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: 2px; }
 
+.ff-nav-icon {
+  flex: 0 0 auto;
+  width: var(--ff-icon-px);
+  height: var(--ff-icon-px);
+  color: var(--ff-icon);
+  transition: color 150ms ease;
+}
+.ff-nav-row:hover .ff-nav-icon { color: var(--ff-text); }
+
+/* Active: a pale teal fill plus the brand teal — never a heavy dark block. */
 .ff-nav-row--active,
 .ff-nav-row--active:hover {
-  background: rgba(114, 226, 191, 0.12);
-  color: #f4fffb;
+  background: var(--ff-active-bg);
+  color: var(--ff-active-fg);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(114, 226, 191, 0.16);
 }
-.ff-nav-row--active .ff-nav-icon { color: var(--ff-mint); }
-
-.ff-nav-bar {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 3px;
-  height: 18px;
-  border-radius: 0 3px 3px 0;
-  background: var(--ff-mint);
-  opacity: 0;
-  transform: translateY(-50%);
-  transition: opacity 160ms ease;
-}
-.ff-nav-row--active .ff-nav-bar { opacity: 1; }
-
-.ff-nav-icon { flex: 0 0 auto; width: 20px; height: 20px; color: inherit; }
+.ff-nav-row--active:hover { background: var(--ff-active-bg-hover); }
+.ff-nav-row--active .ff-nav-icon,
+.ff-nav-row--active:hover .ff-nav-icon { color: var(--ff-active-fg); }
 
 .ff-nav-label {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+  transition: opacity 120ms ease 60ms, transform 160ms var(--ff-ease) 60ms;
 }
 
 /* ── Account footer ──────────────────────────────────────────────────────── */
@@ -584,8 +548,8 @@ html[data-ff-sidebar="collapsed"] {
 .ff-foot {
   flex: 0 0 auto;
   margin-top: auto;
-  padding: 8px 0 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 10px 0 12px;
+  border-top: 1px solid var(--ff-line);
 }
 
 .ff-account { position: relative; }
@@ -595,25 +559,25 @@ html[data-ff-sidebar="collapsed"] {
   align-items: center;
   gap: 10px;
   width: 100%;
-  height: 48px;
-  padding: 0 6px;
-  border-radius: 12px;
+  height: 44px;
+  padding: 0 8px;
+  border-radius: 10px;
   overflow: hidden;
   background: transparent;
-  color: var(--ff-ink);
+  color: var(--ff-text);
   text-align: left;
-  transition: background-color 160ms ease;
+  transition: background-color 150ms ease;
 }
-.ff-profile:hover { background: rgba(255, 255, 255, 0.06); }
-.ff-profile:focus-visible { outline: 2px solid var(--ff-mint); outline-offset: 2px; }
+.ff-profile:hover { background: var(--ff-hover); }
+.ff-profile:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: 2px; }
 
 .ff-profile-name {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 1px;
   flex: 1 1 auto;
   min-width: 0;
-  transition: opacity 140ms ease 70ms, transform 160ms var(--ff-ease) 70ms;
+  transition: opacity 120ms ease 60ms, transform 160ms var(--ff-ease) 60ms;
 }
 .ff-profile-name-text {
   overflow: hidden;
@@ -621,35 +585,38 @@ html[data-ff-sidebar="collapsed"] {
   white-space: nowrap;
   font-size: 13px;
   font-weight: 500;
-  color: var(--ff-ink);
+  line-height: 1.25;
+  color: var(--ff-text);
 }
-.ff-profile-pro {
-  flex: 0 0 auto;
-  padding: 1px 5px;
-  border-radius: 5px;
-  font-size: 8.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #0b1f1c;
-  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+.ff-profile-plan {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--ff-label);
 }
+.ff-profile-plan--pro { color: var(--ff-active-fg); }
+
 .ff-profile-caret {
   flex: 0 0 auto;
-  opacity: 0.55;
-  transition: transform 160ms var(--ff-ease), opacity 160ms ease;
+  color: var(--ff-label);
+  transition: transform 160ms var(--ff-ease), opacity 120ms ease;
 }
-.ff-profile-caret.is-open { transform: rotate(180deg); opacity: 0.95; }
+.ff-profile-caret.is-open { transform: rotate(180deg); }
 
 .ff-profile-skeleton {
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 9999px;
-  background: rgba(114, 226, 191, 0.22);
+  background: var(--ff-hover);
   animation: ff-pulse 1.4s ease-in-out infinite;
 }
-.ff-profile-skeleton--text { width: 84px; height: 10px; border-radius: 5px; }
-@keyframes ff-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.ff-profile-skeleton--text { width: 78px; height: 9px; border-radius: 5px; }
+@keyframes ff-pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
 
 .ff-profile-pop {
   position: absolute;
@@ -657,129 +624,111 @@ html[data-ff-sidebar="collapsed"] {
   right: 0;
   bottom: calc(100% + 8px);
   z-index: 60;
-  padding: 6px;
-  border-radius: 14px;
+  padding: 5px;
+  border-radius: 12px;
   background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 20px 48px -20px rgba(6, 30, 28, 0.6), 0 2px 10px rgba(6, 30, 28, 0.08);
+  border: 1px solid var(--ff-line);
+  box-shadow: 0 16px 34px -18px rgba(23, 43, 42, 0.28), 0 1px 3px rgba(23, 43, 42, 0.05);
   overflow: hidden;
 }
 .ff-profile-pop-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   width: 100%;
-  padding: 10px;
-  border-radius: 9px;
+  padding: 9px;
+  border-radius: 8px;
   background: transparent;
   font-size: 13px;
   font-weight: 500;
-  color: #334155;
+  color: #3c4f4c;
   text-align: left;
   text-decoration: none;
   transition: background-color 120ms ease, color 120ms ease;
 }
-.ff-profile-pop-item:hover { background: #f1f5f9; color: #0f172a; }
-.ff-profile-pop-item:focus-visible { outline: 2px solid #0f766e; outline-offset: -2px; }
-.ff-profile-pop-item--danger { color: #dc2626; }
-.ff-profile-pop-item--danger:hover { background: #fef2f2; color: #b91c1c; }
+.ff-profile-pop-item:hover { background: var(--ff-hover); color: var(--ff-text); }
+.ff-profile-pop-item:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: -2px; }
+.ff-profile-pop-item--danger { color: #c0392b; }
+.ff-profile-pop-item--danger:hover { background: #fdf2f1; color: #a5301f; }
 
 /* ── Collapsed rail ──────────────────────────────────────────────────────── */
 
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-brand-link,
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-toggle { display: none; }
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-brand-rail { display: grid; }
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-head { justify-content: center; }
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-head { justify-content: center; padding-bottom: 6px; }
 
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-brand-text,
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-nav-label,
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta-label,
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-name,
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-section-label {
-  opacity: 0;
-  transform: translateX(-4px);
-  transition-duration: 110ms;
-  transition-delay: 0s;
-}
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-caret { opacity: 0; transition-duration: 110ms; transition-delay: 0s; }
-
-/* Labels leave the flow instead of just fading: the row keeps a 44px content
-   box, so the icon stays optically centred on x=26 in both states and the rail
-   never looks nudged to one side. */
+/* Labels leave the flow rather than only fading: the row keeps a 40px content
+   box, so the icon stays optically centred on the 34px axis. */
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-nav-label,
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta-label,
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-name {
   position: absolute;
-  left: 40px;
+  left: 36px;
   right: 0;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition-duration: 100ms;
+  transition-delay: 0s;
+  pointer-events: none;
 }
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-caret {
   position: absolute;
-  right: 4px;
+  opacity: 0;
+  transition-duration: 100ms;
+  transition-delay: 0s;
+}
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-section-label {
+  height: 0;
+  margin: 10px 0 0;
+  padding: 0;
+  opacity: 0;
+  transition-duration: 100ms;
+  transition-delay: 0s;
 }
 
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-nav-row,
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta {
+[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile {
   justify-content: center;
   gap: 0;
   padding: 0;
 }
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta {
-  width: 44px;
-  margin-inline: auto;
-  background: rgba(114, 226, 191, 0.14);
-  color: var(--ff-mint);
-  box-shadow: inset 0 0 0 1px rgba(114, 226, 191, 0.22);
-}
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-cta:hover {
-  background: rgba(114, 226, 191, 0.2);
-  filter: none;
-}
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile {
   justify-content: center;
+  gap: 0;
+  width: 40px;
+  height: 38px;
+  margin-inline: auto;
   padding: 0;
 }
-
-/* A hairline replaces each section title so the rail keeps its grouping
-   without the invisible-label gap reading as a stray hole. */
-[data-ff-sidebar="collapsed"] .ff-sidebar .ff-section-label::after {
-  content: "";
-  display: block;
-  width: 20px;
-  height: 1px;
-  margin: 6px auto 0;
-  background: rgba(255, 255, 255, 0.14);
-}
-
 [data-ff-sidebar="collapsed"] .ff-sidebar .ff-profile-pop {
-  left: calc(100% + 10px);
+  left: calc(100% + 8px);
   right: auto;
   bottom: 0;
-  width: 216px;
+  width: 208px;
 }
 
-/* ── Tooltip (portalled, so the scrolling nav can never clip it) ─────────── */
+/* ── Tooltip (portalled so the scrolling nav can never clip it) ──────────── */
 
 .ff-tooltip {
   z-index: 70;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(114, 226, 191, 0.22);
-  background: #0b3c38;
-  color: var(--ff-ink);
-  font-size: 12px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: #172b2a;
+  color: #f8faf9;
+  font-size: 11.5px;
   font-weight: 500;
-  line-height: 1.15;
+  line-height: 1.25;
   letter-spacing: 0.005em;
   white-space: nowrap;
   user-select: none;
-  box-shadow: 0 12px 28px -12px rgba(3, 26, 24, 0.8);
+  box-shadow: 0 8px 18px -10px rgba(23, 43, 42, 0.5);
 }
 .ff-tooltip[data-state="delayed-open"],
-.ff-tooltip[data-state="instant-open"] { animation: ff-tooltip-in 120ms ease-out both; }
+.ff-tooltip[data-state="instant-open"] { animation: ff-tooltip-in 110ms ease-out both; }
 @keyframes ff-tooltip-in { from { opacity: 0; } to { opacity: 1; } }
 
-/* ── Drawer trigger ──────────────────────────────────────────────────────── */
+/* ── Menu trigger (phone / tablet) ───────────────────────────────────────── */
 
 .ff-menu-trigger {
   position: fixed;
@@ -790,15 +739,15 @@ html[data-ff-sidebar="collapsed"] {
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 13px;
-  color: var(--ff-ink);
-  background: linear-gradient(160deg, var(--ff-surface-hi), var(--ff-surface));
-  box-shadow: 0 10px 22px -12px rgba(4, 40, 36, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.09);
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  border-radius: 11px;
+  color: var(--ff-text);
+  background: #ffffff;
+  border: 1px solid var(--ff-line);
+  box-shadow: 0 1px 2px rgba(23, 43, 42, 0.06);
+  transition: background-color 150ms ease, box-shadow 150ms ease;
 }
-.ff-menu-trigger:hover { transform: translateY(-1px); box-shadow: 0 14px 26px -12px rgba(4, 40, 36, 0.75), inset 0 0 0 1px rgba(255, 255, 255, 0.14); }
-.ff-menu-trigger:active { transform: none; }
-.ff-menu-trigger:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+.ff-menu-trigger:hover { background: var(--ff-bg); box-shadow: 0 2px 6px -2px rgba(23, 43, 42, 0.14); }
+.ff-menu-trigger:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: 2px; }
 
 @media (min-width: 900px) {
   .ff-menu-trigger { display: none; }
@@ -815,16 +764,16 @@ html[data-ff-sidebar="collapsed"] {
   }
 }
 
-/* ── Mobile / tablet drawer (Radix Dialog) ───────────────────────────────── */
+/* ── Overlay drawer (phone / tablet portrait) ────────────────────────────── */
 
 .ff-drawer-overlay {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(3, 22, 20, 0.46);
+  background: rgba(19, 38, 36, 0.3);
 }
-.ff-drawer-overlay[data-state="open"] { animation: ff-fade-in 240ms ease both; }
-.ff-drawer-overlay[data-state="closed"] { animation: ff-fade-out 200ms ease both; }
+.ff-drawer-overlay[data-state="open"] { animation: ff-fade-in 220ms ease both; }
+.ff-drawer-overlay[data-state="closed"] { animation: ff-fade-out 180ms ease both; }
 @keyframes ff-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ff-fade-out { from { opacity: 1; } to { opacity: 0; } }
 
@@ -835,90 +784,94 @@ html[data-ff-sidebar="collapsed"] {
   z-index: 61;
   display: flex;
   flex-direction: column;
-  width: min(288px, calc(100vw - 48px));
+  width: min(280px, calc(100vw - 48px));
   height: 100dvh;
   max-height: 100dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: env(safe-area-inset-top) 14px calc(14px + env(safe-area-inset-bottom));
-  color: var(--ff-ink);
+  padding: env(safe-area-inset-top) var(--ff-pad) calc(12px + env(safe-area-inset-bottom));
+  background: #ffffff;
   border-right: 1px solid var(--ff-line);
-  box-shadow: 28px 0 70px -34px rgba(2, 20, 18, 0.85);
-  background-image:
-    radial-gradient(120% 60% at 0% 0%, rgba(114, 226, 191, 0.09) 0%, rgba(114, 226, 191, 0) 58%),
-    linear-gradient(178deg, var(--ff-surface-hi) 0%, var(--ff-surface) 46%, #062a28 100%);
+  box-shadow: 0 24px 60px -32px rgba(23, 43, 42, 0.32);
 }
 .ff-drawer[data-state="open"] { animation: ff-drawer-in var(--ff-dur) var(--ff-ease) both; }
-.ff-drawer[data-state="closed"] { animation: ff-drawer-out 210ms var(--ff-ease) both; }
+.ff-drawer[data-state="closed"] { animation: ff-drawer-out 190ms var(--ff-ease) both; }
 @keyframes ff-drawer-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 @keyframes ff-drawer-out { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
 .ff-drawer-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 0 0 auto;
-  padding: 12px 0;
+  padding: 12px 0 10px;
 }
 .ff-drawer-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
   flex: 1 1 auto;
   min-width: 0;
-  height: 44px;
-  border-radius: 12px;
+  height: 40px;
+  /* Optical alignment: the lockup's emblem is 29px wide, wider than the 18px
+     nav glyphs, so it is pulled left until its centre — not its edge — lands on
+     the shared 34px icon axis. */
+  padding-left: calc(var(--ff-row-pad) - 6px);
+  border-radius: 9px;
   text-decoration: none;
   color: inherit;
 }
-.ff-drawer-brand-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
 .ff-drawer-close {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  color: rgba(147, 183, 175, 0.9);
-  background: rgba(255, 255, 255, 0.05);
-  transition: background-color 160ms ease, color 160ms ease;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  color: var(--ff-icon);
+  background: transparent;
+  transition: background-color 150ms ease, color 150ms ease;
 }
-.ff-drawer-close:hover { background: rgba(255, 255, 255, 0.1); color: var(--ff-ink); }
+.ff-drawer-close:hover { background: var(--ff-hover); color: var(--ff-text); }
 
-.ff-drawer .ff-nav { flex: 0 0 auto; overflow: visible; }
+.ff-drawer .ff-nav { flex: 0 0 auto; overflow: visible; padding-bottom: 4px; }
+/* Touch surfaces get the full 44px in the drawer; the desktop panel keeps the
+   tighter 42px rhythm, which is driven by a pointer, not a thumb. */
+.ff-drawer .ff-nav-row { height: 44px; }
+.ff-drawer .ff-cta { height: 44px; }
+.ff-drawer .ff-drawer-close { width: 44px; height: 44px; }
 .ff-drawer .ff-section-label { margin-top: 18px; }
-.ff-drawer .ff-foot { padding-bottom: 4px; }
+.ff-drawer .ff-foot { padding-bottom: 2px; }
 
-/* Drawer account block: actions are laid out in the flow rather than in a
-   nested popover, so they never fight the dialog's Escape handling, never get
-   clipped by the scroll container, and keep 44px touch rows. */
+/* Drawer account block: actions sit in the flow instead of a nested popover, so
+   they never fight the dialog's Escape handling or get clipped while scrolling. */
 .ff-inline-user {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 48px;
-  padding: 0 6px;
+  height: 46px;
+  padding: 0 8px;
 }
-.ff-inline-identity { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ff-inline-identity { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .ff-inline-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
   font-weight: 500;
-  color: var(--ff-ink);
+  line-height: 1.25;
+  color: var(--ff-text);
 }
-.ff-inline-pro {
-  flex: 0 0 auto;
-  padding: 1px 5px;
-  border-radius: 5px;
-  font-size: 8.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #0b1f1c;
-  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+.ff-inline-plan {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ff-label);
 }
-.ff-inline-actions { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+.ff-inline-plan--pro { color: var(--ff-active-fg); }
+.ff-inline-actions { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
 .ff-inline-action {
   display: flex;
   align-items: center;
@@ -926,33 +879,35 @@ html[data-ff-sidebar="collapsed"] {
   width: 100%;
   height: 44px;
   padding: 0 10px;
-  border-radius: 10px;
+  border-radius: 9px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--ff-ink-dim);
+  color: var(--ff-muted);
   text-align: left;
   text-decoration: none;
   background: transparent;
-  transition: background-color 160ms ease, color 160ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
-.ff-inline-action:hover { background: rgba(255, 255, 255, 0.06); color: var(--ff-ink); }
-.ff-inline-action:focus-visible { outline: 2px solid var(--ff-mint); outline-offset: 2px; }
-.ff-inline-action--danger { color: #fca5a5; }
-.ff-inline-action--danger:hover { background: rgba(248, 113, 113, 0.12); color: #fecaca; }
+.ff-inline-action svg { flex: 0 0 auto; color: var(--ff-icon); }
+.ff-inline-action:hover { background: var(--ff-hover); color: var(--ff-text); }
+.ff-inline-action:hover svg { color: var(--ff-text); }
+.ff-inline-action:focus-visible { outline: 2px solid var(--ff-primary); outline-offset: 2px; }
+.ff-inline-action--danger { color: #c0392b; }
+.ff-inline-action--danger svg { color: #c0392b; }
+.ff-inline-action--danger:hover { background: #fdf2f1; color: #a5301f; }
+.ff-inline-action--danger:hover svg { color: #a5301f; }
 
 /* ── Short / landscape viewports ─────────────────────────────────────────── */
 
-@media (min-width: 900px) and (max-height: 640px) {
-  .ff-sidebar .ff-head { padding-block: 8px; }
-  .ff-sidebar .ff-cta-wrap { padding: 2px 0 8px; }
-  .ff-sidebar .ff-section-label { margin-top: 8px; }
-  .ff-sidebar .ff-foot { padding-bottom: 10px; }
-  .ff-sidebar .ff-profile { height: 44px; }
+@media (min-width: 900px) and (max-height: 660px) {
+  .ff-sidebar .ff-head { padding-block: 8px 6px; }
+  .ff-sidebar .ff-cta-wrap { padding-block: 0 4px; }
+  .ff-sidebar .ff-section-label { margin-top: 10px; }
+  .ff-sidebar .ff-foot { padding-block: 8px 10px; }
 }
 
 @media (max-height: 560px) {
-  .ff-drawer .ff-head { padding-block: 8px; }
-  .ff-drawer .ff-cta-wrap { padding-bottom: 8px; }
+  .ff-drawer .ff-head { padding-block: 8px 6px; }
   .ff-drawer .ff-section-label { margin-top: 10px; }
 }
 
@@ -961,18 +916,20 @@ html[data-ff-sidebar="collapsed"] {
 @media (prefers-reduced-motion: reduce) {
   .ff-sidebar,
   .ff-main,
-  .ff-brand-text,
   .ff-nav-label,
   .ff-cta-label,
   .ff-profile-name,
   .ff-profile-caret,
   .ff-section-label,
-  .ff-brand-rail-glyph,
   .ff-nav-row,
-  .ff-nav-bar,
+  .ff-nav-icon,
   .ff-profile,
   .ff-toggle,
-  .ff-menu-trigger {
+  .ff-brand-rail,
+  .ff-menu-trigger,
+  .ff-cta,
+  .ff-drawer-close,
+  .ff-inline-action {
     transition-duration: 1ms !important;
     transition-delay: 0s !important;
   }

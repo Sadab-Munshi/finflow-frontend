@@ -14,24 +14,25 @@ interface MobileNavDrawerProps {
   onOpenChange: (open: boolean) => void
   name: string
   avatarUrl: string
-  isPro: boolean
   planName: string
+  isPro: boolean
   loading: boolean
   onSignOut: () => void | Promise<void>
 }
 
 /**
  * Phone / tablet navigation. Built on Radix Dialog so focus trapping, Escape,
- * focus restore, `aria-modal`, and background scroll locking come from an
- * already-installed dependency instead of hand-rolled listeners.
+ * focus restore, `aria-modal` and background scroll locking come from a
+ * dependency that is already installed, and it mirrors the desktop panel's
+ * light surface exactly so the two never feel like different products.
  */
 export default function MobileNavDrawer({
   open,
   onOpenChange,
   name,
   avatarUrl,
-  isPro,
   planName,
+  isPro,
   loading,
   onSignOut,
 }: MobileNavDrawerProps) {
@@ -57,36 +58,26 @@ export default function MobileNavDrawer({
 
           <div className="ff-drawer-head">
             <Link href="/dashboard" className="ff-drawer-brand" onClick={() => onOpenChange(false)}>
-              <span className="ff-mark ff-mark--sm">
-                <Image
-                  src="/images/finflow-mark.png"
-                  alt=""
-                  width={32}
-                  height={32}
-                  sizes="32px"
-                  className="h-8 w-8 select-none"
-                  draggable={false}
-                />
-              </span>
-              <span className="ff-drawer-brand-text">
-                <span className="ff-wordmark">FinFlow</span>
-                {planName && (
-                  <span className="ff-subtitle">
-                    <span className="ff-subtitle-text">{planName}</span>
-                  </span>
-                )}
-              </span>
+              <Image
+                src="/images/finflow-logo-tight.png"
+                alt="FinFlow"
+                width={97}
+                height={30}
+                sizes="140px"
+                className="ff-logo"
+                draggable={false}
+              />
             </Link>
             <Dialog.Close asChild>
               <button type="button" className="ff-drawer-close" aria-label={t('closeNav')}>
-                <X size={18} strokeWidth={2} aria-hidden="true" />
+                <X size={17} strokeWidth={2} aria-hidden="true" />
               </button>
             </Dialog.Close>
           </div>
 
           <div className="ff-cta-wrap">
             <Link href="/add?tab=manual" className="ff-cta" onClick={() => onOpenChange(false)}>
-              <Plus size={18} strokeWidth={2.1} aria-hidden="true" />
+              <Plus strokeWidth={2.1} aria-hidden="true" />
               <span className="ff-cta-label">{t('add')}</span>
             </Link>
           </div>
@@ -103,6 +94,7 @@ export default function MobileNavDrawer({
               variant="inline"
               name={name}
               avatarUrl={avatarUrl}
+              planName={planName}
               isPro={isPro}
               loading={loading}
               onSignOut={onSignOut}

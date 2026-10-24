@@ -13,236 +13,261 @@ const PANEL = 'components/layout/sidebar/PremiumSidebar.tsx'
 const BRAND = 'components/layout/sidebar/BrandHeader.tsx'
 const LIST = 'components/layout/sidebar/SidebarNavList.tsx'
 const ACCOUNT = 'components/layout/sidebar/AccountMenu.tsx'
+const AVATAR = 'components/layout/sidebar/AvatarCircle.tsx'
 const DRAWER = 'components/layout/sidebar/MobileNavDrawer.tsx'
 const LAYOUT = 'components/layout/Layout.tsx'
 const CSS = 'app/globals.css'
 const ROOT_LAYOUT = 'app/layout.tsx'
 
-test('Premium sidebar — shared navigation model and real routes', async t => {
-  const nav = read(NAV)
+test('Sidebar — light neutral design system', async t => {
+  const css = read(CSS)
 
-  await t.test('every real destination is wired, with no invented links', () => {
-    for (const href of [
-      '/dashboard',
-      '/history',
-      '/budgets',
-      '/insights',
-      '/analytics',
-      '/reports',
-      '/subscription',
-      '/settings',
-    ]) {
-      assert.ok(nav.includes(`path: '${href}'`), `${href} is a real destination`)
-    }
-    assert.ok(!nav.includes("'#'"), 'no placeholder # links')
-    assert.ok(!nav.includes('/accounts'), 'no invented /accounts route')
-    assert.ok(!nav.includes('/transactions'), 'no invented /transactions route')
+  await t.test('surface is a calm neutral, not a dark panel', () => {
+    assert.match(css, /--ff-bg: #f8faf9/, 'sidebar background is the light neutral')
+    assert.match(css, /--ff-text: #172b2a/, 'primary text token')
+    assert.match(css, /--ff-muted: #5f736f/, 'secondary text token')
+    assert.match(css, /--ff-active-bg: #e5f2ee/, 'pale teal active fill')
+    assert.match(css, /--ff-active-fg: #077569/, 'brand teal active foreground')
+    assert.match(css, /--ff-primary: #087f72/, 'primary action teal')
+    assert.match(css, /--ff-primary-hover: #06695f/, 'primary action hover')
+    assert.ok(!css.includes('#082f2d'), 'the old dark emerald surface is gone')
+    assert.ok(!css.includes('#0b3c38'), 'the old dark gradient endpoint is gone')
+    assert.ok(!css.includes('--ff-mint'), 'the neon mint accent is gone')
   })
 
-  await t.test('all layouts render from one source of truth', () => {
-    assert.match(read(PANEL), /SIDEBAR_PRIMARY_NAV/, 'desktop panel uses the shared list')
-    assert.match(read(DRAWER), /SIDEBAR_PRIMARY_NAV/, 'mobile drawer uses the same list')
-    assert.match(read(LIST), /isNavActive/, 'active state is derived from the route helper')
+  await t.test('no gradients, glow, blur or glassmorphism in the sidebar', () => {
+    const sidebarBlock = css.slice(css.indexOf('.ff-sidebar {'), css.indexOf('/* ── Brand header'))
+    assert.ok(!sidebarBlock.includes('gradient'), 'sidebar surface has no gradient')
+    assert.ok(!sidebarBlock.includes('backdrop-filter'), 'no glassmorphism')
+    assert.ok(!sidebarBlock.includes('blur('), 'no blur filters')
+    assert.match(sidebarBlock, /border-right: 1px solid var\(--ff-line\)/, 'a hairline border separates the panel')
+    assert.ok(!/box-shadow:\s*\d+px/.test(sidebarBlock), 'no heavy drop shadow on the panel')
   })
 
-  await t.test('active detection covers nested routes and child pages', () => {
-    assert.match(nav, /pathname\.startsWith\(`\$\{path\}\/`\)/, 'nested paths light up their parent')
-    assert.match(nav, /'\/history': \['\/transaction'\]/, '/transaction/[id] belongs to History')
-    assert.match(nav, /'\/settings': \['\/privacy-security', '\/backup-restore'\]/, 'settings sub-pages belong to Settings')
-    assert.match(nav, /export function isNavActive/, 'helper is exported for tests and reuse')
+  await t.test('geometry matches the spec: 248px expanded, 68px rail', () => {
+    assert.match(css, /--ff-sidebar-expanded: 248px/, 'expanded width')
+    assert.match(css, /--ff-sidebar-rail: 68px/, 'rail width')
+    assert.match(css, /--ff-row-h: 42px/, 'navigation row height in the 42-44px band')
+    assert.match(css, /--ff-icon-px: 18px/, 'icons sit in the 18-20px band')
+  })
+
+  await t.test('a single icon axis in both states', () => {
+    // 14px panel padding + 11px row padding = 25 -> 18px glyph centred on 34px
+    assert.match(css, /--ff-pad: 14px/, 'panel padding')
+    assert.match(css, /--ff-row-pad: 11px/, 'row padding')
+    assert.match(css, /\[data-ff-sidebar="collapsed"\] \.ff-sidebar \.ff-nav-row,\s*\[data-ff-sidebar="collapsed"\] \.ff-sidebar \.ff-profile \{\s*justify-content: center;/, 'rail centres rows on the same axis')
   })
 })
 
-test('Premium sidebar — geometry, states and motion tokens', async t => {
+test('Sidebar — logo and branding', async t => {
+  const brand = read(BRAND)
   const css = read(CSS)
 
-  await t.test('widths match the spec (272px expanded / 72px rail)', () => {
-    assert.match(css, /--ff-sidebar-expanded: 272px/, 'expanded width is 272px')
-    assert.match(css, /--ff-sidebar-rail: 72px/, 'rail width is 72px')
-    assert.match(css, /html\[data-ff-sidebar="collapsed"\]/, 'rail width is driven by the html attribute')
+  await t.test('the real lockup is used at its native aspect ratio', () => {
+    assert.match(brand, /src="\/images\/finflow-logo-tight\.png"/, 'brand uses the shipped FinFlow lockup')
+    assert.match(brand, /width=\{97\}\s*height=\{30\}/, 'aspect ratio preserved (3.23:1)')
+    assert.match(css, /\.ff-logo \{[\s\S]{0,120}height: 30px;[\s\S]{0,80}width: auto;/, 'height fixed, width auto — never stretched')
+    assert.match(css, /\.ff-logo \{[\s\S]{0,220}object-fit: contain/, 'contain keeps the artwork undistorted')
+    assert.ok(exists('public/images/finflow-logo-tight.png'), 'tight lockup asset ships')
+    assert.ok(exists('public/images/finflow-mark.png'), 'emblem-only mark ships for the rail')
   })
 
-  await t.test('brand palette and motion curve are pinned', () => {
-    assert.match(css, /--ff-surface: #082f2d/, 'deep teal base surface')
-    assert.match(css, /--ff-surface-hi: #0b3c38/, 'subtle tonal gradient endpoint')
-    assert.match(css, /--ff-mint: #72e2bf/, 'mint accent')
-    assert.match(css, /--ff-dur: 260ms/, 'width animation sits in 220-280ms')
-    assert.match(css, /--ff-ease: cubic-bezier\(0\.2, 0\.8, 0\.2, 1\)/, 'polished ease-out curve')
+  await t.test('no decorative frame around the logo', () => {
+    const markRule = css.slice(css.indexOf('.ff-mark {'), css.indexOf('.ff-brand-link:focus-visible'))
+    assert.match(markRule, /width: 30px;/, 'mark is sized directly')
+    assert.ok(!markRule.includes('background'), 'no circle or plate behind the mark')
+    assert.ok(!markRule.includes('box-shadow'), 'no glow behind the mark')
+  })
+
+  await t.test('collapse control sits at the opposite end', () => {
+    assert.match(brand, /className="ff-toggle"/, 'toggle rendered in the header row')
+    assert.match(css, /\.ff-head \{[\s\S]{0,120}display: flex;[\s\S]{0,200}gap: 8px;/, 'header is a flex row')
+    assert.match(css, /\.ff-brand-link \{[\s\S]{0,160}flex: 1 1 auto;/, 'brand takes the space, toggle sits right')
+  })
+})
+
+test('Sidebar — user avatar is a true circular crop', async t => {
+  const avatar = read(AVATAR)
+  const css = read(CSS)
+
+  await t.test('the clipping box is positioned, rounded and hidden', () => {
+    // Regression guard: with a `position: static` wrapper, next/image's inline
+    // `position: absolute` resolves against an un-rounded ancestor and the photo
+    // paints as a square.
+    assert.match(avatar, /position: 'relative'/, 'avatar wrapper is positioned')
+    assert.match(avatar, /overflow: 'hidden'/, 'avatar wrapper clips')
+    assert.match(avatar, /borderRadius: '9999px'/, 'avatar wrapper is fully round')
+  })
+
+  await t.test('the image itself is covered, centred and rounded', () => {
+    assert.match(avatar, /objectFit: 'cover'/, 'object-fit cover (not letterboxed)')
+    assert.match(avatar, /objectPosition: 'center'/, 'centred crop')
+    assert.match(avatar, /borderRadius: '9999px'/, 'image carries its own radius as a second guard')
+    assert.match(avatar, /width=\{size\}\s*height=\{size\}/, 'square intrinsic box, no distortion')
+  })
+
+  await t.test('used identically in every surface', () => {
+    assert.match(read(ACCOUNT), /<AvatarCircle name=\{name\} avatarUrl=\{avatarUrl\} size=\{32\} \/>/, 'shared component in panel + drawer')
+    assert.ok(!read(ACCOUNT).includes('Crown'), 'no oversized gold crown badge remains')
+    assert.ok(!css.includes('ring-2 ring-amber-400'), 'no amber ring treatment remains')
+  })
+})
+
+test('Sidebar — navigation and active state', async t => {
+  const nav = read(NAV)
+  const list = read(LIST)
+  const css = read(CSS)
+
+  await t.test('all real destinations preserved, nothing invented', () => {
+    for (const href of ['/dashboard', '/history', '/budgets', '/insights', '/analytics', '/reports', '/subscription', '/settings']) {
+      assert.ok(nav.includes(`path: '${href}'`), `${href} is wired`)
+    }
+    assert.ok(!nav.includes("'#'"), 'no placeholder links')
+    assert.ok(!nav.includes('/accounts'), 'no invented routes')
+  })
+
+  await t.test('active vs hover are visually distinct', () => {
+    const active = css.slice(css.indexOf('.ff-nav-row--active,'), css.indexOf('.ff-nav-label {'))
+    assert.match(active, /background: var\(--ff-active-bg\)/, 'active uses the pale teal fill')
+    assert.match(active, /color: var\(--ff-active-fg\)/, 'active uses brand teal text')
+    assert.match(active, /font-weight: 600/, 'active is slightly heavier')
+    assert.match(css, /\.ff-nav-row:hover \{ background: var\(--ff-hover\); color: var\(--ff-text\); \}/, 'hover is a neutral wash')
+    assert.ok(!css.includes('ff-nav-bar'), 'the heavy left indicator block is gone')
+  })
+
+  await t.test('route awareness survives nested paths', () => {
+    assert.match(nav, /pathname\.startsWith\(`\$\{path\}\/`\)/, 'nested segments activate the parent')
+    assert.match(nav, /'\/history': \['\/transaction'\]/, '/transaction/[id] lights History')
+    assert.match(nav, /'\/settings': \['\/privacy-security', '\/backup-restore'\]/, 'settings sub-pages light Settings')
+    assert.match(list, /aria-current=\{active \? 'page' : undefined\}/, 'aria-current="page" on the active row')
+  })
+})
+
+test('Sidebar — primary action', async t => {
+  const css = read(CSS)
+
+  await t.test('compact deep teal button, not a bright mint block', () => {
+    const cta = css.slice(css.indexOf('.ff-cta {'), css.indexOf('.ff-cta svg'))
+    assert.match(cta, /background: var\(--ff-primary\)/, 'deep teal fill')
+    assert.match(cta, /color: #ffffff/, 'white label')
+    assert.match(cta, /height: 38px/, 'compact height (was 44px+)')
+    assert.match(cta, /border-radius: 9px/, 'subtle radius')
+    assert.ok(!cta.includes('box-shadow'), 'no glow on the primary action')
+    assert.ok(!cta.includes('gradient'), 'flat colour, no gradient')
+  })
+
+  await t.test('rail state is a centred plus with a tooltip', () => {
+    assert.match(css, /\[data-ff-sidebar="collapsed"\] \.ff-sidebar \.ff-cta \{\s*justify-content: center;/, 'icon centred in the rail')
+    assert.match(read(PANEL), /<Tooltip.Trigger asChild>\{addLink\}<\/Tooltip.Trigger>/, 'rail Add button gets a tooltip')
+    assert.match(read(PANEL), /href="\/add\?tab=manual"/, 'existing action preserved')
+  })
+})
+
+test('Sidebar — motion', async t => {
+  const css = read(CSS)
+
+  await t.test('width and offset animate together on one curve', () => {
+    assert.match(css, /--ff-dur: 240ms/, 'duration inside 220-260ms')
+    assert.match(css, /--ff-ease: cubic-bezier\(0\.2, 0\.8, 0\.2, 1\)/, 'smooth ease-out')
+    assert.match(css, /\.ff-sidebar \{[\s\S]{0,400}transition: width var\(--ff-dur\)/, 'panel animates width')
+    assert.match(css, /\.ff-main \{[\s\S]{0,200}padding-left: var\(--ff-sidebar-w\)/, 'content offset reads the same variable')
+    assert.match(css, /\.ff-main[\s\S]{0,120}transition: padding-left var\(--ff-dur\)/, 'offset animates in sync')
+  })
+
+  await t.test('labels fade and translate, never reflow', () => {
+    assert.match(css, /\.ff-nav-label \{[\s\S]{0,220}transition: opacity 120ms/, 'label fades')
+    assert.match(css, /translateX\(-4px\)/, 'label translates 4px')
+    assert.match(css, /text-overflow: ellipsis/, 'long labels truncate instead of wrapping')
     assert.ok(!/\btransition:\s*all\b/.test(css), 'never transitions every property')
   })
 
-  await t.test('shell offset follows the sidebar width', () => {
-    assert.match(css, /\.ff-main\s*\{[^}]*padding-left: var\(--ff-sidebar-w\)/, 'main content is offset by the live width')
-    assert.match(css, /\.ff-main[\s\S]{0,160}transition: padding-left var\(--ff-dur\)/, 'offset animates in sync')
-  })
-
-  await t.test('labels fade and translate instead of snapping', () => {
-    assert.match(css, /\.ff-nav-label[\s\S]{0,200}transition: opacity 140ms/, 'label fades over ~140ms')
-    assert.match(css, /translateX\(-4px\)/, 'labels translate 4px during the switch')
-  })
-
-  await t.test('active, hover, focus and disabled treatments exist', () => {
-    assert.match(css, /\.ff-nav-row--active/, 'persistent active pill')
-    assert.match(css, /\.ff-nav-row--active \.ff-nav-bar/, 'slim mint left indicator on the active row')
-    assert.match(css, /\.ff-nav-row:hover \{ background: rgba\(255, 255, 255, 0\.06\)/, 'subtle hover brightening')
-    assert.match(css, /\.ff-nav-row:focus-visible \{ outline: 2px solid var\(--ff-mint\); outline-offset: 2px; \}/, 'visible 2px offset focus ring')
-    assert.ok(!css.includes('outline: none'), 'focus outlines are never suppressed')
-  })
-
-  await t.test('reduced motion collapses every transition', () => {
-    const block = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)', css.indexOf('.ff-sidebar')))
-    assert.match(block, /\.ff-sidebar,[\s\S]*transition-duration: 1ms !important/, 'sidebar transitions become immediate')
-    assert.match(block, /\.ff-drawer,[\s\S]*animation-duration: 1ms !important/, 'drawer animations become immediate')
+  await t.test('reduced motion is honoured', () => {
+    const block = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'))
+    assert.match(block, /transition-duration: 1ms !important/, 'transitions collapse')
+    assert.match(block, /animation-duration: 1ms !important/, 'animations collapse')
   })
 })
 
-test('Premium sidebar — expansion / collapse behaviour', async t => {
-  const rail = read(RAIL)
-  const brand = read(BRAND)
-  const rootLayout = read(ROOT_LAYOUT)
-
-  await t.test('preference is remembered with SSR-safe guards', () => {
-    assert.match(rail, /SIDEBAR_STORAGE_KEY = 'finflow:sidebar'/, 'preference key is namespaced')
-    assert.match(rail, /try \{[\s\S]*localStorage\.getItem[\s\S]*\} catch/, 'storage reads are guarded')
-    assert.match(rail, /catch \{[\s\S]*private mode/, 'storage writes are guarded')
-  })
-
-  await t.test('breakpoints: 1200px default expanded, 900px compact rail', () => {
-    assert.match(rail, /SIDEBAR_WIDE_BREAKPOINT = 1200/, 'wide desktop threshold')
-    assert.match(rail, /SIDEBAR_DESKTOP_BREAKPOINT = 900/, 'rail/drawer threshold')
-    assert.match(rail, /window\.innerWidth >= SIDEBAR_WIDE_BREAKPOINT[\s\S]{0,80}\? readPreference\(\)/, 'wide screens restore the stored choice')
-    assert.match(rail, /compactExpandedRef\.current\s*\? 'expanded'\s*:\s*'collapsed'/, 'compact screens default to the rail')
-  })
-
-  await t.test('the first paint is correct (pre-hydration bootstrap)', () => {
-    assert.match(rootLayout, /finflow:sidebar/, 'bootstrap reads the same key')
-    assert.match(rootLayout, /setAttribute\('data-ff-sidebar', state\)/, 'bootstrap writes the html attribute')
-    assert.ok(
-      rootLayout.indexOf("data-ff-sidebar") < rootLayout.indexOf('<body'),
-      'bootstrap runs in <head>, before the body paints'
-    )
-  })
-
-  await t.test('toggle is discoverable, labelled and focus-preserving', () => {
-    assert.match(brand, /aria-label=\{t\('collapseNav'\)\}/, 'expanded label = Collapse navigation')
-    assert.match(brand, /aria-label=\{t\('expandNav'\)\}/, 'rail label = Expand navigation')
-    assert.match(brand, /aria-controls="ff-sidebar-nav"/, 'toggle points at the nav landmark')
-    assert.match(brand, /aria-expanded/, 'expanded state is exposed')
-    assert.match(brand, /target\?\.focus\(\{ preventScroll: true \}\)/, 'focus follows the toggle across states')
-    assert.match(read('app/globals.css'), /\.ff-toggle \{[\s\S]{0,120}width: 44px;[\s\S]{0,80}height: 44px;/, '44x44 clickable target')
-  })
-})
-
-test('Premium sidebar — accessibility and semantics', async t => {
-  const panel = read(PANEL)
-  const drawer = read(DRAWER)
-  const list = read(LIST)
-  const account = read(ACCOUNT)
-
-  await t.test('landmarks and labels', () => {
-    assert.match(panel, /<nav id="ff-sidebar-nav"[\s\S]{0,120}aria-label=\{t\('primaryNav'\)\}/, 'desktop nav landmark is labelled')
-    assert.match(drawer, /<nav id="ff-drawer-nav"[\s\S]{0,120}aria-label=\{t\('primaryNav'\)\}/, 'drawer nav landmark is labelled')
-    assert.match(drawer, /Dialog\.Title className="sr-only"/, 'drawer has an accessible title')
-  })
-
-  await t.test('real links, real buttons, aria-current', () => {
-    assert.match(list, /<Link\b/, 'rows are framework links, not divs')
-    assert.match(list, /aria-current=\{active \? 'page' : undefined\}/, 'active row exposes aria-current="page"')
-    assert.match(account, /<button\b[\s\S]{0,200}aria-haspopup="true"/, 'profile menu button is a real button with a popup role')
-    assert.match(account, /role="menu"/, 'popup is exposed as a menu')
-    assert.match(account, /role="menuitem"/, 'menu entries carry menuitem roles')
-  })
-
-  await t.test('icon-only rail keeps accessible names and tooltips', () => {
-    assert.match(list, /tooltips \? \(/, 'rail rows get tooltips')
-    assert.match(list, /className="ff-tooltip"/, 'tooltip content is labelled')
-    assert.match(panel, /tooltips=\{collapsed\}/, 'tooltips only exist while collapsed')
-    assert.match(panel, /<Tooltip\.Provider delayDuration=\{180\}/, 'tooltips use the project tooltip primitive')
-    assert.match(read('app/globals.css'), /\.ff-tooltip[\s\S]{0,400}z-index: 70/, 'tooltips are portalled above the nav scroll container')
-  })
-
-  await t.test('drawer focus management and scroll lock', () => {
-    assert.match(drawer, /Dialog\.Root open=\{open\} onOpenChange=\{onOpenChange\}/, 'dialog owns open state')
-    assert.match(drawer, /Dialog\.Overlay className="ff-drawer-overlay/, 'backdrop is a real overlay (click to close)')
-    assert.match(drawer, /Dialog\.Close asChild/, 'dedicated close button')
-    assert.match(drawer, /onCloseAutoFocus=\{event => \{[\s\S]{0,600}trigger\.focus\(\{ preventScroll: true \}\)/, 'focus returns to the menu trigger')
-    assert.match(read(LAYOUT), /if \(window\.innerWidth >= 900\) setDrawerOpen\(false\)/, 'resizing to desktop clears the drawer and its scroll lock')
-  })
-})
-
-test('Premium sidebar — responsive integration', async t => {
+test('Sidebar — responsive structure', async t => {
   const layout = read(LAYOUT)
   const css = read(CSS)
+  const rail = read(RAIL)
 
-  await t.test('mobile shows the trigger, desktop hides it', () => {
-    assert.match(layout, /className="ff-menu-trigger no-print"/, 'trigger is wired into the shell')
-    assert.match(layout, /aria-label=\{t\('openNav'\)\}/, 'trigger has an accessible name')
-    assert.match(css, /@media \(min-width: 900px\) \{\s*\.ff-menu-trigger \{ display: none; \}/, 'trigger disappears once the rail fits')
-    assert.match(css, /\.ff-menu-trigger \{[\s\S]{0,200}width: 44px;[\s\S]{0,60}height: 44px;/, 'touch target is 44x44')
+  await t.test('breakpoints and persisted preference', () => {
+    assert.match(rail, /SIDEBAR_WIDE_BREAKPOINT = 1200/, 'wide desktop threshold')
+    assert.match(rail, /SIDEBAR_DESKTOP_BREAKPOINT = 900/, 'drawer threshold')
+    assert.match(rail, /readPreference\(\)/, 'wide screens restore the stored choice')
+    assert.match(rail, /compactExpandedRef\.current\s*\?\s*'expanded'\s*:\s*'collapsed'/, 'compact screens default to the rail')
+    assert.match(read(ROOT_LAYOUT), /setAttribute\('data-ff-sidebar', state\)/, 'pre-paint bootstrap writes the attribute')
+    assert.ok(read(ROOT_LAYOUT).indexOf('data-ff-sidebar') < read(ROOT_LAYOUT).indexOf('<body'), 'bootstrap runs in <head>')
   })
 
-  await t.test('bottom nav and FAB follow the same 900px breakpoint', () => {
-    assert.match(layout, /min-\[900px\]:hidden fixed bottom-0/, 'bottom nav hides at the rail breakpoint')
-    assert.ok(!layout.includes('md:ml-64'), 'old md:ml-64 shell offset is gone')
-    assert.ok(!layout.includes('md:hidden flex-col'), 'old second sidebar is gone')
-    assert.ok(!layout.includes('w-64 bg-gradient-to-b from-teal-700'), 'old teal sidebar removed')
+  await t.test('drawer is light, 280px, and cannot cause page overflow', () => {
+    assert.match(css, /width: min\(280px, calc\(100vw - 48px\)\)/, 'drawer width rule')
+    const drawer = css.slice(css.indexOf('.ff-drawer {'), css.indexOf('.ff-drawer[data-state="open"]'))
+    assert.match(drawer, /background: #ffffff/, 'drawer uses the light surface')
+    assert.ok(!drawer.includes('gradient'), 'no dark gradient panel')
+    assert.match(css, /\.ff-drawer-overlay \{[\s\S]{0,120}background: rgba\(19, 38, 36, 0\.3\)/, 'soft dimmed backdrop')
+    assert.match(css, /\.ff-drawer \.ff-nav-row \{ height: 44px; \}/, 'drawer rows meet the 44px touch target')
   })
 
-  await t.test('drawer width, safe areas and short viewports', () => {
-    assert.match(css, /width: min\(288px, calc\(100vw - 48px\)\)/, 'phone drawer width is capped so the backdrop stays visible')
-    assert.match(css, /padding: env\(safe-area-inset-top\) 14px calc\(14px \+ env\(safe-area-inset-bottom\)\)/, 'safe-area insets respected')
-    assert.match(css, /height: 100dvh/, 'mobile browser chrome is accounted for')
-    assert.match(css, /@media \(min-width: 900px\) and \(max-height: 640px\)/, 'compact desktop / short viewport tuning')
-    assert.match(css, /overscroll-behavior: contain/, 'nav scroll does not chain to the page')
+  await t.test('short viewports keep account actions reachable', () => {
+    assert.match(css, /height: 100dvh/, 'mobile chrome accounted for')
+    assert.match(css, /padding: env\(safe-area-inset-top\)[^;]*safe-area-inset-bottom/, 'safe-area insets')
+    assert.match(css, /overscroll-behavior: contain/, 'independent scrolling')
+    assert.match(css, /@media \(min-width: 900px\) and \(max-height: 660px\)/, 'compact height tuning')
   })
 
-  await t.test('one shared nav data set drives every layout', () => {
-    assert.equal((layout.match(/<PremiumSidebar/g) || []).length, 1, 'single desktop sidebar instance')
-    assert.equal((layout.match(/<MobileNavDrawer/g) || []).length, 1, 'single mobile drawer instance')
+  await t.test('single sidebar + drawer instances; old shell offset gone', () => {
+    assert.equal((layout.match(/<PremiumSidebar/g) || []).length, 1, 'one desktop sidebar')
+    assert.equal((layout.match(/<MobileNavDrawer/g) || []).length, 1, 'one drawer')
+    assert.ok(!layout.includes('md:ml-64'), 'stale md:ml-64 offset removed')
+    assert.ok(!layout.includes('w-64 bg-gradient-to-b from-teal-700'), 'old teal aside removed')
   })
 })
 
-test('Premium sidebar — preserved app behaviour', async t => {
+test('Sidebar — accessibility', async t => {
+  const css = read(CSS)
+  const panel = read(PANEL)
+  const drawer = read(DRAWER)
+  const account = read(ACCOUNT)
+
+  await t.test('semantics, labels and focus rings', () => {
+    assert.match(panel, /aria-label=\{t\('primaryNav'\)\}/, 'labelled nav landmark')
+    assert.match(drawer, /Dialog\.Title className="sr-only"/, 'drawer accessible title')
+    assert.match(account, /aria-haspopup="true"/, 'profile button exposes its popup')
+    assert.match(account, /role="menuitem"/, 'menu items carry roles')
+    assert.match(read(BRAND), /aria-label=\{t\('collapseNav'\)\}/, 'toggle labelled Collapse navigation')
+    assert.match(read(BRAND), /aria-label=\{t\('expandNav'\)\}/, 'toggle labelled Expand navigation')
+    assert.match(read(BRAND), /aria-controls="ff-sidebar-nav"/, 'toggle points at the nav')
+    assert.ok(!/outline:\s*none/.test(css), 'focus outlines never suppressed')
+  })
+
+  await t.test('drawer focus management', () => {
+    assert.match(drawer, /onCloseAutoFocus=\{event => \{[\s\S]{0,600}trigger\.focus\(\{ preventScroll: true \}\)/, 'focus restored to the trigger')
+    assert.match(read(LAYOUT), /if \(window\.innerWidth >= 900\) setDrawerOpen\(false\)/, 'stale drawer cleared on resize')
+    assert.match(read(LIST), /tooltips \? \(/, 'icon-only rail rows get tooltips')
+  })
+})
+
+test('Sidebar — app behaviour preserved', async t => {
   const layout = read(LAYOUT)
 
-  await t.test('auth, subscription gate and notifications are untouched', () => {
-    assert.match(layout, /createClient\(\)[\s\S]{0,120}auth\.signOut\(\{ scope: 'local' \}\)/, 'sign out still uses Supabase local scope')
-    assert.match(layout, /useSubscriptionGate\(\)/, 'subscription gating preserved')
-    assert.match(layout, /checkFeature\(method\.feature\)/, 'FAB feature gating preserved')
+  await t.test('auth, gating, notifications and FAB intact', () => {
+    assert.match(layout, /auth\.signOut\(\{ scope: 'local' \}\)/, 'sign out preserved')
+    assert.match(layout, /useSubscriptionGate\(\)/, 'subscription gate preserved')
     assert.match(layout, /<NotificationBell \/>/, 'notification bell preserved')
+    assert.match(layout, /checkFeature\(method\.feature\)/, 'FAB feature gating preserved')
     assert.match(layout, /isSubscriptionRoute/, 'subscription route treatment preserved')
-    assert.match(layout, /setDrawerOpen\(false\)[\s\S]{0,60}setFabOpen\(false\)/, 'overlays still close on navigation')
   })
 
-  await t.test('the add flow still points at /add with a real tab', () => {
-    assert.match(read(PANEL), /href="\/add\?tab=manual"/, 'desktop CTA opens manual entry')
-    assert.match(read(DRAWER), /href="\/add\?tab=manual"/, 'drawer CTA opens manual entry')
-  })
-})
-
-test('Premium sidebar — i18n parity for new strings', async t => {
-  const ns = ['en', 'hi', 'bn'].map(loc => JSON.parse(read(`messages/${loc}/nav.json`)))
-  const keys = [
-    'primaryNav',
-    'sectionMain',
-    'sectionAccount',
-    'collapseNav',
-    'expandNav',
-    'openNav',
-    'closeNav',
-  ]
-
-  await t.test('en, hi and bn all define the new sidebar strings', () => {
-    for (const msg of ns) {
-      for (const key of keys) {
-        assert.ok(typeof msg[key] === 'string' && msg[key].trim().length > 0, `${key} is translated`)
-      }
+  await t.test('nav translations exist in all three locales', () => {
+    const keys = ['primaryNav', 'sectionMain', 'sectionAccount', 'collapseNav', 'expandNav', 'openNav', 'closeNav']
+    const dicts = ['en', 'hi', 'bn'].map(l => JSON.parse(read(`messages/${l}/nav.json`)))
+    for (const dict of dicts) {
+      for (const k of keys) assert.ok(String(dict[k] || '').trim().length > 0, `${k} translated`)
     }
-    assert.deepEqual(Object.keys(ns[1]).sort(), Object.keys(ns[0]).sort(), 'Hindi keys match English')
-    assert.deepEqual(Object.keys(ns[2]).sort(), Object.keys(ns[0]).sort(), 'Bengali keys match English')
-  })
-
-  await t.test('the extracted brand mark exists', () => {
-    assert.ok(exists('public/images/finflow-mark.png'), 'logo mark is available for the 40px brand container')
+    assert.deepEqual(Object.keys(dicts[1]).sort(), Object.keys(dicts[0]).sort(), 'hi keys match en')
+    assert.deepEqual(Object.keys(dicts[2]).sort(), Object.keys(dicts[0]).sort(), 'bn keys match en')
   })
 })

@@ -6,43 +6,32 @@ import Link from 'next/link'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Tooltip } from 'radix-ui'
 import { useTranslations } from 'next-intl'
-import { cn } from '@/lib/utils'
 
 interface BrandHeaderProps {
-  isPro: boolean
-  planName: string
   toggle: () => void
 }
 
-const mark = (isPro: boolean) => (
-  <span className={cn('ff-mark', isPro && 'ff-mark--pro')}>
-    <Image
-      src="/images/finflow-mark.png"
-      alt=""
-      width={36}
-      height={36}
-      priority
-      sizes="36px"
-      className="h-9 w-9 select-none"
-      draggable={false}
-    />
-  </span>
-)
-
 /**
- * Brand row. Both the expanded and the rail variant are always in the DOM and
- * CSS decides which one is visible (`[data-ff-sidebar]` on <html>). That keeps
- * the very first painted frame correct even before React hydrates, so a stored
- * "collapsed" preference never flashes an expanded panel.
+ * Brand row.
+ *
+ * The expanded state uses the real FinFlow lockup (`finflow-logo-tight.png`,
+ * the shipped 2000×632 artwork with only its transparent padding trimmed) at a
+ * fixed height with `width: auto`, so the artwork keeps its native 3.23:1 ratio
+ * and is never stretched, squashed or redrawn. The rail state swaps to the
+ * emblem-only mark cut from that same file — no new artwork, no decorative
+ * circle behind it.
+ *
+ * Both variants stay in the DOM; CSS picks one from `[data-ff-sidebar]`, so the
+ * first painted frame is already correct before hydration.
  */
-export default function BrandHeader({ isPro, planName, toggle }: BrandHeaderProps) {
+export default function BrandHeader({ toggle }: BrandHeaderProps) {
   const t = useTranslations('nav')
   const wideToggleRef = useRef<HTMLButtonElement>(null)
   const railToggleRef = useRef<HTMLButtonElement>(null)
 
   const handleToggle = useCallback(() => {
-    // Decide before mutating: after the toggle the opposite control is visible,
-    // so keyboard focus follows it instead of being dropped onto <body>.
+    // Decide before mutating: the opposite control becomes visible, so keyboard
+    // focus has to follow it instead of being dropped onto <body>.
     const willCollapse = document.documentElement.getAttribute('data-ff-sidebar') !== 'collapsed'
     toggle()
     window.requestAnimationFrame(() => {
@@ -54,15 +43,16 @@ export default function BrandHeader({ isPro, planName, toggle }: BrandHeaderProp
   return (
     <div className="ff-head">
       <Link href="/dashboard" className="ff-brand-link" prefetch={false}>
-        {mark(isPro)}
-        <span className="ff-brand-text">
-          <span className="ff-wordmark">FinFlow</span>
-          {planName && (
-            <span className="ff-subtitle">
-              <span className="ff-subtitle-text">{planName}</span>
-            </span>
-          )}
-        </span>
+        <Image
+          src="/images/finflow-logo-tight.png"
+          alt="FinFlow"
+          width={97}
+          height={30}
+          priority
+          sizes="140px"
+          className="ff-logo"
+          draggable={false}
+        />
       </Link>
 
       <Tooltip.Root>
@@ -76,14 +66,20 @@ export default function BrandHeader({ isPro, planName, toggle }: BrandHeaderProp
             aria-expanded={false}
             aria-controls="ff-sidebar-nav"
           >
-            {mark(isPro)}
-            <span className="ff-brand-rail-glyph" aria-hidden="true">
-              <PanelLeftOpen size={15} strokeWidth={2} />
-            </span>
+            <Image
+              src="/images/finflow-mark.png"
+              alt=""
+              width={60}
+              height={60}
+              priority
+              sizes="30px"
+              className="ff-mark"
+              draggable={false}
+            />
           </button>
         </Tooltip.Trigger>
         <Tooltip.Portal>
-          <Tooltip.Content side="right" sideOffset={12} collisionPadding={8} className="ff-tooltip">
+          <Tooltip.Content side="right" sideOffset={10} collisionPadding={8} className="ff-tooltip">
             {t('expandNav')}
           </Tooltip.Content>
         </Tooltip.Portal>
@@ -100,7 +96,7 @@ export default function BrandHeader({ isPro, planName, toggle }: BrandHeaderProp
             aria-expanded
             aria-controls="ff-sidebar-nav"
           >
-            <PanelLeftClose size={18} strokeWidth={1.9} aria-hidden="true" />
+            <PanelLeftClose size={17} strokeWidth={1.9} aria-hidden="true" />
           </button>
         </Tooltip.Trigger>
         <Tooltip.Portal>
