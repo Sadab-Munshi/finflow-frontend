@@ -1,240 +1,56 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Mic,
   Sparkles,
   CheckCircle2,
   ArrowUpRight,
   Lock,
-  TrendingUp,
 } from 'lucide-react'
 import { BorderBeam } from 'border-beam'
 
 /**
- * 1. HERO VISUAL: Prominent Interactive FinFlow Dashboard Preview Window + 3D CardSwap Loop
- * Compact & streamlined on mobile; full-column scaled visual prominence on tablet & desktop.
+ * 1. HERO VISUAL: Seamless Inline 60fps FinFlow Product Showcase Video (1200x900 4:3)
+ * Replaces the stacked card box cleanly with instant WebP poster paint + WebM/MP4 looping video.
  */
 export function HeroCardSwapLoop() {
-  const [activeIndex, setActiveIndex] = useState(0)
-
-  const cards = [
-    {
-      id: 'balance',
-      badge: 'Live Overview',
-      badgeColor: 'bg-teal-50 text-teal-700 border-teal-200',
-      accentBar: 'from-teal-500 to-emerald-500',
-      title: 'Monthly Net Balance',
-      amount: '₹2,58,750',
-      sub: '+18.4% saved compared to last month',
-      pill: 'On Track',
-      pillColor: 'bg-emerald-50 text-emerald-700',
-    },
-    {
-      id: 'voice',
-      badge: 'Voice · हिंदी & English',
-      badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      accentBar: 'from-indigo-500 to-violet-500',
-      title: '“सब्ज़ी और किराना ₹480”',
-      amount: '-₹480',
-      sub: 'Categorized under Groceries & Home',
-      pill: 'Voice Logged',
-      pillColor: 'bg-indigo-50 text-indigo-700',
-    },
-    {
-      id: 'receipt',
-      badge: 'Camera Receipt Scan',
-      badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
-      accentBar: 'from-amber-500 to-orange-500',
-      title: 'DMart Supermarket',
-      amount: '-₹1,450',
-      sub: '14 items · GST ₹118.40 extracted automatically',
-      pill: 'Bill Verified',
-      pillColor: 'bg-amber-50 text-amber-800',
-    },
-  ]
+  const videoRef = useRef<HTMLVideoElement | null>(null)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % cards.length)
-    }, 3200)
-    return () => clearInterval(timer)
-  }, [cards.length])
+    const el = videoRef.current
+    if (!el) return
+    el.defaultMuted = true
+    el.muted = true
+    el.play().catch(() => {})
+  }, [])
 
   return (
     <div className="relative w-full max-w-md md:max-w-none mx-auto">
-      <style>{`
-        @keyframes eqSwell {
-          0%, 100% { transform: scaleY(0.35); }
-          50% { transform: scaleY(1); }
-        }
-      `}</style>
-
       {/* Soft multi-tone ambient halo */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -inset-3 lg:-inset-5 rounded-[36px] bg-gradient-to-tr from-teal-200/45 via-indigo-200/30 to-sky-200/40 blur-2xl"
       />
 
-      {/* Elevated Dashboard Preview Window */}
-      <div className="relative rounded-3xl bg-white/90 backdrop-blur-xl border border-slate-200/90 p-3.5 sm:p-5 lg:p-6 shadow-[0_24px_60px_-15px_rgba(15,23,42,0.14),0_0_32px_-8px_rgba(13,148,136,0.12)]">
-        {/* Window Top Bar + Floating Multi-Language Voice Pill */}
-        <div className="flex items-center justify-between gap-2 pb-3 mb-3.5 border-b border-slate-100">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-400/90" />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90" />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90" />
-            <span className="ml-1.5 text-xs font-semibold text-slate-600 hidden lg:inline whitespace-nowrap">
-              FinFlow Live Overview
-            </span>
-          </div>
-
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-200/80">
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-600 text-white shrink-0">
-              <Mic className="w-3 h-3" />
-            </span>
-            <div className="flex items-center gap-0.5 h-3" aria-hidden="true">
-              {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                <span
-                  key={i}
-                  className="w-1 h-full rounded-full bg-indigo-500"
-                  style={{
-                    animation: `eqSwell ${0.6 + (i % 3) * 0.2}s ease-in-out infinite`,
-                    animationDelay: `${i * 80}ms`,
-                  }}
-                />
-              ))}
-            </div>
-            <span className="text-[11px] font-semibold text-slate-700 whitespace-nowrap">
-              EN · हिंदी · বাংলা
-            </span>
-          </div>
-        </div>
-
-        {/* 3D Card Swap Stack.
-            Every card is a grid item in the same cell, so the stack is exactly
-            as tall as the tallest card at any breakpoint instead of a
-            hard-coded 186/206/224px box. The old fixed heights left ~47px of
-            dead white air under the card on a phone (the card itself is only
-            ~139px), which read as a broken, half-empty panel. The bottom
-            padding reserves the room the two cards behind peek into, so the
-            offsets never collide with the pager dots below. */}
-        <div className="relative grid w-full pb-7">
-          {cards.map((card, index) => {
-            const offset = (index - activeIndex + cards.length) % cards.length
-            const translateY = offset === 0 ? 0 : offset === 1 ? 12 : 24
-            const scale = offset === 0 ? 1 : offset === 1 ? 0.96 : 0.92
-            const zIndex = offset === 0 ? 30 : offset === 1 ? 20 : 10
-            const opacity = offset === 0 ? 1 : offset === 1 ? 0.78 : 0.45
-
-            return (
-              <div
-                key={card.id}
-                onClick={() => setActiveIndex(index)}
-                style={{
-                  transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
-                  zIndex,
-                  opacity,
-                  willChange: 'transform, opacity',
-                  transition:
-                    'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), opacity 500ms cubic-bezier(0.16, 1, 0.3, 1)',
-                }}
-                className="col-start-1 row-start-1 cursor-pointer"
-              >
-                <BorderBeam
-                  size="sm"
-                  colorVariant={index === 0 ? 'ocean' : index === 1 ? 'colorful' : 'sunset'}
-                  strength={offset === 0 ? 0.75 : 0}
-                  active={offset === 0}
-                  theme="light"
-                  borderRadius={20}
-                >
-                  <div className="rounded-2xl bg-gradient-to-br from-white via-white to-slate-50 border border-slate-200/90 p-4 sm:p-5 lg:p-6 shadow-[0_14px_34px_-12px_rgba(15,23,42,0.12)]">
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold border whitespace-nowrap ${card.badgeColor}`}
-                      >
-                        {card.badge}
-                      </span>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap ${card.pillColor}`}
-                      >
-                        {card.pill}
-                      </span>
-                    </div>
-
-                    <div className="flex items-baseline justify-between gap-2 mb-1.5">
-                      <h3 className="text-[15px] lg:text-xl font-bold text-slate-900 truncate">
-                        {card.title}
-                      </h3>
-                      <span
-                        className="text-lg lg:text-[28px] font-extrabold text-slate-900 font-mono shrink-0 whitespace-nowrap"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {card.amount}
-                      </span>
-                    </div>
-
-                    <p className="text-xs lg:text-sm text-slate-500 mb-3 truncate">
-                      {card.sub}
-                    </p>
-
-                    <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full bg-gradient-to-r ${card.accentBar} transition-all duration-700`}
-                        style={{ width: offset === 0 ? '78%' : '45%' }}
-                      />
-                    </div>
-                  </div>
-                </BorderBeam>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Tablet (2-col) & Desktop (3-col) Live Cashflow Metrics Strip */}
-        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-2.5 lg:gap-3 pt-4 mt-2 border-t border-slate-100">
-          <div className="rounded-2xl bg-emerald-50/70 border border-emerald-100 px-3 py-2.5">
-            <div className="text-[11px] font-medium text-emerald-800/80 whitespace-nowrap">Monthly Inflow</div>
-            <div className="text-sm lg:text-base font-extrabold font-mono text-emerald-700 mt-0.5 whitespace-nowrap">
-              +₹85,000
-            </div>
-          </div>
-          <div className="hidden lg:block rounded-2xl bg-slate-50 border border-slate-200/70 px-3 py-2.5">
-            <div className="text-[11px] font-medium text-slate-500 whitespace-nowrap">Spent This Month</div>
-            <div className="text-sm lg:text-base font-extrabold font-mono text-slate-800 mt-0.5 whitespace-nowrap">
-              ₹26,420
-            </div>
-          </div>
-          <div className="rounded-2xl bg-teal-50/70 border border-teal-100 px-3 py-2.5">
-            <div className="flex items-center gap-1 text-[11px] font-medium text-teal-800/80 whitespace-nowrap">
-              <TrendingUp className="w-3 h-3 text-teal-600 shrink-0" />
-              <span>Savings Rate</span>
-            </div>
-            <div className="text-sm lg:text-base font-extrabold font-mono text-teal-700 mt-0.5 whitespace-nowrap">
-              68.9%
-            </div>
-          </div>
-        </div>
-
-        {/* Accessible 48x48 Touch-Target Card Switcher Dots */}
-        <div className="flex items-center justify-center gap-1 mt-1">
-          {cards.map((c, i) => (
-            <button
-              key={c.id}
-              type="button"
-              aria-label={`Show ${c.badge}`}
-              onClick={() => setActiveIndex(i)}
-              className="min-w-[48px] min-h-[48px] inline-flex items-center justify-center bg-transparent border-0 cursor-pointer p-0"
-            >
-              <span
-                className={`block h-2 rounded-full transition-all ${
-                  i === activeIndex ? 'w-7 bg-teal-600' : 'w-2 bg-slate-300 hover:bg-slate-400'
-                }`}
-              />
-            </button>
-          ))}
-        </div>
+      {/* Full-bleed 4:3 Product Showcase Video Card */}
+      <div className="relative rounded-3xl bg-white border border-slate-200/90 overflow-hidden shadow-[0_24px_60px_-15px_rgba(15,23,42,0.14),0_0_32px_-8px_rgba(13,148,136,0.12)]">
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          poster="/assets/hero-preview-poster.webp"
+          width={1200}
+          height={900}
+          aria-label="FinFlow live voice, receipt scan, budget, insights, and monthly summary preview"
+          className="block w-full h-auto aspect-[4/3] object-cover bg-white pointer-events-none select-none"
+        >
+          <source src="/assets/hero-preview.webm" type="video/webm" />
+          <source src="/assets/hero-preview.mp4" type="video/mp4" />
+        </video>
       </div>
     </div>
   )
@@ -261,6 +77,13 @@ export function VoicePillVisual() {
 
   return (
     <div className="rounded-2xl bg-gradient-to-br from-indigo-50/90 via-violet-50/60 to-white border border-indigo-100 p-4">
+      <style>{`
+        @keyframes eqSwell {
+          0%, 100% { transform: scaleY(0.35); }
+          50% { transform: scaleY(1); }
+        }
+      `}</style>
+
       <div className="flex items-center justify-between gap-1.5 mb-3">
         <div className="flex items-center gap-1">
           {samples.map((item, i) => (
@@ -437,7 +260,7 @@ export function MonthlyReportVisual() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-sky-900 font-medium pt-2 border-t border-sky-100">
+      <div className="flex items-center justify-between text-[11px] text-sky-950 font-medium pt-2 border-t border-sky-100">
         <span>Net Saved: ₹42,500</span>
         <span className="text-sky-600 font-mono">1-Tap Download</span>
       </div>
