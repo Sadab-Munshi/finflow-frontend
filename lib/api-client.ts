@@ -280,6 +280,21 @@ export async function markNotificationRead(notificationId: string) {
   })
 }
 
+/**
+ * Record that these notifications have been surfaced as toasts.
+ *
+ * Distinct from "read": the bell toasts a notification without the user
+ * having opened it, and marking it read would silently clear the unread
+ * badge. `shown` is the toast ledger.
+ */
+export async function markNotificationsShown(ids: string[]) {
+  return request('/api/notifications/mark-shown', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  })
+}
+
 export async function markAllNotificationsRead() {
   return request('/api/notifications/mark-all-read', { method: 'POST' })
 }

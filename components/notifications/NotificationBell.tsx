@@ -10,6 +10,7 @@ import { useUser } from '@/context/UserContext'
 import {
   getNotifications,
   markNotificationRead,
+  markNotificationsShown,
   markAllNotificationsRead,
 } from '@/lib/api-client'
 import NotificationCenter from './NotificationCenter'
@@ -20,6 +21,15 @@ const NOTIFICATION_CACHE_TTL_MS = 30_000 // 30 seconds
 
 // Module-level cache so it persists across re-renders
 let notificationsCache: { data: Notification[]; timestamp: number } | null = null
+
+// Module-level toast ledger.
+//
+// The layout chrome is rendered by each page rather than by a shared
+// app/layout.tsx, so every navigation unmounts and remounts this component —
+// which resets every ref and piece of state. This variable survives the
+// remount because it lives in module scope, so a user is toasted at most once
+// per page session no matter how many tabs they switch between.
+let toastedForUserId: string | null = null
 
 function getToastStyle(type: string) {
   switch (type) {
@@ -42,6 +52,11 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const bellRef = useRef<HTMLDivElement>(null)
+  // Held in a ref so the toast callbacks stay stable across navigations.
+  const routerRef = useRef(router)
+  useEffect(() => {
+    routerRef.current = router
+  }, [router])
 
   const loadNotifications = useCallback(async (forceRefresh = false) => {
     if (!userId) return
@@ -68,8 +83,15 @@ export default function NotificationBell() {
     }
   }, [userId])
 
-  // Show toasts for unread+unshown notifications on app load, then mark them as shown
+  // Show toasts for unread+unshown notifications ONCE per page session.
+  //
+  // Deliberately depends on nothing that changes during navigation: the
+  // previous revision listed `showUnseenToasts` (which itself depended on
+  // `router`) in the effect's deps, so every route change re-armed it and
+  // replayed the toasts.
   const showUnseenToasts = useCallback(async (uid: string) => {
+    if (toastedForUserId === uid) return
+
     let unseen: Notification[] = []
     try {
       const payload = await getNotifications(2, true)
@@ -77,16 +99,20 @@ export default function NotificationBell() {
         (n) => n.shown !== true
       )
     } catch {
+      // Leave the ledger unset so a later mount can retry.
       return
     }
+
     const data = unseen.slice(0, 2)
+
+    // Claim the session before awaiting the write: two instances of this
+    // component can mount at once (app/*/loading.tsx renders the chrome while
+    // the page renders its own), and both would otherwise toast the same rows.
+    toastedForUserId = uid
     if (data.length === 0) return
 
-    // Mark as read-ish immediately so a remount doesn't re-toast them. The
-    // backend endpoint is idempotent, so a double call is harmless.
-    await Promise.all(
-      data.map((n) => markNotificationRead(n.id).catch(() => {}))
-    )
+    // `shown`, not `read` — toasting must not clear the unread badge.
+    await markNotificationsShown(data.map((n) => n.id)).catch(() => {})
 
     // Display a toast for each unseen notification
     data.forEach((n: Notification) => {
@@ -97,7 +123,7 @@ export default function NotificationBell() {
             onClick={() => {
               toast.dismiss(t.id)
               if (n.link) {
-                router.push(n.link)
+                routerRef.current.push(n.link)
               }
             }}
             style={{ cursor: n.link ? 'pointer' : 'default' }}
@@ -113,18 +139,22 @@ export default function NotificationBell() {
         }
       )
     })
-  }, [router])
+  }, [])
 
   // The signed-in user comes from UserProvider — a second auth.getUser() here
   // was one of the duplicate requests on first paint.
   const { user: currentUser } = useUser()
 
+  // Fires once per user per page session. `showUnseenToasts` is intentionally
+  // absent from the deps — it is stable, and depending on it re-ran the whole
+  // toast sequence on every remount.
   useEffect(() => {
     const id = currentUser?.userId
     if (!id) return
     setUserId(id)
     showUnseenToasts(id)
-  }, [currentUser?.userId, showUnseenToasts])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.userId])
 
   useEffect(() => {
     if (!userId) return
@@ -156,8 +186,9 @@ export default function NotificationBell() {
           })
           setUnreadCount(prev => prev + 1)
 
-          // Mark as shown so it doesn't reappear on next app load
-          markNotificationRead(newNotification.id).catch(() => {
+          // Mark as shown so it doesn't reappear on next app load. Not
+          // `read`: the toast does not mean the user opened it.
+          markNotificationsShown([newNotification.id]).catch(() => {
             /* best effort */
           })
 
