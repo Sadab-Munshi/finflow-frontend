@@ -115,8 +115,14 @@ NEXT_PUBLIC_POSTHOG_KEY=... (optional)
 NEXT_PUBLIC_POSTHOG_HOST=... (optional)
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=... (optional, push notifications)
 VAPID_PRIVATE_KEY=... (optional)
-NEXT_PUBLIC_API_URL=... (optional, defaults to http://localhost:3001)
+FINFLOW_API_ORIGIN=... (server-side only; dev default http://localhost:3001)
+FINFLOW_PROXY_SECRET=... (server-side only; must match finflow-api's PROXY_SECRET)
 ```
+
+> **The backend host is never exposed to the browser.** Client code calls
+> `/api/*` same-origin; `app/api/[...path]/route.ts` relays to `FINFLOW_API_ORIGIN`
+> and adds `X-Finflow-Proxy-Secret`. Do not add `NEXT_PUBLIC_*` backend URLs —
+> they are inlined into the client bundle. See `docs/API-PROXY.md`.
 
 ## Important Patterns
 

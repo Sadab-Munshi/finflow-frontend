@@ -34,8 +34,12 @@ cp .env.example .env.local   # fill values (names + purpose: docs/CONFIG.md)
 npm run dev                  # → http://localhost:3000
 ```
 
-The app needs the backend for AI/auth-adjacent endpoints — run finflow-api
-locally (`NEXT_PUBLIC_API_URL=http://localhost:3001`) or point at the deployed API.
+The app needs the backend for AI/auth-adjacent endpoints. Client code never
+calls the backend directly: requests go to `/api/*` on the app's own origin and
+are relayed by `app/api/[...path]/route.ts`, which adds the proxy secret
+(see [docs/API-PROXY.md](docs/API-PROXY.md)). Locally that defaults to
+`http://localhost:3001`; in production set `FINFLOW_API_ORIGIN` (server-side
+only — never a `NEXT_PUBLIC_` variable).
 
 Production: `npm run build && npm start`. Deploy is Vercel (see `docs/DEPLOYMENT.md`).
 

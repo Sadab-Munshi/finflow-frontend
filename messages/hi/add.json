@@ -59,5 +59,6 @@
   "saveFailed": "सहेजने में विफल",
   "saveRetry": "विफल, पुनः प्रयास करें?",
   "scanDone": "हो गया!",
-  "transactionsFound": "{count} लेन-देन मिले"
+  "transactionsFound": "{count} लेन-देन मिले",
+  "fileTooLarge": "यह फ़ाइल बहुत बड़ी है। कृपया 3 MB से छोटी फ़ाइल चुनें।"
 }

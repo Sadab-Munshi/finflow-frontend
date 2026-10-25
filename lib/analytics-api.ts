@@ -1,4 +1,5 @@
 import { createClient } from './supabase/client'
+import { apiBase } from './api-base'
 import type {
   RollingAveragesResponse,
   CashFlowForecastResponse,
@@ -6,7 +7,6 @@ import type {
   YoYComparisonResponse,
 } from './analytics-types'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 let supabaseClient: ReturnType<typeof createClient> | null = null
 
@@ -31,7 +31,7 @@ async function request(path: string) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { headers })
+  const res = await fetch(`${apiBase()}${path}`, { headers })
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))

@@ -59,5 +59,6 @@
   "saveFailed": "Save failed",
   "saveRetry": "Failed, retry?",
   "scanDone": "Done!",
-  "transactionsFound": "{count} transactions extracted"
+  "transactionsFound": "{count} transactions extracted",
+  "fileTooLarge": "That file is too large. Please use a file under 3 MB."
 }

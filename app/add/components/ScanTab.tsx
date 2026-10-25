@@ -20,6 +20,11 @@ import { useTransaction } from '../hooks/useTransaction'
 import { PreviewCard } from './PreviewCard'
 import { ManualForm } from './ManualTab'
 import { aiParseReceipt } from '@/lib/api-client'
+import {
+  compressImageToBudget,
+  base64ByteLength,
+  MAX_UPLOAD_BYTES,
+} from '@/lib/image-compress'
 
 const CAMERA_TEAL = '#0d9488'
 const UPLOAD_INDIGO = '#4f46e5'
@@ -144,40 +149,6 @@ function ScanProgress({ currentStep }: { currentStep: number }) {
   )
 }
 
-/* ─── Image Compression ─── */
-function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promise<{ base64: string; previewUrl: string }> {
-  return new Promise((resolve, reject) => {
-    const img = new window.Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      let w = img.width
-      let h = img.height
-      if (w > maxWidth) {
-        h = Math.round((h * maxWidth) / w)
-        w = maxWidth
-      }
-      const canvas = document.createElement('canvas')
-      canvas.width = w
-      canvas.height = h
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        reject(new Error('Failed to get canvas context'))
-        return
-      }
-      ctx.drawImage(img, 0, 0, w, h)
-      const previewUrl = canvas.toDataURL('image/jpeg', quality)
-      const base64 = previewUrl.split(',')[1]
-      URL.revokeObjectURL(url)
-      resolve({ base64, previewUrl })
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('Image load failed'))
-    }
-    img.src = url
-  })
-}
-
 export default function ScanTab() {
   const t = useTranslations('add')
   const { saveTransaction, isSubmitting, currentUser } = useTransaction()
@@ -233,7 +204,9 @@ export default function ScanTab() {
       let mimeType = file.type || 'image/jpeg'
 
       if (!isPdf) {
-        const compressed = await compressImage(file, 1200, 0.8)
+        // Compressed to a byte budget so the payload survives the /api/*
+        // Vercel proxy (which rejects bodies above ~4.5 MB).
+        const compressed = await compressImageToBudget(file, MAX_UPLOAD_BYTES)
         base64 = compressed.base64
         mimeType = 'image/jpeg'
         setScanPreviewUrl(compressed.previewUrl)
@@ -246,6 +219,12 @@ export default function ScanTab() {
           reader.readAsDataURL(file)
         })
         base64 = dataUrl.split(',')[1]
+
+        // A PDF can't be downscaled in the browser; refuse it here rather
+        // than letting the proxy answer with an opaque 413.
+        if (base64ByteLength(base64) > MAX_UPLOAD_BYTES) {
+          throw new Error(t('fileTooLarge'))
+        }
       }
 
       setScanStep(1)
