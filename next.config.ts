@@ -101,7 +101,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://pay.sadabmunshi.me https://*.sadabmunshi.me",
               "frame-src 'self' https://challenges.cloudflare.com https://pay.sadabmunshi.me https://*.sadabmunshi.me",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://app.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://api.groq.com https://api.sarvam.ai https://generativelanguage.googleapis.com https://api.brevo.com https://challenges.cloudflare.com https://finflow-api.sadabmunshi.me https://pay.sadabmunshi.me https://pay-api.sadabmunshi.me https://*.sadabmunshi.me",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://app.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://api.groq.com https://api.sarvam.ai https://generativelanguage.googleapis.com https://api.brevo.com https://challenges.cloudflare.com https://pay.sadabmunshi.me https://pay-api.sadabmunshi.me",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
               "base-uri 'self'",
