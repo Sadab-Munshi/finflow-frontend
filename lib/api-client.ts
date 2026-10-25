@@ -17,6 +17,67 @@ async function getToken(): Promise<string | null> {
   return session?.access_token ?? null
 }
 
+// ── Ban enforcement ───────────────────────────────────────────────────────
+//
+// The backend refuses banned callers with `403`. Supabase Auth knows nothing
+// about bans, so a banned user still receives a perfectly valid session, signs
+// in, and lands in an app where every single request fails — with no
+// explanation and no way out. These helpers turn that dead end into a clean
+// exit to the login screen carrying the reason.
+//
+// The match is deliberately narrow. `403` on its own is NOT a ban: the API
+// returns it for tier gating (`UPGRADE_REQUIRED`), disabled features
+// (`FEATURE_DISABLED`), a missing proxy secret, admin/role failures, disabled
+// payments, and order-ownership failures. Treating any 403 as a ban would sign
+// out ordinary free-tier users the moment they touched a Pro feature.
+//
+// `code` is authoritative as soon as the API emits it; the exact-message
+// comparison keeps older API builds working. `includes()` is avoided on
+// purpose — it would make "Account is banned" match an IP-ban check.
+const BAN_MESSAGE_IP = 'IP address is banned'
+const BAN_MESSAGE_ACCOUNT = 'Account is banned'
+
+type BanKind = 'ip_banned' | 'account_banned'
+
+/** `null` unless this response is specifically a ban rejection. */
+function detectBan(status: number, body: unknown): BanKind | null {
+  if (status !== 403) return null
+  const payload = (body ?? {}) as { code?: string; message?: string }
+  if (payload.code === 'IP_BANNED') return 'ip_banned'
+  if (payload.code === 'ACCOUNT_BANNED') return 'account_banned'
+  // Fallback for API builds that do not send a code yet.
+  if (payload.message === BAN_MESSAGE_IP) return 'ip_banned'
+  if (payload.message === BAN_MESSAGE_ACCOUNT) return 'account_banned'
+  return null
+}
+
+// One eviction per page load. A banned user's screen fires several requests at
+// once (bootstrap, notifications, app status, heartbeat); without this latch
+// they race each other through signOut + redirect.
+let banRedirectInFlight = false
+
+async function evictBannedUser(kind: BanKind): Promise<void> {
+  if (typeof window === 'undefined') return
+  if (banRedirectInFlight) return
+  banRedirectInFlight = true
+
+  try {
+    // Local scope on purpose: the API is already refusing this session, so
+    // asking the auth server to revoke it over the network can only hang or
+    // fail. Everything cached for the session is dropped regardless.
+    await getSupabase().auth.signOut({ scope: 'local' })
+  } catch {
+    /* sign-out is best effort — the redirect below is the enforcement */
+  }
+
+  // Hard navigation, not router.push: it discards React state, the module
+  // caches (notification list, bootstrap payload) and every in-flight request.
+  // `replace` keeps the back button from walking into the broken page again.
+  window.location.replace(
+    kind === 'ip_banned' ? '/login?error=ip_banned' : '/login?banned=true'
+  )
+}
+
 async function request(path: string, options: RequestInit = {}) {
   const token = await getToken()
   const headers: Record<string, string> = {}
@@ -36,6 +97,12 @@ async function request(path: string, options: RequestInit = {}) {
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    const ban = detectBan(res.status, error)
+    if (ban) {
+      // Signs out and leaves for /login before the caller sees the rejection;
+      // the throw below is what stops the current call chain.
+      await evictBannedUser(ban)
+    }
     const err = new Error(error.message || error.error || `API error: ${res.status}`)
     Object.assign(err, {
       status: res.status,
@@ -65,7 +132,17 @@ async function requestMultipart(path: string, formData: FormData) {
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
-    throw new Error(error.error || `API error: ${res.status}`)
+    // Same ban interception as request(). File uploads (receipt scanning,
+    // speech-to-text) are real API calls and must not be a hole in enforcement.
+    const ban = detectBan(res.status, error)
+    if (ban) {
+      await evictBannedUser(ban)
+    }
+    const err = new Error(error.error || `API error: ${res.status}`)
+    // Attach the same diagnostic fields the JSON helper does, so a caller can
+    // tell a 403 from a 413 without parsing the message.
+    Object.assign(err, { status: res.status, code: error.code })
+    throw err
   }
 
   return res.json()
