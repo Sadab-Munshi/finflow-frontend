@@ -74,22 +74,30 @@ function backendOrigin(): string {
 /**
  * The real client IP, as seen by Vercel.
  *
- * finflow-api rate-limits per IP (`globalLimiter`, 300 req / 15 min) and runs
- * with `trust proxy: 1`, so it resolves `req.ip` from the *last* X-Forwarded-For
- * entry after trusting one hop. If we forwarded Vercel's own header unchanged,
- * every user would collapse onto Vercel's egress IP and share one bucket. We
- * therefore send exactly one authoritative value, taken from the header Vercel
- * sets itself and clients cannot spoof (`x-real-ip`).
+ * finflow-api rate-limits per IP (`globalLimiter`, 300 req / 15 min) and
+ * resolves the caller from this value, so we send exactly one authoritative
+ * address rather than Vercel's raw chain.
+ *
+ * `x-forwarded-for` is read FIRST and its **index 0** is the original client:
+ * Vercel prepends the real peer and appends its own infrastructure hops, so
+ * `parts[parts.length - 1]` is the nearest proxy — reading it logged every
+ * request as coming from the Mumbai edge datacentre. `x-real-ip` is the
+ * fallback for requests where the chain is absent.
+ *
+ * The backend re-validates whatever we send (finflow-api/src/utils/ip.ts) and
+ * only trusts it alongside a valid `X-Finflow-Proxy-Secret`, which this
+ * function's caller attaches.
  */
 function clientIp(request: NextRequest): string {
-  const realIp = request.headers.get('x-real-ip')
-  if (realIp) return realIp
   const xff = request.headers.get('x-forwarded-for')
   if (xff) {
-    // Vercel appends the observed peer as the final entry.
     const parts = xff.split(',').map((p) => p.trim()).filter(Boolean)
-    if (parts.length) return parts[parts.length - 1]
+    // Index 0 = original client. Later entries are our own hops, including
+    // Vercel's edge — never use those.
+    if (parts.length) return parts[0]
   }
+  const realIp = request.headers.get('x-real-ip')
+  if (realIp) return realIp
   return ''
 }
 

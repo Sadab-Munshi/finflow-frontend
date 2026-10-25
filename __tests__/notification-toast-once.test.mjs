@@ -1,12 +1,16 @@
 /**
  * Regression guard for "notification toasts replay on every tab switch".
  *
- * Root cause (PR #66): the layout chrome is rendered by each page instead of a
- * shared app/layout.tsx, so every navigation unmounts and remounts
- * NotificationBell. The toast sequence was reachable from the mount effect via
- * `showUnseenToasts` — which itself depended on `router` — and the ledger it
- * wrote was `read` rather than `shown`, so the unread backlog drained two
- * notifications per navigation.
+ * History, so nobody re-introduces these:
+ *   * PR #66 — the layout chrome is rendered by each page instead of a shared
+ *     app/layout.tsx, so every navigation unmounts and remounts the bell. The
+ *     toast sequence hung off the mount effect via `showUnseenToasts`, which
+ *     depended on `router`, so every route change replayed it.
+ *   * PR #67 — tried to track "toasted" in a `shown` column that does not
+ *     exist in the live schema, producing PGRST204 on every toast.
+ *
+ * The ledger now lives in sessionStorage. Nothing about a toast is persisted
+ * to the database.
  *
  * These are structural assertions: the repo has no DOM test harness, so the
  * invariants that make the bug impossible are checked at the source level.
@@ -52,22 +56,28 @@ test('notification toasts fire once per session, not per navigation', async (t) 
   await t.test('a module-scope ledger survives the remount', () => {
     assert.match(
       bell,
-      /let toastedForUserId:\s*string \| null = null/,
+      /let ledgerClaimedForUserId:\s*string \| null = null/,
       'the once-per-session guard must live in module scope — a ref or state resets on remount'
     )
-    assert.match(bell, /if \(toastedForUserId === uid\) return/, 'the guard is never consulted')
+    assert.match(bell, /if \(ledgerClaimedForUserId === uid\) return/, 'the guard is never consulted')
   })
 
   await t.test('the ledger is claimed before awaiting the network', () => {
-    const body = bell.slice(bell.indexOf('toastedForUserId = uid'))
-    const claim = bell.indexOf('toastedForUserId = uid')
-    const write = bell.indexOf('markNotificationsShown(')
-    assert.ok(claim > -1 && write > -1)
+    // Scope to the toast callback: the helpers are defined at module level,
+    // so an unscoped indexOf would find the definition instead of the call.
+    const start = bell.indexOf('const showUnseenToasts')
+    const end = bell.indexOf('const { user: currentUser }')
+    assert.ok(start > -1 && end > start, 'could not bound the toast callback')
+    const fn = bell.slice(start, end)
+
+    const claim = fn.indexOf('ledgerClaimedForUserId = uid')
+    const write = fn.indexOf('rememberToastedIds(')
+    assert.ok(claim > -1, 'the session is never claimed')
+    assert.ok(write > -1, 'toasted ids are never recorded')
     assert.ok(
       claim < write,
       'claiming after the write lets two concurrent mounts (loading.tsx + page) double-toast'
     )
-    assert.ok(body.length > 0)
   })
 
   await t.test('the toast callback itself is stable', () => {
@@ -82,41 +92,72 @@ test('notification toasts fire once per session, not per navigation', async (t) 
   })
 })
 
-test('toasting does not mark notifications as read', async (t) => {
+test('toasting never writes to the database', async (t) => {
   const bell = stripComments(read(BELL))
   const api = stripComments(read(API))
 
-  await t.test('the unseen-toast path writes `shown`, not `read`', () => {
-    // Anchors are code, not comments — comments are stripped above.
+  await t.test('the toast path makes no notification mutation', () => {
     const start = bell.indexOf('const showUnseenToasts')
     const end = bell.indexOf('const { user: currentUser }')
-    assert.ok(start > -1 && end > start, 'could not bound the toast callback')
+    assert.ok(start > -1 && end > start)
     const fn = bell.slice(start, end)
-    assert.match(fn, /markNotificationsShown\(/, 'toast path must set the shown ledger')
-    assert.doesNotMatch(
-      fn,
-      /markNotificationRead\(/,
-      'marking a toast as read silently clears the user\'s unread badge'
-    )
+
+    assert.doesNotMatch(fn, /markNotificationRead\(/, 'a toast is not a read')
+    assert.doesNotMatch(fn, /markAllNotificationsRead\(/)
+    assert.doesNotMatch(fn, /markNotificationsShown/, 'the mark-shown endpoint was removed')
   })
 
-  await t.test('the realtime handler writes `shown`, not `read`', () => {
+  await t.test('the realtime handler makes no notification mutation', () => {
     const start = bell.indexOf('notifications-realtime')
     const end = bell.indexOf('const handleMarkAsRead')
-    assert.ok(start > -1 && end > start, 'could not bound the realtime handler')
     const rt = bell.slice(start, end)
-    assert.match(rt, /markNotificationsShown\(\[newNotification\.id\]\)/)
+
     assert.doesNotMatch(rt, /markNotificationRead\(/)
+    assert.doesNotMatch(rt, /markNotificationsShown/)
+  })
+
+  await t.test('the dead mark-shown transport is gone from the client', () => {
+    assert.doesNotMatch(api, /markNotificationsShown/)
+    assert.doesNotMatch(api, /mark-shown/)
+  })
+
+  await t.test('no source file references a `shown` column', () => {
+    // The column is not in the live schema; reading or writing it produced
+    // PGRST204 on every toast. `read` is the only flag we may touch.
+    for (const file of [BELL, API, 'lib/types.ts', 'app/notifications/page.tsx']) {
+      const src = stripComments(read(file))
+      assert.doesNotMatch(src, /\.shown\b/, `${file} still reads .shown`)
+      assert.doesNotMatch(src, /\bshown\s*:/, `${file} still writes a shown field`)
+    }
   })
 
   await t.test('an explicit user action may still mark as read', () => {
     // handleMarkAsRead is user-initiated — this one is correct and must stay.
     assert.match(bell, /const handleMarkAsRead[\s\S]{0,220}markNotificationRead\(notificationId\)/)
   })
+})
 
-  await t.test('the client exposes the mark-shown transport', () => {
-    assert.match(api, /export async function markNotificationsShown\(ids: string\[\]\)/)
-    assert.match(api, /\/api\/notifications\/mark-shown/)
+test('the toast ledger is client-side and survives a remount', async (t) => {
+  const bell = stripComments(read(BELL))
+
+  await t.test('the ledger uses sessionStorage, not the database', () => {
+    assert.match(bell, /sessionStorage\.getItem\(TOAST_LEDGER_KEY\)/)
+    assert.match(bell, /sessionStorage\.setItem\(TOAST_LEDGER_KEY/)
+  })
+
+  await t.test('already-toasted ids are filtered out', () => {
+    assert.match(bell, /readToastedIds\(\)/)
+    assert.match(bell, /filter\(\(n\) => !alreadyToasted\.has\(n\.id\)\)/)
+  })
+
+  await t.test('storage failures cannot break the bell', () => {
+    // Private mode throws on access; the helpers must swallow it.
+    assert.match(bell, /function readToastedIds[\s\S]{0,400}catch/)
+    assert.match(bell, /function rememberToastedIds[\s\S]{0,400}catch/)
+  })
+
+  await t.test('the ledger stays bounded', () => {
+    assert.match(bell, /slice\(-100\)/, 'unbounded sessionStorage growth')
   })
 })
 

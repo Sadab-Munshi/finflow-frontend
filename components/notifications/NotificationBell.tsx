@@ -10,7 +10,6 @@ import { useUser } from '@/context/UserContext'
 import {
   getNotifications,
   markNotificationRead,
-  markNotificationsShown,
   markAllNotificationsRead,
 } from '@/lib/api-client'
 import NotificationCenter from './NotificationCenter'
@@ -22,14 +21,53 @@ const NOTIFICATION_CACHE_TTL_MS = 30_000 // 30 seconds
 // Module-level cache so it persists across re-renders
 let notificationsCache: { data: Notification[]; timestamp: number } | null = null
 
-// Module-level toast ledger.
+// ── Toast ledger ──────────────────────────────────────────────────────────
 //
-// The layout chrome is rendered by each page rather than by a shared
-// app/layout.tsx, so every navigation unmounts and remounts this component —
-// which resets every ref and piece of state. This variable survives the
-// remount because it lives in module scope, so a user is toasted at most once
-// per page session no matter how many tabs they switch between.
-let toastedForUserId: string | null = null
+// Which notifications have already been surfaced as toasts is tracked in the
+// BROWSER, not in the database.
+//
+// Two earlier designs failed:
+//   * writing `read: true` cleared the unread badge just for opening the app;
+//   * writing a `shown` column threw PGRST204 — that column is not in the live
+//     schema, so every toast produced a 400 and a server log line.
+//
+// A toast is a per-session UI concern, so it needs no persistence at all.
+// `sessionStorage` survives the remount that every navigation causes (the
+// layout chrome is rendered by each page, not a shared app/layout.tsx) AND a
+// page reload, while starting clean in a new tab.
+const TOAST_LEDGER_KEY = 'ff-toasted-notifications'
+
+// Module-scope guard: the storage read is synchronous but the toast sequence is
+// async, and two chrome instances mount at once (app/*/loading.tsx + the page).
+// This claims the session before either instance can start, so they cannot
+// both toast the same rows.
+let ledgerClaimedForUserId: string | null = null
+
+function readToastedIds(): Set<string> {
+  try {
+    const raw = window.sessionStorage.getItem(TOAST_LEDGER_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [])
+  } catch {
+    // Private mode / storage disabled: fall back to no memory. The module
+    // guard still prevents repeats within this page session.
+    return new Set()
+  }
+}
+
+function rememberToastedIds(ids: string[]): void {
+  if (ids.length === 0) return
+  try {
+    const merged = readToastedIds()
+    for (const id of ids) merged.add(id)
+    // Keep the ledger bounded — only recent notifications are ever candidate
+    // toasts (the query asks for 2), so old ids are dead weight.
+    const trimmed = Array.from(merged).slice(-100)
+    window.sessionStorage.setItem(TOAST_LEDGER_KEY, JSON.stringify(trimmed))
+  } catch {
+    /* storage unavailable — the module guard is the remaining protection */
+  }
+}
 
 function getToastStyle(type: string) {
   switch (type) {
@@ -83,36 +121,35 @@ export default function NotificationBell() {
     }
   }, [userId])
 
-  // Show toasts for unread+unshown notifications ONCE per page session.
+  // Show toasts for unread notifications that have not already been toasted in
+  // this browser session.
   //
-  // Deliberately depends on nothing that changes during navigation: the
-  // previous revision listed `showUnseenToasts` (which itself depended on
-  // `router`) in the effect's deps, so every route change re-armed it and
-  // replayed the toasts.
+  // Deliberately depends on nothing that changes during navigation: listing
+  // `showUnseenToasts` (which itself depended on `router`) in the mount
+  // effect's deps is what made every route change replay the toasts.
   const showUnseenToasts = useCallback(async (uid: string) => {
-    if (toastedForUserId === uid) return
+    if (ledgerClaimedForUserId === uid) return
 
     let unseen: Notification[] = []
     try {
+      // `unread=true` filters on `read` — the only toast-related column that
+      // actually exists in the live schema.
       const payload = await getNotifications(2, true)
-      unseen = ((payload?.notifications ?? []) as Notification[]).filter(
-        (n) => n.shown !== true
-      )
+      unseen = (payload?.notifications ?? []) as Notification[]
     } catch {
-      // Leave the ledger unset so a later mount can retry.
+      // Leave the session unclaimed so a later mount can retry.
       return
     }
 
-    const data = unseen.slice(0, 2)
+    // Claim the session BEFORE awaiting anything else.
+    ledgerClaimedForUserId = uid
 
-    // Claim the session before awaiting the write: two instances of this
-    // component can mount at once (app/*/loading.tsx renders the chrome while
-    // the page renders its own), and both would otherwise toast the same rows.
-    toastedForUserId = uid
+    const alreadyToasted = readToastedIds()
+    const data = unseen.filter((n) => !alreadyToasted.has(n.id)).slice(0, 2)
     if (data.length === 0) return
 
-    // `shown`, not `read` — toasting must not clear the unread badge.
-    await markNotificationsShown(data.map((n) => n.id)).catch(() => {})
+    // Record them locally so a reload or remount never repeats them.
+    rememberToastedIds(data.map((n) => n.id))
 
     // Display a toast for each unseen notification
     data.forEach((n: Notification) => {
@@ -186,11 +223,9 @@ export default function NotificationBell() {
           })
           setUnreadCount(prev => prev + 1)
 
-          // Mark as shown so it doesn't reappear on next app load. Not
-          // `read`: the toast does not mean the user opened it.
-          markNotificationsShown([newNotification.id]).catch(() => {
-            /* best effort */
-          })
+          // Remember the toast locally so a remount or reload does not repeat
+          // it. Nothing is written to the database — a toast is not a read.
+          rememberToastedIds([newNotification.id])
 
           // Show toast notification
           const toastConfig = getToastStyle(newNotification.type)

@@ -112,7 +112,6 @@ export interface Notification {
   icon?: string;
   link?: string;
   read: boolean;
-  shown: boolean;
   created_at: string;
 }
 
