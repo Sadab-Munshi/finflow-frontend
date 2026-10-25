@@ -42,7 +42,6 @@ interface SubscriptionGateContextValue {
   features: Record<string, SubscriptionFeatureConfig>
   userTier: SubscriptionTier
   override: SubscriptionOverrideRecord | null
-  isSuperAdmin: boolean
   subscriptionsEnabled: boolean
   paymentsEnabled: boolean
   trialEnabled: boolean
@@ -59,7 +58,6 @@ const SubscriptionGateContext = createContext<SubscriptionGateContextValue>({
   features: {},
   userTier: 'free',
   override: null,
-  isSuperAdmin: false,
   subscriptionsEnabled: true,
   paymentsEnabled: true,
   trialEnabled: true,
@@ -136,8 +134,6 @@ export function SubscriptionGateProvider({ children }: { children: React.ReactNo
     }
   }, [bootstrap?.subscription, bootstrap?.user.id])
 
-  const isSuperAdmin = Boolean(bootstrap?.isSuperAdmin)
-
   const refresh = useCallback(async () => {
     await refreshProfile()
   }, [refreshProfile])
@@ -170,7 +166,6 @@ export function SubscriptionGateProvider({ children }: { children: React.ReactNo
       features,
       userTier,
       override,
-      isSuperAdmin,
       subscriptionsEnabled: settings.subscriptions_enabled,
       paymentsEnabled: settings.payments_enabled,
       trialEnabled: settings.trial_enabled,
@@ -187,7 +182,6 @@ export function SubscriptionGateProvider({ children }: { children: React.ReactNo
       features,
       userTier,
       override,
-      isSuperAdmin,
       checkFeature,
       isFeatureEnabled,
       canAccessFeature,

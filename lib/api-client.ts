@@ -116,7 +116,6 @@ export interface BootstrapPayload {
     updated_by?: string | null
     updated_at?: string | null
   }>
-  isSuperAdmin: boolean
   notifications: { unreadCount: number }
   banned: boolean
   banReason: string | null
@@ -277,21 +276,6 @@ export async function markNotificationRead(notificationId: string) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ notificationId }),
-  })
-}
-
-/**
- * Record that these notifications have been surfaced as toasts.
- *
- * Distinct from "read": the bell toasts a notification without the user
- * having opened it, and marking it read would silently clear the unread
- * badge. `shown` is the toast ledger.
- */
-export async function markNotificationsShown(ids: string[]) {
-  return request('/api/notifications/mark-shown', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids }),
   })
 }
 
