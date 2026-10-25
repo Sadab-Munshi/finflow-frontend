@@ -59,5 +59,6 @@
   "saveFailed": "সংরক্ষণ ব্যর্থ",
   "saveRetry": "ব্যর্থ, আবার চেষ্টা করবেন?",
   "scanDone": "হয়ে গেছে!",
-  "transactionsFound": "{count}টি লেনদেন পাওয়া গেছে"
+  "transactionsFound": "{count}টি লেনদেন পাওয়া গেছে",
+  "fileTooLarge": "ফাইলটি খুব বড়। অনুগ্রহ করে ৩ MB-এর কম আকারের ফাইল বেছে নিন।"
 }

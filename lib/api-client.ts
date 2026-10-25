@@ -1,6 +1,5 @@
 import { createClient } from './supabase/client'
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { apiBase } from './api-base'
 import { track } from './posthog'
 
 let supabaseClient: ReturnType<typeof createClient> | null = null
@@ -19,7 +18,6 @@ async function getToken(): Promise<string | null> {
 }
 
 async function request(path: string, options: RequestInit = {}) {
-  console.log('[api-client] fetching:', `${API_BASE}${path}`)
   const token = await getToken()
   const headers: Record<string, string> = {}
 
@@ -31,7 +29,7 @@ async function request(path: string, options: RequestInit = {}) {
     Object.assign(headers, options.headers)
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${apiBase()}${path}`, {
     ...options,
     headers,
   })
@@ -59,7 +57,7 @@ async function requestMultipart(path: string, formData: FormData) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${apiBase()}${path}`, {
     method: 'POST',
     headers,
     body: formData,
@@ -183,7 +181,7 @@ export async function authWaitlistJoin(
   reason: 'closed' | 'invite_only' | 'capacity'
 ): Promise<WaitlistJoinResult> {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/waitlist-join`, {
+    const res = await fetch(`${apiBase()}/api/auth/waitlist-join`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, reason }),

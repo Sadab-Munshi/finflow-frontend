@@ -38,7 +38,12 @@ here is dead config; kept in old README only.)
 
 | Name | Public? | Purpose | Default | Consumer file |
 |---|---|---|---|---|
-| `NEXT_PUBLIC_API_URL` | yes | finflow-api base URL | `http://localhost:3001` | `lib/api-client.ts:3`, `lib/analytics-api.ts` (same constant) |
+| `FINFLOW_API_ORIGIN` | **no** (server-side) | finflow-api base URL, used by the `/api/*` relay | `http://localhost:3001` | `app/api/[...path]/route.ts`, `lib/api-base.ts` |
+| `FINFLOW_PROXY_SECRET` | **no** (server-side) | shared secret sent as `X-Finflow-Proxy-Secret` | — | `app/api/[...path]/route.ts` — must match finflow-api's `PROXY_SECRET` |
+
+The browser never receives a backend URL: client code calls `/api/*` same-origin.
+`NEXT_PUBLIC_API_URL` is **deprecated** (still read as a fallback by the proxy so
+existing deployments keep working). See `docs/API-PROXY.md`.
 
 `NEXT_PUBLIC_INTERNAL_API_SECRET` and `NEXT_PUBLIC_BOT_SECRET` were removed
 2026-10-06 — a browser bundle must never hold API secrets. Ban-check and

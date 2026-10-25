@@ -22,7 +22,7 @@ deployment now. <!-- TODO: verify nothing in the Vercel dashboard still schedule
 |---|---|---|
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel → Environment Variables (Production + Preview) |
 | Turnstile | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | same |
-| Backend | `NEXT_PUBLIC_API_URL` | same |
+| Backend | `FINFLOW_API_ORIGIN`, `FINFLOW_PROXY_SECRET` (both server-side, no `NEXT_PUBLIC_` prefix) | same |
 
 Delete from Vercel env (removed from code 2026-10-06): `SUPABASE_SERVICE_ROLE_KEY`,
 `NEXT_PUBLIC_INTERNAL_API_SECRET`, `NEXT_PUBLIC_BOT_SECRET`. The two public

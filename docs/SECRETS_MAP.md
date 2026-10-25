@@ -18,7 +18,9 @@ credential.
 | `NEXT_PUBLIC_SUPABASE_URL` | public | project URL | all three `lib/supabase/*` clients | Supabase project change (rare) → Vercel env → redeploy |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | RLS-scoped client key | same | rotate in Supabase → update **all** apps (this + finflow-api) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public | widget site key | `components/auth/TurnstileWidget.tsx` | Cloudflare → Turnstile → rotate site key |
-| `NEXT_PUBLIC_API_URL` | public | backend base URL | `lib/api-client.ts:3`, `lib/analytics-api.ts` | config change; also update CSP `connect-src` (`next.config.ts:101`) |
+| `FINFLOW_API_ORIGIN` | **server only** | backend base URL for the `/api/*` relay | `app/api/[...path]/route.ts` | config change; no CSP edit needed (same-origin) |
+| `FINFLOW_PROXY_SECRET` | **server only** | `X-Finflow-Proxy-Secret` sent upstream | `app/api/[...path]/route.ts` | rotate **together** with finflow-api's `PROXY_SECRET`, then redeploy both |
+| `NEXT_PUBLIC_API_URL` | *deprecated* | legacy backend base URL | proxy fallback only | remove after cutover (`docs/API-PROXY.md`) |
 | `NEXT_PUBLIC_POSTHOG_KEY` | public by design | PostHog project key | `lib/posthog.ts:4-6` | PostHog project — treat as semi-public anyway (browser analytics key) |
 | `NEXT_PUBLIC_POSTHOG_HOST` | public | ingest host | `lib/posthog.ts:7` | config change; also CSP `script-src`/`connect-src` |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | public | push subscribe key | `lib/push.ts` | regenerate VAPID pair on finflow-api side and update here (invalidates subscriptions) |
