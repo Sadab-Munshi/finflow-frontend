@@ -81,7 +81,7 @@ export default function AppTopBar({
       </div>
 
       <div className="ff-topbar-side ff-topbar-side--end">
-        <Link href="/settings" className="ff-icon-btn ff-topbar-settings" aria-label={t('settings')}>
+        <Link href="/settings" prefetch={false} className="ff-icon-btn ff-topbar-settings" aria-label={t('settings')}>
           <Settings className="h-[18px] w-[18px]" aria-hidden="true" />
         </Link>
 
@@ -89,6 +89,7 @@ export default function AppTopBar({
 
         <Link
           href="/profile"
+          prefetch={false}
           aria-label={t('profile')}
           className="ff-topbar-avatar"
         >

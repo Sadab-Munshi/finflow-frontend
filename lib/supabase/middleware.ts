@@ -54,25 +54,20 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Check ban status for authenticated users on protected routes
-  if (user && isProtected) {
-    try {
-      const { data: banData } = await supabase
-        .from('user_management')
-        .select('is_banned, ip_banned')
-        .eq('user_id', user.id)
-        .maybeSingle()
-
-      if (banData?.is_banned || banData?.ip_banned) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        url.searchParams.set('banned', 'true')
-        return NextResponse.redirect(url)
-      }
-    } catch (error) {
-      console.error('Middleware ban check failed:', error)
-    }
-  }
+  // ── Ban enforcement moved server-side ──────────────────────────────────────
+  // This used to read `user_management` from the Edge with the anon key. That
+  // was an administrative table queried by the client-facing app, and it ran on
+  // every navigation, so it showed up as one of the duplicate ban checks in the
+  // network panel.
+  //
+  // Enforcement is now authoritative in two places that already run on every
+  // request:
+  //   * finflow-api `authMiddleware` -> 403 "Account is banned" on any API call
+  //   * /api/v1/user/bootstrap      -> `banned` flag, which UserProvider acts on
+  //
+  // Nothing is lost: a banned user's very first data request is rejected by the
+  // API, and bootstrap signs them out. The redirect below still handles the
+  // signed-out case.
 
   return supabaseResponse
 }

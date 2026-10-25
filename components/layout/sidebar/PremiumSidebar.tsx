@@ -36,7 +36,7 @@ export default function PremiumSidebar({
   const { collapsed, toggle } = useSidebarRail()
 
   const addLink = (
-    <Link href="/add?tab=manual" className="ff-cta">
+    <Link href="/add?tab=manual" prefetch={false} className="ff-cta">
       <Plus strokeWidth={2.1} aria-hidden="true" />
       <span className="ff-cta-label">{t('add')}</span>
     </Link>

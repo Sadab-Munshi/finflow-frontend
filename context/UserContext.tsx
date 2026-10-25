@@ -1,9 +1,24 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  ReactNode,
+} from 'react'
+import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { posthog } from '@/lib/posthog'
-import { trackLogin, sendHeartbeat, checkBan, checkIpBan, getSubscriptionStatus, type PlanId } from '@/lib/api-client'
+import {
+  trackLogin,
+  sendHeartbeat,
+  getUserBootstrap,
+  type PlanId,
+  type BootstrapPayload,
+} from '@/lib/api-client'
 
 interface UserProfile {
   userId: string
@@ -20,218 +35,178 @@ interface UserContextType {
   user: UserProfile | null
   loading: boolean
   refreshProfile: () => Promise<void>
+  /**
+   * The raw bootstrap payload. Exposed so SubscriptionGateContext can read
+   * settings/features/tier from the SAME response instead of issuing its own —
+   * otherwise consolidating the dashboard would just move the duplicate calls
+   * one layer down.
+   */
+  bootstrap: BootstrapPayload | null
 }
 
 const UserContext = createContext<UserContextType>({
   user: null,
   loading: true,
   refreshProfile: async () => {},
+  bootstrap: null,
 })
 
 export const useUser = () => useContext(UserContext)
 
+/** Paths where a signed-out visitor is expected — skip the bootstrap entirely. */
+function isPublicPath(pathname: string | null): boolean {
+  if (!pathname) return false
+  return [
+    '/login',
+    '/signup',
+    '/reset-password',
+    '/auth',
+    '/privacy',
+    '/terms',
+    '/disclaimer',
+    '/cookies',
+    '/support',
+    '/user-guide',
+  ].some((p) => pathname === p || pathname.startsWith(`${p}/`)) || pathname === '/'
+}
+
 export function UserProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const [user, setUser] = useState<UserProfile | null>(null)
+  const [bootstrap, setBootstrap] = useState<BootstrapPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // One bootstrap per signed-in session unless something explicitly refreshes.
+  const bootstrappedFor = useRef<string | null>(null)
+  const loginTracked = useRef(false)
 
-  const refreshProfile = useCallback(async () => {
+  /**
+   * Single source of truth for the shell.
+   *
+   * Previously this provider made ~7 calls on mount (auth.getUser, a settings
+   * select, a `user_management` read, api.ipify.org, track-login, heartbeat and
+   * the subscription endpoint), and a separate 20-second loop re-ran the ban
+   * checks — each with its own api.ipify.org round trip. All of that is now one
+   * request, and the ban state is enforced server-side by authMiddleware.
+   */
+  const loadBootstrap = useCallback(async (): Promise<void> => {
     const supabase = createClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (!authUser) return
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser()
 
-    let userName = authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User'
-    let avatarUrl = ''
-    const { data } = await supabase.from('settings').select('avatar_url, name').eq('user_id', authUser.id).single()
-    if (data?.avatar_url) avatarUrl = data.avatar_url
-    if (data?.name) userName = data.name
+    if (!authUser) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
 
-    let isPro = false
-    let planId: PlanId = 'free'
-    let planName = 'Free Starter'
-    let aiMultiplier = 1
+    let payload
     try {
-      const subRes = await getSubscriptionStatus()
-      const subPayload = (subRes as any)?.data ? (subRes as any).data : (subRes as any)
-      const sub = subPayload?.subscription
-      if (sub) {
-        planId = sub.planId || 'free'
-        planName = sub.planName || 'Free Starter'
-        aiMultiplier = Number(sub.aiMultiplier) || 1
-        isPro = sub.status === 'active' && planId !== 'free'
-      }
-    } catch {}
+      payload = await getUserBootstrap()
+    } catch {
+      // Bootstrap unreachable: keep the last known profile rather than blanking
+      // the UI. The backend still enforces bans and feature gates.
+      setLoading(false)
+      return
+    }
 
-    setUser(prev => {
-      if (prev) return { ...prev, userName, avatarUrl, isPro, planId, planName, aiMultiplier }
-      return {
-        userId: authUser.id,
-        email: authUser.email || '',
-        userName,
-        avatarUrl,
-        isPro,
-        planId,
-        planName,
-        aiMultiplier,
-      }
+    if (payload.banned) {
+      await supabase.auth.signOut({ scope: 'local' })
+      window.location.href = '/login?banned=true'
+      return
+    }
+
+    setBootstrap(payload)
+    setUser({
+      userId: payload.user.id,
+      email: payload.user.email || authUser.email || '',
+      userName: payload.user.name,
+      avatarUrl: payload.user.avatarUrl,
+      isPro: payload.subscription.isPro,
+      planId: payload.subscription.planId,
+      planName: payload.subscription.planName,
+      aiMultiplier: payload.subscription.aiMultiplier,
     })
-  }, [])
 
-  useEffect(() => {
-    const initUser = async () => {
-      const supabase = createClient()
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) {
-        setUser(null)
-        setLoading(false)
-        return
-      }
+    bootstrappedFor.current = payload.user.id
 
-      // PostHog identify
+    // Login telemetry is fire-and-forget and must never block the shell.
+    // The IP is no longer fetched from api.ipify.org: the backend sees the real
+    // address from x-real-ip on this very request, so the extra third-party
+    // round trip (and the data leak to it) is gone.
+    if (!loginTracked.current) {
+      loginTracked.current = true
       posthog.identify(authUser.id, {
         email: authUser.email,
-        name: authUser.user_metadata?.full_name,
+        name: payload.user.name,
       })
-
-      // Ban check
-      const { data: banData } = await supabase
-        .from('user_management')
-        .select('is_banned, ip_banned, ban_reason')
-        .eq('user_id', authUser.id)
-        .single()
-      if (banData?.is_banned || banData?.ip_banned) {
-        await supabase.auth.signOut({ scope: 'local' })
-        window.location.href = '/login?banned=true'
-        return
-      }
-
-      // Track login
-      let ipAddress = 'unknown'
-      try {
-        const ipRes = await fetch('https://api.ipify.org?format=json')
-        const ipData = await ipRes.json()
-        ipAddress = ipData.ip
-      } catch {}
-
-      trackLogin(authUser.id, authUser.email, ipAddress).catch(e => console.error('[trackLogin] Failed:', e))
-
-      // Heartbeat — via the API (the old direct Supabase upsert was silently
-      // RLS-blocked in prod, so presence never updated)
-      const pingHeartbeat = async () => {
-        try {
-          await sendHeartbeat()
-        } catch (e) {
-          console.warn('[heartbeat] Failed:', e)
-        }
-      }
-      pingHeartbeat()
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current)
-      heartbeatRef.current = setInterval(pingHeartbeat, 30000)
-
-      // Fetch profile
-      let userName = authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User'
-      let avatarUrl = ''
-      const { data } = await supabase
-        .from('settings')
-        .select('avatar_url, name')
-        .eq('user_id', authUser.id)
-        .single()
-      if (data?.avatar_url) avatarUrl = data.avatar_url
-      if (data?.name) userName = data.name
-
-      let isPro = false
-      let planId: PlanId = 'free'
-      let planName = 'Free Starter'
-      let aiMultiplier = 1
-      try {
-        const subRes = await getSubscriptionStatus()
-        const subPayload = (subRes as any)?.data ? (subRes as any).data : (subRes as any)
-        const sub = subPayload?.subscription
-        if (sub) {
-          planId = sub.planId || 'free'
-          planName = sub.planName || 'Free Starter'
-          aiMultiplier = Number(sub.aiMultiplier) || 1
-          isPro = sub.status === 'active' && planId !== 'free'
-        }
-      } catch {}
-
-      setUser({
-        userId: authUser.id,
-        email: authUser.email || '',
-        userName,
-        avatarUrl,
-        isPro,
-        planId,
-        planName,
-        aiMultiplier,
-      })
-      setLoading(false)
+      trackLogin(authUser.id, authUser.email || '').catch(() => {})
     }
 
-    initUser()
-
-    const supabase = createClient()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        setLoading(true)
-        initUser()
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null)
-        if (heartbeatRef.current) {
-          clearInterval(heartbeatRef.current)
-          heartbeatRef.current = null
-        }
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current)
-    }
+    setLoading(false)
   }, [])
 
-  // Ban polling every 20 seconds
+  const refreshProfile = useCallback(async () => {
+    await loadBootstrap()
+  }, [loadBootstrap])
+
+  // Initial load, and a revalidation whenever the route changes — the
+  // SWR-style freshness you asked for, with no background polling.
   useEffect(() => {
-    if (!user) return
-
-    const checkBanStatus = async () => {
-      const supabase = createClient()
-      let ipAddress = 'unknown'
-      try {
-        const ipRes = await fetch('https://api.ipify.org?format=json')
-        const ipData = await ipRes.json()
-        ipAddress = ipData.ip
-      } catch {}
-
-      let banned = false
-      try {
-        const banData = await checkBan(user.userId)
-        banned = banData.banned || false
-      } catch {
-        // fail silently, treat as not banned (matches middleware's fail-open ban check)
-      }
-
-      let ipBanned = false
-      try {
-        const ipBanData = await checkIpBan(ipAddress)
-        ipBanned = ipBanData.banned || false
-      } catch {
-        // fail silently, treat as not banned
-      }
-
-      if (banned || ipBanned) {
-        await supabase.auth.signOut({ scope: 'local' })
-        window.location.href = '/login?banned=true'
-      }
+    if (isPublicPath(pathname)) {
+      setLoading(false)
+      return
     }
 
-    checkBanStatus()
-    const interval = setInterval(checkBanStatus, 20000)
-    return () => clearInterval(interval)
+    let cancelled = false
+    const run = async () => {
+      await loadBootstrap()
+      if (cancelled) return
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [pathname, loadBootstrap])
+
+  // Heartbeat: keeps the admin panel's "Online now" data flowing. This is the
+  // only recurring timer that remains — it is a single lightweight POST every
+  // 30s and it does not re-run any ban or subscription logic.
+  useEffect(() => {
+    if (!user?.userId) return
+
+    const ping = async () => {
+      try {
+        await sendHeartbeat()
+      } catch {
+        /* presence is best-effort */
+      }
+    }
+    ping()
+    if (heartbeatRef.current) clearInterval(heartbeatRef.current)
+    heartbeatRef.current = setInterval(ping, 30000)
+
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current)
+      heartbeatRef.current = null
+    }
   }, [user?.userId])
 
+  // Focus revalidation: returning to the tab refreshes the shell (kill-switch
+  // and plan changes show up). Deliberately not a background poll.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onFocus = () => {
+      if (isPublicPath(window.location.pathname)) return
+      loadBootstrap().catch(() => {})
+    }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [loadBootstrap])
+
   return (
-    <UserContext.Provider value={{ user, loading, refreshProfile }}>
+    <UserContext.Provider value={{ user, loading, refreshProfile, bootstrap }}>
       {children}
     </UserContext.Provider>
   )

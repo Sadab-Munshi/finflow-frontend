@@ -51,9 +51,15 @@ test('Sign out — one confirmation, one implementation', async t => {
     // The single user-initiated sign-out call in the app.
     const callers = [...sourceFiles('app'), ...sourceFiles('components')].filter(f => /\bauth\.signOut\(/.test(read(f)))
     assert.deepEqual(callers, [SIGN_OUT], 'only the shared dialog signs the user out')
-    // The two remaining calls are forced sign-outs for banned accounts.
+    // One forced sign-out remains for banned accounts. It used to be two: the
+    // mount-time `user_management` read and the 20s ban poll each signed out
+    // independently. Both were consolidated into a single bootstrap-driven path
+    // (Phase 3: duplicate ban-check loops), so the invariant is now exactly one
+    // forced sign-out in the provider and no user-initiated ones outside the
+    // shared dialog.
     const context = read('context/UserContext.tsx')
-    assert.equal((context.match(/auth\.signOut\(/g) || []).length, 2, 'ban enforcement untouched')
+    assert.equal((context.match(/auth\.signOut\(/g) || []).length, 1, 'one forced sign-out for banned accounts')
+    assert.match(context, /scope: 'local'/, 'forced sign-out stays local-scoped')
   })
 
   await t.test('duplicate requests and in-flight state are handled', () => {

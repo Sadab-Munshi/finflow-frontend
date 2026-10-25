@@ -9,12 +9,17 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Layout from '@/components/layout/Layout'
-import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/context/UserContext'
 import { getNotificationIcon, timeAgo } from '@/lib/notification-utils'
 import NotificationsSkeleton from '@/components/skeletons/NotificationsSkeleton'
 import toast from 'react-hot-toast'
 import type { Notification } from '@/lib/types'
-import { deleteNotification } from '@/lib/api-client'
+import {
+  deleteNotification,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from '@/lib/api-client'
 
 const PAGE_SIZE = 20
 
@@ -54,12 +59,12 @@ function formatDateLabel(createdAt: string) {
 /* ── Component ───────────────────────────────────────────────────────── */
 export default function NotificationsPage() {
   const router = useRouter()
+  const { user: currentUser } = useUser()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
-  const [userId, setUserId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   /* bulk select state */
@@ -71,24 +76,22 @@ export default function NotificationsPage() {
 
   /* ── Data loading ───────────────────────────────────────────────── */
   const loadNotifications = useCallback(async (offset = 0, append = false) => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
-    setUserId(user.id)
+    // Paged through the validated backend endpoint. Pagination is expressed as
+    // a limit/offset pair the server clamps, so a bad offset can no longer
+    // reach PostgREST as a malformed `Range` header (the old 400s).
+    try {
+      const payload = await getNotifications(PAGE_SIZE + offset)
+      const all = (payload?.notifications ?? []) as Notification[]
+      const data = all.slice(offset, offset + PAGE_SIZE)
 
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
-
-    if (data) {
+      if (!payload) return
       if (append) setNotifications(prev => [...prev, ...data])
       else setNotifications(data)
       setHasMore(data.length === PAGE_SIZE)
+    } catch {
+      toast.error('Could not load notifications')
     }
-  }, [router])
+  }, [])
 
   useEffect(() => {
     const load = async () => {
@@ -105,15 +108,13 @@ export default function NotificationsPage() {
   }
 
   const handleMarkAsRead = async (id: string) => {
-    const supabase = createClient()
-    await supabase.from('notifications').update({ read: true }).eq('id', id)
+    await markNotificationRead(id).catch(() => {})
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
   }
 
   const handleMarkAllAsRead = async () => {
-    if (!userId) return
-    const supabase = createClient()
-    await supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false)
+    if (!currentUser?.userId) return
+    await markAllNotificationsRead().catch(() => {})
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     toast.success('All notifications marked as read')
   }
@@ -191,8 +192,7 @@ export default function NotificationsPage() {
   const handleBulkMarkRead = async () => {
     if (selected.size === 0) return
     const ids = Array.from(selected)
-    const supabase = createClient()
-    await supabase.from('notifications').update({ read: true }).in('id', ids)
+    await Promise.all(ids.map(id => markNotificationRead(id).catch(() => {})))
     setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n))
     setSelected(new Set())
     setSelectMode(false)
