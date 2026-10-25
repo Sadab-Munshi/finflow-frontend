@@ -29,6 +29,10 @@ export default function SidebarNavList({ items, onNavigate, tooltips = false }: 
           <Link
             href={item.path}
             onClick={onNavigate}
+            // Prefetching every sidebar route on load fires an RSC request per
+            // destination. Navigation here is deliberate, so the prefetch buys
+            // little and costs a burst of requests.
+            prefetch={false}
             aria-current={active ? 'page' : undefined}
             className={cn('ff-nav-row', active && 'ff-nav-row--active')}
           >

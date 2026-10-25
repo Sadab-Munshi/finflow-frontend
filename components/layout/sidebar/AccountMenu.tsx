@@ -152,11 +152,11 @@ export default function AccountMenu({
 
   const menuItems = (
     <>
-      <Link href="/profile" role="menuitem" className="ff-profile-pop-item" onClick={() => setOpen(false)}>
+      <Link href="/profile" prefetch={false} role="menuitem" className="ff-profile-pop-item" onClick={() => setOpen(false)}>
         <User size={15} strokeWidth={1.9} aria-hidden="true" />
         <span>{t('viewProfile')}</span>
       </Link>
-      <Link href="/profile" role="menuitem" className="ff-profile-pop-item" onClick={() => setOpen(false)}>
+      <Link href="/profile" prefetch={false} role="menuitem" className="ff-profile-pop-item" onClick={() => setOpen(false)}>
         <PenLine size={15} strokeWidth={1.9} aria-hidden="true" />
         <span>{t('editProfile')}</span>
       </Link>

@@ -237,19 +237,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Bottom Nav */}
       <nav className="min-[900px]:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-around z-40 no-print shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <Link href="/dashboard" className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
+        <Link href="/dashboard" prefetch={false} className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
           <LayoutDashboard className={cn('w-5 h-5 transition-colors', pathname === '/dashboard' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/dashboard' ? 'text-teal-600' : 'text-gray-400')}>{t('dashboard')}</span>
         </Link>
-        <Link href="/history" className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
+        <Link href="/history" prefetch={false} className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
           <History className={cn('w-5 h-5 transition-colors', pathname === '/history' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/history' ? 'text-teal-600' : 'text-gray-400')}>{t('history')}</span>
         </Link>
-        <Link href="/insights" className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
+        <Link href="/insights" prefetch={false} className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
           <BarChart2 className={cn('w-5 h-5 transition-colors', pathname === '/insights' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/insights' ? 'text-teal-600' : 'text-gray-400')}>{t('insights')}</span>
         </Link>
-        <Link href="/profile" className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
+        <Link href="/profile" prefetch={false} className="flex flex-col items-center gap-1 py-2 px-3 flex-1">
           <User className={cn('w-5 h-5 transition-colors', pathname === '/profile' ? 'text-teal-600' : 'text-gray-400')} />
           <span className={cn('text-xs font-medium transition-colors', pathname === '/profile' ? 'text-teal-600' : 'text-gray-400')}>{t('profile')}</span>
         </Link>

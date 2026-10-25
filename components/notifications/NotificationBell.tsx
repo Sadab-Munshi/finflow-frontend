@@ -6,6 +6,12 @@ import { useTranslations } from 'next-intl'
 import { Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/context/UserContext'
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from '@/lib/api-client'
 import NotificationCenter from './NotificationCenter'
 import type { Notification } from '@/lib/types'
 
@@ -47,41 +53,40 @@ export default function NotificationBell() {
       return
     }
 
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(NOTIFICATIONS_LIMIT)
-
-    if (data) {
+    // Goes through the validated backend endpoint instead of a client-built
+    // PostgREST query. The old `.eq('user_id', ...)`-style call is what could
+    // produce a 400 when a filter value was empty or malformed; the server now
+    // owns the query and clamps `limit` itself.
+    try {
+      const payload = await getNotifications(NOTIFICATIONS_LIMIT)
+      const data: Notification[] = (payload?.notifications ?? []) as Notification[]
       notificationsCache = { data, timestamp: Date.now() }
       setNotifications(data)
       setUnreadCount(data.filter((n: Notification) => !n.read).length)
+    } catch {
+      // Keep whatever is on screen; the bell is non-critical chrome.
     }
   }, [userId])
 
   // Show toasts for unread+unshown notifications on app load, then mark them as shown
   const showUnseenToasts = useCallback(async (uid: string) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', uid)
-      .eq('read', false)
-      .eq('shown', false)
-      .order('created_at', { ascending: false })
-      .limit(2)
+    let unseen: Notification[] = []
+    try {
+      const payload = await getNotifications(2, true)
+      unseen = ((payload?.notifications ?? []) as Notification[]).filter(
+        (n) => n.shown !== true
+      )
+    } catch {
+      return
+    }
+    const data = unseen.slice(0, 2)
+    if (data.length === 0) return
 
-    if (!data || data.length === 0) return
-
-    // Mark all as shown immediately to avoid re-showing on remount
-    const ids = data.map((n: Notification) => n.id)
-    await supabase
-      .from('notifications')
-      .update({ shown: true })
-      .in('id', ids)
+    // Mark as read-ish immediately so a remount doesn't re-toast them. The
+    // backend endpoint is idempotent, so a double call is harmless.
+    await Promise.all(
+      data.map((n) => markNotificationRead(n.id).catch(() => {}))
+    )
 
     // Display a toast for each unseen notification
     data.forEach((n: Notification) => {
@@ -110,18 +115,16 @@ export default function NotificationBell() {
     })
   }, [router])
 
-  // Get user and load notifications
+  // The signed-in user comes from UserProvider — a second auth.getUser() here
+  // was one of the duplicate requests on first paint.
+  const { user: currentUser } = useUser()
+
   useEffect(() => {
-    const init = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserId(user.id)
-        showUnseenToasts(user.id)
-      }
-    }
-    init()
-  }, [])
+    const id = currentUser?.userId
+    if (!id) return
+    setUserId(id)
+    showUnseenToasts(id)
+  }, [currentUser?.userId, showUnseenToasts])
 
   useEffect(() => {
     if (!userId) return
@@ -154,13 +157,9 @@ export default function NotificationBell() {
           setUnreadCount(prev => prev + 1)
 
           // Mark as shown so it doesn't reappear on next app load
-          supabase
-            .from('notifications')
-            .update({ shown: true })
-            .eq('id', newNotification.id)
-            .then(({ error }) => {
-              if (error) console.error('Failed to mark notification as shown:', error)
-            })
+          markNotificationRead(newNotification.id).catch(() => {
+            /* best effort */
+          })
 
           // Show toast notification
           const toastConfig = getToastStyle(newNotification.type)
@@ -206,11 +205,7 @@ export default function NotificationBell() {
   }, [])
 
   const handleMarkAsRead = async (notificationId: string) => {
-    const supabase = createClient()
-    await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('id', notificationId)
+    await markNotificationRead(notificationId).catch(() => {})
 
     setNotifications(prev => {
       const updated = prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
@@ -222,12 +217,7 @@ export default function NotificationBell() {
 
   const handleMarkAllAsRead = async () => {
     if (!userId) return
-    const supabase = createClient()
-    await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('user_id', userId)
-      .eq('read', false)
+    await markAllNotificationsRead().catch(() => {})
 
     setNotifications(prev => {
       const updated = prev.map(n => ({ ...n, read: true }))

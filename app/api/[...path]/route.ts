@@ -41,6 +41,27 @@ const HOP_BY_HOP = new Set([
   'upgrade',
 ])
 
+/**
+ * Explicit path translations for the versioned backend surface.
+ *
+ * The relay forwards paths verbatim by default (that is the contract the other
+ * 20 routers rely on). The one exception is the versioned user API: the client
+ * calls `/api/user/bootstrap` while finflow-api mounts it at
+ * `/api/v1/user/bootstrap`. Keeping the rewrite here — rather than making the
+ * client speak `/api/v1/...` — means the browser-facing URL stays stable if the
+ * backend version ever moves.
+ */
+const PATH_REWRITES: Array<{ match: RegExp; replace: string }> = [
+  { match: /^user\//, replace: 'v1/user/' },
+]
+
+function rewritePath(suffix: string): string {
+  for (const rule of PATH_REWRITES) {
+    if (rule.match.test(suffix)) return suffix.replace(rule.match, rule.replace)
+  }
+  return suffix
+}
+
 function backendOrigin(): string {
   const raw =
     process.env.FINFLOW_API_ORIGIN ||
@@ -122,7 +143,7 @@ function buildResponseHeaders(upstream: Response): Headers {
 }
 
 async function proxy(request: NextRequest, path: string[]): Promise<Response> {
-  const suffix = path.map(encodeURIComponent).join('/')
+  const suffix = rewritePath(path.map(encodeURIComponent).join('/'))
   const target = `${backendOrigin()}/api/${suffix}`
   // Preserve the query string exactly (filters, pagination, ?q=, etc).
   const search = request.nextUrl.search

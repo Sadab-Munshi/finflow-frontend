@@ -71,6 +71,62 @@ async function requestMultipart(path: string, formData: FormData) {
   return res.json()
 }
 
+// ============ User Bootstrap ============
+//
+// One call that returns everything the app shell needs. Replaces the ten-ish
+// separate reads the client used to make on load — including five that queried
+// administrative tables (subscription_settings, subscription_overrides,
+// super_admins, subscription_features, user_management) straight from the
+// browser. Those tables are no longer reachable from client code.
+//
+// Goes to /api/user/bootstrap; the relay maps it to the backend's versioned
+// /api/v1/user/bootstrap.
+
+export interface BootstrapPayload {
+  ok: boolean
+  user: { id: string; email: string; name: string; avatarUrl: string }
+  subscription: {
+    /** RESOLVED tier — use this for gating, not planId. */
+    effectiveTier: 'free' | 'pro' | 'max'
+    source: 'override' | 'subscription' | 'default'
+    planId: PlanId
+    planName: string
+    status: string
+    aiMultiplier: number
+    unlimitedAi: boolean
+    currentPeriodEnd: string | null
+    trialEndsAt: string | null
+    expiresAt: string | null
+    isPro: boolean
+    trialUsed: boolean
+  }
+  settings: {
+    subscriptionsEnabled: boolean
+    paymentsEnabled: boolean
+    trialEnabled: boolean
+    trialDays: number
+  }
+  features: Array<{
+    key: string
+    name: string
+    description: string
+    enabled: boolean
+    required_tier: 'free' | 'pro' | 'max'
+    registered?: boolean
+    updated_by?: string | null
+    updated_at?: string | null
+  }>
+  isSuperAdmin: boolean
+  notifications: { unreadCount: number }
+  banned: boolean
+  banReason: string | null
+  serverTime: string
+}
+
+export async function getUserBootstrap(): Promise<BootstrapPayload> {
+  return request('/api/user/bootstrap')
+}
+
 // ============ AI Endpoints ============
 
 export async function aiParseText(text: string) {
@@ -276,24 +332,6 @@ export async function submitFeedback(message: string, type: 'general' | 'bug' | 
 
 export async function getReports() {
   return request('/api/reports')
-}
-
-// ============ Ban Check Endpoints ============
-// BLOCKED until finflow-api accepts JWT auth on these endpoints.
-// Required API change (finflow-api src/routes/ban.ts:22,50): accept
-// Authorization: Bearer <user JWT> as an alternative to x-internal-secret —
-// verify via authMiddleware and restrict check-ban to userId === req.user.id
-// (self-service only). Until then both calls return 401; callers fail-open
-// (context/UserContext.tsx catch blocks treat errors as "not banned").
-
-export async function checkBan(userId: string) {
-  return request(`/api/check-ban?userId=${encodeURIComponent(userId)}`)
-}
-
-export async function checkIpBan(ipAddress: string) {
-  return request('/api/check-ip-ban', {
-    headers: { 'x-forwarded-for': ipAddress },
-  })
 }
 
 // ============ Track Login ============

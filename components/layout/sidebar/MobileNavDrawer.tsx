@@ -65,7 +65,7 @@ export default function MobileNavDrawer({
           <Dialog.Title className="sr-only">{t('primaryNav')}</Dialog.Title>
 
           <div className="ff-drawer-head">
-            <Link href="/dashboard" className="ff-drawer-brand" onClick={() => onOpenChange(false)}>
+            <Link href="/dashboard" prefetch={false} className="ff-drawer-brand" onClick={() => onOpenChange(false)}>
               <Image
                 src="/images/finflow-logo-tight.png"
                 alt="FinFlow"
