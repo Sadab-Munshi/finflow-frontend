@@ -21,52 +21,38 @@ const NOTIFICATION_CACHE_TTL_MS = 30_000 // 30 seconds
 // Module-level cache so it persists across re-renders
 let notificationsCache: { data: Notification[]; timestamp: number } | null = null
 
-// ── Toast ledger ──────────────────────────────────────────────────────────
+// ── Realtime toast de-duplication ─────────────────────────────────────────
 //
-// Which notifications have already been surfaced as toasts is tracked in the
-// BROWSER, not in the database.
+// Toasts have exactly ONE source: a genuinely new notification arriving over
+// the Supabase Realtime socket while the user is on the page. The initial load
+// never toasts anything — it only fills the list and the bell badge — so
+// anything that was already unread before this tab opened stays silent.
 //
-// Two earlier designs failed:
+// Two earlier designs are gone for good:
 //   * writing `read: true` cleared the unread badge just for opening the app;
 //   * writing a `shown` column threw PGRST204 — that column is not in the live
 //     schema, so every toast produced a 400 and a server log line.
 //
-// A toast is a per-session UI concern, so it needs no persistence at all.
-// `sessionStorage` survives the remount that every navigation causes (the
-// layout chrome is rendered by each page, not a shared app/layout.tsx) AND a
-// page reload, while starting clean in a new tab.
-const TOAST_LEDGER_KEY = 'ff-toasted-notifications'
+// A third attempt, a sessionStorage ledger fed by a mount-time unread query,
+// still replayed up to two historical notifications per tab: storage is
+// per-tab, so every new tab started with an empty ledger.
+//
+// What remains is this: the socket can deliver the same INSERT twice across a
+// reconnect or resubscribe, and that must not double-toast. The guard is
+// memory-only — there is nothing to persist, because a notification that
+// predates the page can no longer be toasted at all.
+const recentlyToastedIds = new Set<string>()
 
-// Module-scope guard: the storage read is synchronous but the toast sequence is
-// async, and two chrome instances mount at once (app/*/loading.tsx + the page).
-// This claims the session before either instance can start, so they cannot
-// both toast the same rows.
-let ledgerClaimedForUserId: string | null = null
-
-function readToastedIds(): Set<string> {
-  try {
-    const raw = window.sessionStorage.getItem(TOAST_LEDGER_KEY)
-    const parsed = raw ? JSON.parse(raw) : []
-    return new Set(Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [])
-  } catch {
-    // Private mode / storage disabled: fall back to no memory. The module
-    // guard still prevents repeats within this page session.
-    return new Set()
+/** True the first time an id is seen on the live socket, false on a replay. */
+function claimRealtimeToast(id: string): boolean {
+  if (recentlyToastedIds.has(id)) return false
+  recentlyToastedIds.add(id)
+  // Bounded: only the last handful of live frames can plausibly be replayed.
+  if (recentlyToastedIds.size > 100) {
+    const oldest = recentlyToastedIds.values().next().value
+    if (oldest) recentlyToastedIds.delete(oldest)
   }
-}
-
-function rememberToastedIds(ids: string[]): void {
-  if (ids.length === 0) return
-  try {
-    const merged = readToastedIds()
-    for (const id of ids) merged.add(id)
-    // Keep the ledger bounded — only recent notifications are ever candidate
-    // toasts (the query asks for 2), so old ids are dead weight.
-    const trimmed = Array.from(merged).slice(-100)
-    window.sessionStorage.setItem(TOAST_LEDGER_KEY, JSON.stringify(trimmed))
-  } catch {
-    /* storage unavailable — the module guard is the remaining protection */
-  }
+  return true
 }
 
 function getToastStyle(type: string) {
@@ -121,76 +107,17 @@ export default function NotificationBell() {
     }
   }, [userId])
 
-  // Show toasts for unread notifications that have not already been toasted in
-  // this browser session.
-  //
-  // Deliberately depends on nothing that changes during navigation: listing
-  // `showUnseenToasts` (which itself depended on `router`) in the mount
-  // effect's deps is what made every route change replay the toasts.
-  const showUnseenToasts = useCallback(async (uid: string) => {
-    if (ledgerClaimedForUserId === uid) return
-
-    let unseen: Notification[] = []
-    try {
-      // `unread=true` filters on `read` — the only toast-related column that
-      // actually exists in the live schema.
-      const payload = await getNotifications(2, true)
-      unseen = (payload?.notifications ?? []) as Notification[]
-    } catch {
-      // Leave the session unclaimed so a later mount can retry.
-      return
-    }
-
-    // Claim the session BEFORE awaiting anything else.
-    ledgerClaimedForUserId = uid
-
-    const alreadyToasted = readToastedIds()
-    const data = unseen.filter((n) => !alreadyToasted.has(n.id)).slice(0, 2)
-    if (data.length === 0) return
-
-    // Record them locally so a reload or remount never repeats them.
-    rememberToastedIds(data.map((n) => n.id))
-
-    // Display a toast for each unseen notification
-    data.forEach((n: Notification) => {
-      const toastConfig = getToastStyle(n.type)
-      toast(
-        (t) => (
-          <div
-            onClick={() => {
-              toast.dismiss(t.id)
-              if (n.link) {
-                routerRef.current.push(n.link)
-              }
-            }}
-            style={{ cursor: n.link ? 'pointer' : 'default' }}
-          >
-            <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '2px' }}>{n.title}</p>
-            <p style={{ fontSize: '12px', opacity: 0.85 }}>{n.message}</p>
-          </div>
-        ),
-        {
-          duration: 6000,
-          icon: toastConfig.icon,
-          style: { ...toastConfig.style, borderRadius: '12px' },
-        }
-      )
-    })
-  }, [])
-
   // The signed-in user comes from UserProvider — a second auth.getUser() here
   // was one of the duplicate requests on first paint.
   const { user: currentUser } = useUser()
 
-  // Fires once per user per page session. `showUnseenToasts` is intentionally
-  // absent from the deps — it is stable, and depending on it re-ran the whole
-  // toast sequence on every remount.
+  // Mount only records WHO is signed in so the list/badge fetches can run.
+  // It deliberately starts no toast sequence: unread rows that existed before
+  // this page opened are history, not events, and must not pop up.
   useEffect(() => {
     const id = currentUser?.userId
     if (!id) return
     setUserId(id)
-    showUnseenToasts(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.userId])
 
   useEffect(() => {
@@ -215,6 +142,11 @@ export default function NotificationBell() {
         },
         (payload) => {
           const newNotification = payload.new as Notification
+
+          // A reconnect or resubscribe can deliver the same INSERT twice. Only
+          // the first delivery updates the list and raises a toast.
+          if (!claimRealtimeToast(newNotification.id)) return
+
           setNotifications(prev => {
             const updated = [newNotification, ...prev].slice(0, NOTIFICATIONS_LIMIT)
             // Invalidate cache with new data
@@ -223,11 +155,8 @@ export default function NotificationBell() {
           })
           setUnreadCount(prev => prev + 1)
 
-          // Remember the toast locally so a remount or reload does not repeat
-          // it. Nothing is written to the database — a toast is not a read.
-          rememberToastedIds([newNotification.id])
-
-          // Show toast notification
+          // This is the ONLY toast in the component, and it only ever fires
+          // for an event that happened while the user was connected.
           const toastConfig = getToastStyle(newNotification.type)
           toast(
             (t) => (
@@ -235,7 +164,7 @@ export default function NotificationBell() {
                 onClick={() => {
                   toast.dismiss(t.id)
                   if (newNotification.link) {
-                    router.push(newNotification.link)
+                    routerRef.current.push(newNotification.link)
                   }
                 }}
                 style={{ cursor: newNotification.link ? 'pointer' : 'default' }}
