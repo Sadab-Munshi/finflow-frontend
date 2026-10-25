@@ -100,12 +100,32 @@ migrated to its own proxy first.
 
 Order of work to turn enforcement on:
 
-1. Deploy the frontend proxy and the backend gate with enforcement off.
-2. Confirm production traffic arrives with the header (backend logs / proxy
-   telemetry) and there are no direct browser calls left.
-3. Give `finflow-admin` its own proxy.
-4. Set `ENFORCE_PROXY_SECRET=true` on the backend, restart, watch for 403s.
-5. Remove `https://finflow-api.sadabmunshi.me` from `connect-src` in the CSP
-   (`next.config.ts`) and drop the deprecated `NEXT_PUBLIC_API_URL`.
+1. ✅ Deploy the frontend proxy and the backend gate with enforcement off.
+2. ✅ Confirm production traffic arrives with the header and no direct browser
+   calls remain.
+3. ✅ `finflow-admin` has its own proxy (`finflow-admin/app/api/[...path]/route.ts`)
+   plus server-only `FINFLOW_API_ORIGIN` / `FINFLOW_PROXY_SECRET`.
+4. ⏳ Set `ENFORCE_PROXY_SECRET=true` on the backend, restart, watch for 403s.
+5. ✅ Removed from `connect-src` (`next.config.ts`): both
+   `https://finflow-api.sadabmunshi.me` and the `https://*.sadabmunshi.me`
+   wildcard. The wildcard matched the backend host, so deleting the explicit
+   entry alone would have changed nothing. `pay.` and `pay-api.` are kept
+   explicitly (youpi checkout).
 
-Steps 3–5 are **not** done and are tracked as a follow-up.
+### Deploy checklist for enforcement
+
+Set the same value in three places, then restart the API:
+
+| Host | Variable |
+|---|---|
+| finflow-api (Oracle VM) | `PROXY_SECRET` + `ENFORCE_PROXY_SECRET=true` |
+| finflow-frontend (Vercel) | `FINFLOW_PROXY_SECRET` |
+| finflow-admin (Vercel) | `FINFLOW_PROXY_SECRET` |
+
+Do **not** flip enforcement until both Vercel projects have the secret, or the
+app that is missing it starts returning 403 on every panel request.
+
+Still outstanding after that: drop `FINFLOW_API_ORIGIN` fallbacks to
+`NEXT_PUBLIC_API_URL`, and narrow the remaining `https://*.sadabmunshi.me`
+wildcards in `script-src` / `img-src` / `frame-src` (untouched here — they are
+not `connect-src` and a wrong narrowing breaks the youpi checkout iframe).
