@@ -42,8 +42,10 @@ export function PricingCard({
     >
       {/* Top Badge Row */}
       <div>
-        <div className="flex items-center justify-between gap-2 min-h-[28px] mb-3">
-          {plan.badge ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 min-h-[28px] mb-3">
+          {/* When this card is the active plan, the Current Plan chip is the only badge
+              that should show — the marketing badge used to collide with it on narrow cards. */}
+          {isCurrentPlan ? null : plan.badge ? (
             <span
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs ${
                 isProYearly
