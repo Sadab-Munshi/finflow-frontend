@@ -38,6 +38,7 @@ import { SubscriptionPageHeader } from '@/components/subscription/SubscriptionPa
 import { CurrentPlanCard } from '@/components/subscription/CurrentPlanCard'
 import { UsageOverview } from '@/components/subscription/UsageOverview'
 import { PlanComparison } from '@/components/subscription/PlanComparison'
+import { SubscriptionSuccessOverlay } from '@/components/subscription/SubscriptionSuccessOverlay'
 import { PaymentHistoryList } from '@/components/subscription/PaymentHistoryList'
 import { PaymentHistoryTable } from '@/components/subscription/PaymentHistoryTable'
 import { PaymentDetails } from '@/components/subscription/PaymentDetails'
@@ -83,6 +84,11 @@ function SubscriptionContent() {
   const [verifyingOrderId, setVerifyingOrderId] = useState<string | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<PaymentOrderRecord | null>(null)
   const [notice, setNotice] = useState<NoticeBannerState | null>(null)
+  // Celebration shown once a pass is genuinely activated (paid or free trial).
+  const [celebration, setCelebration] = useState<{
+    planName: string
+    detail?: string | null
+  } | null>(null)
 
   const fetchSubscriptionState = useCallback(async (quiet = false) => {
     if (!quiet) {
@@ -152,10 +158,16 @@ function SubscriptionContent() {
             payload.subscription?.planId,
             payload.subscription?.planName
           )
-          setNotice({
-            type: 'success',
-            title: `${activatedName} Activated`,
-            message: `Your UPI payment has been confirmed and your ${activatedName} allowance is now active.`,
+          const periodEnd = payload.subscription?.currentPeriodEnd
+          setCelebration({
+            planName: activatedName,
+            detail: periodEnd
+              ? `Valid until ${new Date(periodEnd).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })} · No auto-renewal`
+              : 'Your allowance is now active.',
           })
           await fetchSubscriptionState(true)
           await refreshProfile().catch(() => {})
@@ -191,11 +203,19 @@ function SubscriptionContent() {
     fetchSubscriptionState()
   }, [fetchSubscriptionState])
 
-  // Auto-verify if returning from UPI redirect flow (?payment=return&orderId=...)
+  // Auto-verify when returning from a UPI-app redirect.
+  //
+  // The API has always emitted `?order_id=` (snake_case) while this effect read
+  // `orderId` and additionally required `payment=return|success` — which the API
+  // never appended. Both halves of the condition therefore failed and a payment
+  // completed inside a UPI app (which destroys the SDK callback) never verified.
+  // Accept either casing and treat a bare order id as a return signal.
   useEffect(() => {
     const paymentFlag = searchParams?.get('payment')
-    const returnOrderId = searchParams?.get('orderId')
-    if (returnOrderId && (paymentFlag === 'return' || paymentFlag === 'success')) {
+    const returnOrderId = searchParams?.get('orderId') || searchParams?.get('order_id')
+    const isReturnSignal =
+      paymentFlag === 'return' || paymentFlag === 'success' || Boolean(returnOrderId)
+    if (returnOrderId && isReturnSignal) {
       verifyOrderById(returnOrderId, { showPendingNotice: true })
       if (typeof window !== 'undefined') {
         const cleanUrl = window.location.pathname
@@ -349,11 +369,16 @@ function SubscriptionContent() {
       if (payload?.usage || payload?.quotas) {
         setQuotas(payload.usage || payload.quotas)
       }
-      setNotice({
-        type: 'success',
-        title: `${payload?.trialDays || effectiveTrialDays}-Day Free Trial Activated`,
-        message:
-          'Your Pro Free Trial is now active! Confirmation notifications have been sent to your active channels.',
+      const trialDays = payload?.trialDays || effectiveTrialDays
+      setCelebration({
+        planName: `${trialDays}-Day Free Trial`,
+        detail: payload?.endsAt
+          ? `Valid until ${new Date(payload.endsAt).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })} · No auto-renewal`
+          : 'Full Pro capacity is now unlocked.',
       })
       await Promise.all([
         fetchSubscriptionState(true),
@@ -402,6 +427,12 @@ function SubscriptionContent() {
 
   return (
     <Layout>
+      <SubscriptionSuccessOverlay
+        open={Boolean(celebration)}
+        planName={celebration?.planName || ''}
+        detail={celebration?.detail}
+        onDismiss={() => setCelebration(null)}
+      />
       <div className="min-h-screen bg-gradient-to-b from-[#F0FDFA]/70 via-[#F8FAFC] to-amber-50/30">
         <SubscriptionPageHeader
           title="Subscription & Billing"
@@ -495,39 +526,39 @@ function SubscriptionContent() {
                 onViewLatestReceipt={(order) => setSelectedOrder(order)}
               />
 
-              {/* One-Time Free Trial Banner (shown strictly when trial_enabled & unused) */}
+              {/* One-Time Free Trial Banner — kept as a slim row so it does not
+                  compete with the Current Plan card for attention. */}
               {showFreeTrialOffer && (
                 <section
                   aria-label="Free trial offer"
-                  className="rounded-2xl border border-teal-300/80 bg-gradient-to-r from-[#042F2E] via-[#115E59] to-[#0F766E] text-white p-4 sm:p-5 shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                  className="rounded-2xl border border-[#CCFBF1] bg-[#F0FDFA] px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                 >
-                  <div className="space-y-1 min-w-0">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-extrabold uppercase tracking-wider">
-                      <Sparkles className="w-3 h-3 shrink-0" />
-                      {tGate('freeTrialBadge')}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-[#CCFBF1] text-[#0F766E] shrink-0">
+                      <Sparkles className="w-4 h-4" />
                     </span>
-                    <h3 className="text-base sm:text-lg font-extrabold text-white">
+                    <p className="text-xs sm:text-sm font-semibold text-[#0F172A] leading-snug">
                       {tGate('freeTrialTitle', { days: effectiveTrialDays })}
-                    </h3>
-                    <p className="text-xs text-teal-100 leading-relaxed">
-                      {tGate('freeTrialDesc')}
+                      <span className="block text-[11px] font-normal text-[#64748B] mt-0.5">
+                        {tGate('freeTrialDesc')}
+                      </span>
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleStartFreeTrial}
                     disabled={startingTrial}
-                    className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm transition-all active:scale-[0.99] disabled:opacity-60 whitespace-nowrap shrink-0"
+                    className="inline-flex items-center justify-center gap-1.5 min-h-[40px] px-4 rounded-xl bg-[#0F766E] hover:bg-[#0d6b63] text-white text-xs font-bold transition-colors disabled:opacity-60 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#0F766E]"
                   >
                     {startingTrial ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
                         <span>{tGate('freeTrialStarting')}</span>
                       </>
                     ) : (
                       <>
                         <span>{tGate('freeTrialCta', { days: effectiveTrialDays })}</span>
-                        <ArrowRight className="w-4 h-4 shrink-0" />
+                        <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                       </>
                     )}
                   </button>
@@ -632,49 +663,20 @@ function SubscriptionContent() {
               {/* 5. Customer-Facing Billing Reassurance Footer */}
               <section
                 aria-label="Billing guarantees"
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                className="rounded-2xl bg-white border border-[#E2E8F0] px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-6"
               >
-                <div className="rounded-2xl bg-white border border-[#E2E8F0] p-4 flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] flex items-center justify-center text-[#0F766E] shrink-0">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[#0F172A]">
-                      Instant UPI Activation
-                    </h3>
-                    <p className="text-xs text-[#64748B] mt-0.5 leading-relaxed">
-                      Pay with Google Pay, PhonePe, Paytm, or any UPI app. Your pass activates as soon as the transfer completes.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-white border border-[#E2E8F0] p-4 flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] flex items-center justify-center text-[#0F766E] shrink-0">
-                    <CalendarCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[#0F172A]">
-                      No Recurring Auto-Debit
-                    </h3>
-                    <p className="text-xs text-[#64748B] mt-0.5 leading-relaxed">
-                      Every FinFlow pass is a fixed-duration prepaid purchase. You are never billed automatically when your pass ends.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-white border border-[#E2E8F0] p-4 flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] flex items-center justify-center text-[#0F766E] shrink-0">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-[#0F172A]">
-                      Verified Bank Receipts
-                    </h3>
-                    <p className="text-xs text-[#64748B] mt-0.5 leading-relaxed">
-                      Every completed payment includes a downloadable receipt with your UPI bank reference (UTR) for your records.
-                    </p>
-                  </div>
-                </div>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#475569]">
+                  <Zap className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+                  Instant UPI activation
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#475569]">
+                  <CalendarCheck className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+                  No recurring auto-debit
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#475569]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+                  Verified bank receipts
+                </span>
               </section>
             </>
           )}
