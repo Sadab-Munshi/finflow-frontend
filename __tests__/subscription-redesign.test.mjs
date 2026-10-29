@@ -127,21 +127,19 @@ test('formatQuotaMetric and getNormalizedUsageMetrics map internal keys to frien
   assert.equal(yearlyMetrics[0].isHighCapacity, true)
 })
 
-test('getCustomerFacingPlans hides test_1inr by default and includes it only when showTestPlan is true', () => {
-  const defaultPlans = utils.getCustomerFacingPlans([])
+test('getCustomerFacingPlans always lists the paid trial_7d pass as a normal plan', () => {
+  const plans = utils.getCustomerFacingPlans([])
   assert.deepEqual(
-    defaultPlans.map((p) => p.id),
-    ['free', 'pro_monthly', 'pro_yearly']
+    plans.map((p) => p.id),
+    ['free', 'trial_7d', 'pro_monthly', 'pro_yearly']
   )
 
-  const withTestPlans = utils.getCustomerFacingPlans([], { showTestPlan: true })
-  assert.deepEqual(
-    withTestPlans.map((p) => p.id),
-    ['free', 'pro_monthly', 'pro_yearly', 'test_1inr']
-  )
-
-  // Existing holders of test_1inr still get a clean display name
-  assert.equal(utils.getPlanDisplayName('test_1inr'), '7-Day Trial Pass')
+  // The retired ₹1 pass is gone; the paid 7-day pass replaces it at full Pro value.
+  const trial = plans.find((p) => p.id === 'trial_7d')
+  assert.equal(trial.priceInr, 19)
+  assert.equal(trial.durationDays, 7)
+  assert.equal(utils.getPlanDisplayName('trial_7d'), '7-Day Trial Pass')
+  assert.ok(!plans.some((p) => p.id === 'test_1inr'))
 })
 
 test('customer-facing subscription UI files contain zero internal gateway or engineering jargon', () => {

@@ -510,7 +510,7 @@ export async function healthCheck() {
 
 // ============ Subscriptions & YOUPI PG Payments ============
 
-export type PlanId = 'free' | 'test_1inr' | 'pro_monthly' | 'pro_yearly'
+export type PlanId = 'free' | 'trial_7d' | 'pro_monthly' | 'pro_yearly'
 
 export interface SubscriptionPlan {
   id: PlanId
