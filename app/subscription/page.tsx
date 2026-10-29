@@ -378,11 +378,6 @@ function SubscriptionContent() {
     }
   }
 
-  const showTestPlan =
-    searchParams?.get('testMode') === '1' ||
-    process.env.NEXT_PUBLIC_ENABLE_TEST_PASS === 'true' ||
-    subscription?.planId === 'test_1inr'
-
   const latestPaidOrder =
     orders.find((o) => normalizePaymentStatus(o.status).status === 'paid') || null
   const recentOrders = orders.slice(0, 3)
@@ -400,10 +395,8 @@ function SubscriptionContent() {
   const effectiveMultiplier = Math.max(
     1,
     Number(subscription?.aiMultiplier) ||
-      (subscription?.planId === 'pro_monthly'
+      (subscription?.planId === 'pro_monthly' || subscription?.planId === 'trial_7d'
         ? 5
-        : subscription?.planId === 'test_1inr'
-        ? 2
         : 1)
   )
 
@@ -554,7 +547,6 @@ function SubscriptionContent() {
                 currentPlanId={subscription?.planId || 'free'}
                 currentStatus={subscription?.status || 'free'}
                 processingPlanId={processingPlanId}
-                showTestPlan={showTestPlan}
                 onSelectPlan={(plan) => {
                   if (!paymentsEnabled) {
                     setNotice({

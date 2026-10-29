@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ChevronDown, ChevronUp, ShieldCheck, FlaskConical } from 'lucide-react'
+import { ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react'
 import { PricingCard } from './PricingCard'
 import {
   formatInrCurrency,
@@ -16,7 +16,6 @@ interface PlanComparisonProps {
   currentPlanId?: PlanId
   currentStatus?: 'active' | 'expired' | 'free' | 'cancelled'
   processingPlanId?: PlanId | null
-  showTestPlan?: boolean
   onSelectPlan: (plan: CustomerFacingPlan) => void
 }
 
@@ -64,7 +63,6 @@ export function PlanComparison({
   currentPlanId = 'free',
   currentStatus = 'free',
   processingPlanId = null,
-  showTestPlan = false,
   onSelectPlan,
 }: PlanComparisonProps) {
   const [mobileSelectedTab, setMobileSelectedTab] = useState<'pro_monthly' | 'pro_yearly' | 'free'>(
@@ -72,9 +70,8 @@ export function PlanComparison({
   )
   const [showMatrix, setShowMatrix] = useState(false)
 
-  const normalizedPlans = getCustomerFacingPlans(plans, { showTestPlan })
-  const primaryPlans = normalizedPlans.filter((p) => p.id !== 'test_1inr')
-  const testPlan = normalizedPlans.find((p) => p.id === 'test_1inr')
+  const normalizedPlans = getCustomerFacingPlans(plans)
+  const primaryPlans = normalizedPlans
 
   const isPlanActive = (planId: PlanId) => {
     if (planId === 'free') {
@@ -184,44 +181,6 @@ export function PlanComparison({
           />
         ))}
       </div>
-
-      {/* Optional Test Pass Banner (only when explicitly enabled via ?testMode=1 or active test_1inr holder) */}
-      {showTestPlan && testPlan && (
-        <div className="rounded-2xl border border-dashed border-[#CBD5E1] bg-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center text-[#475569] shrink-0">
-              <FlaskConical className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-bold text-[#0F172A]">{testPlan.name}</h3>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F1F5F9] text-[#475569]">
-                  {formatInrCurrency(testPlan.priceInr)} · {testPlan.intervalLabel}
-                </span>
-                {isPlanActive('test_1inr') && (
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#ECFDF5] text-[#047857]">
-                    Active on Account
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-[#64748B] mt-0.5">
-                {testPlan.tagline} (2x monthly AI limits for 7 days).
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onSelectPlan(testPlan)}
-            disabled={processingPlanId !== null}
-            className="inline-flex items-center justify-center min-h-[44px] px-4 py-2 rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] hover:bg-[#F1F5F9] text-xs font-semibold text-[#0F172A] shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
-          >
-            {isPlanActive('test_1inr')
-              ? 'Extend 7-Day Pass (₹1)'
-              : 'Activate 7-Day Pass (₹1)'}
-          </button>
-        </div>
-      )}
 
       {/* Expandable Plan Quota Comparison Table */}
       <div className="rounded-2xl bg-white border border-[#E2E8F0] overflow-hidden shadow-sm">

@@ -133,23 +133,23 @@ export const CUSTOMER_PLAN_OVERRIDES: Record<
       reports: 'Standard monthly PDF',
     },
   },
-  test_1inr: {
+  trial_7d: {
     name: '7-Day Trial Pass',
     publicBadge: '7-Day Pass',
     cadenceLabel: 'for 7 days',
-    billingNote: 'One-time ₹1 pass · Valid for 7 days · Does not auto-renew',
-    tagline: '7-day prepaid pass with double monthly AI allowances.',
+    billingNote: 'One-time ₹19 pass · Valid for 7 days · Does not auto-renew',
+    tagline: 'Full Pro AI capacity for 7 days, with no auto-renewal.',
     features: [
-      '120 Smart Entries & 100 Voice Entries per month',
-      '60 Receipt Scans & 20 Spending Insights per month',
+      '300 Smart Entries & 250 Voice Entries per month',
+      '150 Receipt Scans & 50 Spending Insights per month',
       'Instant UPI payment confirmation & digital receipt',
       'Valid for 7 days with no automatic renewal',
     ],
     allowances: {
-      nlp: '120 / month',
-      voice: '100 / month',
-      receipt: '60 / month',
-      insights: '20 / month',
+      nlp: '300 / month',
+      voice: '250 / month',
+      receipt: '150 / month',
+      insights: '50 / month',
       reports: 'Standard monthly PDF',
     },
   },
@@ -398,8 +398,8 @@ export function getCustomerPlanName(
   options?: { isTestAccount?: boolean }
 ): string {
   if (!planId) return 'Free Starter'
-  if (planId === 'test_1inr') {
-    return options?.isTestAccount ? '7-Day Trial Pass (₹1)' : '7-Day Trial Pass'
+  if (planId === 'trial_7d') {
+    return options?.isTestAccount ? '7-Day Trial Pass (₹19)' : '7-Day Trial Pass'
   }
   if (planId in CUSTOMER_PLAN_OVERRIDES) {
     return CUSTOMER_PLAN_OVERRIDES[planId as PlanId].name
@@ -534,16 +534,13 @@ export function getNormalizedUsageMetrics(
 }
 
 /**
- * Returns customer-facing plans merged with authoritative pricing/duration from the API,
- * hiding the ₹1 test pass unless `showTestPlan` is explicitly true.
+ * Returns customer-facing plans merged with authoritative pricing/duration from the API.
+ * Plan order is the ascending value ladder: free → 7-day pass → monthly → yearly.
  */
 export function getCustomerFacingPlans(
-  apiPlans: SubscriptionPlan[] | undefined | null,
-  options?: { showTestPlan?: boolean }
+  apiPlans: SubscriptionPlan[] | undefined | null
 ): CustomerFacingPlan[] {
-  const baseOrder: PlanId[] = options?.showTestPlan
-    ? ['free', 'pro_monthly', 'pro_yearly', 'test_1inr']
-    : ['free', 'pro_monthly', 'pro_yearly']
+  const baseOrder: PlanId[] = ['free', 'trial_7d', 'pro_monthly', 'pro_yearly']
 
   const apiById = new Map<string, SubscriptionPlan>()
   if (Array.isArray(apiPlans)) {
@@ -562,7 +559,7 @@ export function getCustomerFacingPlans(
     }
   > = {
     free: { priceInr: 0, durationDays: 0, aiMultiplier: 1, unlimitedAi: false },
-    test_1inr: { priceInr: 1, durationDays: 7, aiMultiplier: 2, unlimitedAi: false },
+    trial_7d: { priceInr: 19, durationDays: 7, aiMultiplier: 5, unlimitedAi: false },
     pro_monthly: { priceInr: 99, durationDays: 30, aiMultiplier: 5, unlimitedAi: false },
     pro_yearly: { priceInr: 999, durationDays: 365, aiMultiplier: 999, unlimitedAi: true },
   }
@@ -574,7 +571,7 @@ export function getCustomerFacingPlans(
     const priceInr = fromApi?.priceInr ?? fallback.priceInr
     const durationDays = fromApi?.durationDays ?? fallback.durationDays
     const cadenceLabel =
-      planId === 'test_1inr' && durationDays > 0
+      planId === 'trial_7d' && durationDays > 0
         ? `for ${durationDays} day${durationDays > 1 ? 's' : ''}`
         : override.cadenceLabel
 

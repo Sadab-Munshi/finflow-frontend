@@ -46,10 +46,8 @@ export function CurrentPlanCard({
   const multiplier = Math.max(
     1,
     Number(subscription?.aiMultiplier) ||
-      (subscription?.planId === 'pro_monthly'
+      (subscription?.planId === 'pro_monthly' || subscription?.planId === 'trial_7d'
         ? 5
-        : subscription?.planId === 'test_1inr'
-        ? 2
         : 1)
   )
 

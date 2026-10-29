@@ -96,7 +96,7 @@ export function normalizeTier(value: unknown): SubscriptionTier {
 
 export function mapPlanIdToTier(planId: string | null | undefined): SubscriptionTier {
   if (planId === 'pro_yearly' || planId === 'max' || planId === 'premium') return 'max'
-  if (planId === 'pro_monthly' || planId === 'test_1inr' || planId === 'pro') return 'pro'
+  if (planId === 'pro_monthly' || planId === 'trial_7d' || planId === 'pro') return 'pro'
   return 'free'
 }
 
