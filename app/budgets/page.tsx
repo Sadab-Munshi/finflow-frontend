@@ -173,8 +173,6 @@ export default function BudgetsPage() {
     })
   }, [filtered, transactions])
 
-  const getCategoryName = (slug: string) => getCategoryByName(slug)?.name || slug
-
   /* Row menu: closes on Escape or a click anywhere outside it, so it can never
      be left open behind another interaction or trap keyboard focus. */
   useEffect(() => {
@@ -308,32 +306,26 @@ export default function BudgetsPage() {
       >
 
         {/* ── Heading · month · create ─────────────────────────────── */}
-        <div className="mb-3 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="mb-1.5 flex flex-col gap-1.5 sm:mb-4 sm:gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <h1 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-2xl">
               {t('title')}
             </h1>
-            <p className="mt-1 text-sm leading-5 text-gray-700">
-              {overBudgetItems.length > 0
-                ? (() => {
-                    const worst = overBudgetItems.reduce((a, b) =>
-                      getSpentAmount(b) - b.amount > getSpentAmount(a) - a.amount ? b : a
-                    )
-                    return `${overBudgetItems.length} ${overBudgetItems.length === 1 ? 'category is' : 'categories are'} over — ${getCategoryName(worst.category)} is ${formatIndianCurrency(getSpentAmount(worst) - worst.amount)} over`
-                  })()
-                : filtered.length > 0
-                  ? 'Every category is within its limit this month'
-                  : 'Set a monthly limit for the categories you spend in'}
+            <p className="mt-0.5 text-sm leading-5 text-gray-700">
+              Track your monthly spending limits.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center rounded-lg border border-gray-300 bg-white">
+          {/* Month + create share one row at every width. The stepper takes the
+              slack on phones so the create button never orphans onto its own
+              row with dead space beside it. */}
+          <div className="flex items-center gap-2 sm:shrink-0">
+            <div className="flex min-w-0 flex-1 items-center rounded-lg border border-gray-300 bg-white sm:flex-none">
               <button
                 onClick={goPrev}
                 disabled={prevDisabled}
                 aria-label="Previous month"
-                className={`flex h-11 w-11 items-center justify-center rounded-l-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-inset ${
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-l-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-inset sm:w-11 ${
                   prevDisabled ? 'cursor-not-allowed text-gray-300' : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -341,7 +333,7 @@ export default function BudgetsPage() {
               </button>
               <span
                 aria-live="polite"
-                className="min-w-[112px] px-1 text-center text-sm font-medium tabular-nums text-gray-900"
+                className="min-w-0 flex-1 truncate px-1 text-center text-sm font-medium tabular-nums text-gray-900 sm:min-w-[112px] sm:flex-none"
               >
                 {formatMonthLabel(selectedMonth)}
               </span>
@@ -349,7 +341,7 @@ export default function BudgetsPage() {
                 onClick={goNext}
                 disabled={nextDisabled}
                 aria-label="Next month"
-                className={`flex h-11 w-11 items-center justify-center rounded-r-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-inset ${
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-r-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-inset sm:w-11 ${
                   nextDisabled ? 'cursor-not-allowed text-gray-300' : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -360,20 +352,22 @@ export default function BudgetsPage() {
             {filtered.length > 0 && (
               <button
                 onClick={openCreate}
-                className="flex h-11 items-center gap-1.5 rounded-lg bg-[#0D9488] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#0B7F75] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-offset-2"
+                aria-label="Create new budget"
+                className="flex h-11 shrink-0 items-center gap-1.5 rounded-lg bg-[#0F766E] px-3 text-sm font-semibold text-white transition-colors hover:bg-[#115E59] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-offset-2 sm:px-4"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
-                New budget
+                <span className="hidden min-[370px]:inline">New budget</span>
+                <span className="min-[370px]:hidden">New</span>
               </button>
             )}
           </div>
         </div>
 
         {/* ── Summary ──────────────────────────────────────────────────
-             Phones get a 2-up row (Spent / Total budget) with Remaining
-            overall spanning the full width below, because three equal
-            columns forced "Remaining overall" to wrap and knocked the
-            amounts out of line. From sm up it is three columns. */}
+             Phones: Spent / Total budget as a two-column row, then
+            "Remaining overall" as a single label-and-value line beneath.
+            Three equal columns forced the long label to wrap and pushed the
+            values out of alignment, and cost ~40px of vertical space. */}
         {filtered.length > 0 && (() => {
           const overCount = overBudgetItems.length
           const atLimitCount = filtered.filter((b) => {
@@ -393,25 +387,25 @@ export default function BudgetsPage() {
           return (
             <section
               aria-label="Budget summary"
-              className="mb-5 rounded-xl border border-gray-300 bg-white"
+              className="mb-2.5 rounded-xl border border-gray-300 bg-white sm:mb-5"
             >
               <div className="grid grid-cols-2 sm:grid-cols-3">
-                <div className="px-3 py-3 sm:px-5 sm:py-4">
+                <div className="px-3 py-1.5 sm:px-5 sm:py-4">
                   <p className="text-xs font-medium text-gray-600">Spent</p>
-                  <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl">
+                  <p className="mt-0.5 text-lg font-semibold tabular-nums tracking-tight text-gray-900 sm:mt-1 sm:text-2xl">
                     {formatIndianCurrency(totalSpent)}
                   </p>
                 </div>
-                <div className="border-l border-gray-200 px-3 py-3 sm:px-5 sm:py-4">
+                <div className="border-l border-gray-200 px-3 py-1.5 sm:px-5 sm:py-4">
                   <p className="text-xs font-medium text-gray-600">Total budget</p>
-                  <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl">
+                  <p className="mt-0.5 text-lg font-semibold tabular-nums tracking-tight text-gray-900 sm:mt-1 sm:text-2xl">
                     {formatIndianCurrency(totalBudget)}
                   </p>
                 </div>
-                <div className="col-span-2 border-t border-gray-200 px-3 py-3 sm:col-span-1 sm:border-l sm:border-t-0 sm:px-5 sm:py-4">
+                <div className="col-span-2 flex items-baseline justify-between gap-3 border-t border-gray-200 px-3 py-1.5 sm:col-span-1 sm:block sm:border-l sm:border-t-0 sm:px-5 sm:py-4">
                   <p className="text-xs font-medium text-gray-600">Remaining overall</p>
                   <p
-                    className="mt-1 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl"
+                    className="text-lg font-semibold tabular-nums tracking-tight sm:mt-1 sm:text-2xl"
                     style={{ color: remaining < 0 ? '#831C1E' : '#111827' }}
                   >
                     {formatIndianCurrency(Math.abs(remaining))}
@@ -420,7 +414,7 @@ export default function BudgetsPage() {
                 </div>
               </div>
 
-              <div className="px-3 pb-3 sm:px-5 sm:pb-4">
+              <div className="px-3 pb-2 sm:px-5 sm:pb-4">
                 <div
                   role="progressbar"
                   aria-label="Total budget used"
@@ -435,7 +429,9 @@ export default function BudgetsPage() {
                     style={{ width: `${fillPct}%`, background: '#0D9488' }}
                   />
                 </div>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                {/* Stacked on phones so the percentage and the warning count are
+                    never squeezed into one crowded line. */}
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5">
                   <p className="text-xs tabular-nums text-gray-600">
                     {Math.round(usedPct)}% of budget used
                   </p>
@@ -470,7 +466,7 @@ export default function BudgetsPage() {
             </p>
             <button
               onClick={openCreate}
-              className="mt-4 inline-flex h-11 items-center gap-1.5 rounded-lg bg-[#0D9488] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#0B7F75] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-offset-2"
+              className="mt-4 inline-flex h-11 items-center gap-1.5 rounded-lg bg-[#0F766E] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#115E59] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E] focus-visible:ring-offset-2"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               Create a budget
@@ -478,13 +474,13 @@ export default function BudgetsPage() {
           </motion.div>
         ) : (
           <>
-            <p className="mb-2 text-xs font-medium text-gray-600 sm:mb-2.5">
+            <p className="mb-1 text-xs font-medium text-gray-600 sm:mb-2">
               {sortedFiltered.length} {sortedFiltered.length === 1 ? 'budget' : 'budgets'}
             </p>
 
             {/* 1 col on phones, 2 from sm (tablet/large landscape), 3 only once
                 each card still has comfortable width (xl). */}
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
               {sortedFiltered.map((budget, i) => {
                 const catData  = getCategoryByName(budget.category)
                 const name     = catData?.name || budget.category
@@ -526,7 +522,7 @@ export default function BudgetsPage() {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, delay: i * 0.04 }}
-                    className="flex flex-col rounded-xl border border-gray-300 bg-white p-3.5 sm:p-4"
+                    className="flex flex-col rounded-xl border border-gray-300 bg-white p-3 sm:p-4"
                   >
                     {/* 1 · category name + actions */}
                     <div className="flex items-start justify-between gap-2">
@@ -552,7 +548,7 @@ export default function BudgetsPage() {
                               <Pencil className="h-4 w-4" aria-hidden="true" />
                             </button>
 
-                            <div className="relative -mr-1" data-budget-menu>
+                            <div className="relative" data-budget-menu>
                               <button
                                 onClick={() => setOpenMenuId(menuOpen ? null : budget.id)}
                                 aria-label={`More actions for ${name}`}
@@ -594,7 +590,7 @@ export default function BudgetsPage() {
                     </div>
 
                     {/* 2 · spent against the limit */}
-                    <p className="mt-1.5 text-sm tabular-nums">
+                    <p className="mt-1 text-sm leading-5 tabular-nums">
                       <span className="font-semibold text-gray-900">{formatIndianCurrency(spent)}</span>
                       <span className="text-gray-600"> spent of </span>
                       <span className="text-gray-900">{formatIndianCurrency(limit)}</span>
@@ -616,7 +612,7 @@ export default function BudgetsPage() {
                               ? 'Limit reached'
                               : `${Math.round(pct)}% of budget used, ${formatIndianCurrency(limit - spent)} remaining`
                       }
-                      className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-gray-200"
+                      className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200"
                     >
                       <div
                         className="h-full rounded-full transition-[width] duration-500"
@@ -625,7 +621,7 @@ export default function BudgetsPage() {
                     </div>
 
                     {/* 4 · status — always in words, never colour alone */}
-                    <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3">
+                    <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
                       {!hasLimit ? (
                         <span className="text-xs font-medium text-gray-700">No limit set</span>
                       ) : isOver ? (
@@ -645,7 +641,7 @@ export default function BudgetsPage() {
                       {/* Real drill-down: /history filters by ?category= already. */}
                       <Link
                         href={`/history?category=${encodeURIComponent(budget.category)}`}
-                        className="-my-2.5 inline-flex min-h-[44px] items-center gap-0.5 rounded-md px-1 text-xs font-semibold text-[#0B7F75] transition-colors hover:text-[#0D9488] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]"
+                        className="-my-2 inline-flex min-h-[44px] items-center gap-0.5 rounded-md px-1 text-xs font-semibold text-[#0B7F75] transition-colors hover:text-[#0D9488] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]"
                       >
                         View spending
                         <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
