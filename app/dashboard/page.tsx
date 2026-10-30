@@ -22,6 +22,7 @@ import { getTransactions } from '@/lib/db'
 import { getCategoryByName } from '@/lib/categories'
 import { cn, formatIndianCurrency, formatIST, normalizeDateToYMD, getISTDateOffset } from '@/lib/utils'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
+import { useDashboardPrefs } from '@/lib/useDashboardPrefs'
 import { Transaction } from '@/lib/types'
 import { useTranslations } from 'next-intl'
 
@@ -89,8 +90,14 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading]           = useState(true)
   const [pieChartHeight, setPieChartHeight] = useState(250)
-  const [dashboardView, setDashboardView] = useState<'month' | 'all'>('month')
-  const [hideBalance, setHideBalance]   = useState(false)
+  // Persisted per device: a tab switch, reload or return visit keeps both
+  // the month/all-time choice and the hidden-balance state (lib/useDashboardPrefs).
+  const {
+    dashboardView,
+    setDashboardView,
+    hideBalance,
+    toggleHideBalance,
+  } = useDashboardPrefs()
 
   // ── Data fetching ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -317,7 +324,7 @@ export default function DashboardPage() {
           <div className="relative flex items-start justify-between">
             <p className="text-white/80 text-sm">{heroLabel}</p>
             <button
-              onClick={() => setHideBalance(!hideBalance)}
+              onClick={toggleHideBalance}
               aria-label={t('toggleBalance')}
               className="text-white/70 hover:text-white transition-colors"
             >
