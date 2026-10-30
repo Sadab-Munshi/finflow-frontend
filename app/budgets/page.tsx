@@ -71,34 +71,9 @@ const categoryIconMap: Record<string, typeof Utensils> = {
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000]
 
 /* Status helpers */
-function pColor(pct: number) {
-  if (pct <= 50) return '#16A34A'
-  if (pct <= 80) return '#D97706'
-  return '#DC2626'
-}
 
-function statusBadge(pct: number) {
-  if (pct <= 50) return {
-    label: 'On Track',
-    pill: 'bg-green-50 text-green-700',
-    dot: 'bg-green-500',
-  }
-  if (pct <= 80) return {
-    label: 'Near Limit',
-    pill: 'bg-amber-50 text-amber-700',
-    dot: 'bg-amber-500',
-  }
-  return {
-    label: 'Over Budget',
-    pill: 'bg-red-50 text-red-700',
-    dot: 'bg-red-500',
-  }
-}
 
 /* Icon background tint from category color */
-function iconBg(hex: string) {
-  return `${hex}18`
-}
 
 /* ── Component ─────────────────────────────────────────────────────── */
 
@@ -301,240 +276,162 @@ export default function BudgetsPage() {
     <Layout>
       <div className="mx-auto w-full max-w-[1440px] pb-8">
 
-        {/* ── Page Header ──────────────────────────────────────────── */}
-        <div className="mb-4 flex flex-col gap-3 lg:mb-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
-          {filtered.length > 0 && (
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-4 py-2 font-semibold text-sm transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              {t('createBudget')}
-            </button>
-          )}
+        {/* ── Page Header: title + the screen's one finding ────────── */}
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              {overBudgetItems.length > 0
+                ? `${overBudgetItems.length} ${overBudgetItems.length === 1 ? 'category is' : 'categories are'} over their limit — ${overBudgetItems[0].category} by ${formatIndianCurrency(getSpentAmount(overBudgetItems[0]) - overBudgetItems[0].amount)}`
+                : filtered.length > 0
+                  ? 'Every category is within its limit this month'
+                  : 'Set a monthly limit for the categories you spend in'}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="flex items-center rounded-lg border border-gray-200 bg-white">
+              <button
+                onClick={goPrev}
+                disabled={prevDisabled}
+                aria-label="Previous month"
+                className={`flex h-8 w-8 items-center justify-center rounded-l-lg transition-colors ${
+                  prevDisabled ? 'cursor-not-allowed text-gray-300' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="min-w-[124px] text-center text-sm font-medium tabular-nums text-gray-900">
+                {formatMonthLabel(selectedMonth)}
+              </span>
+              <button
+                onClick={goNext}
+                disabled={nextDisabled}
+                aria-label="Next month"
+                className={`flex h-8 w-8 items-center justify-center rounded-r-lg transition-colors ${
+                  nextDisabled ? 'cursor-not-allowed text-gray-300' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {filtered.length > 0 && (
+              <button
+                onClick={openCreate}
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-[#0D9488] px-3 text-sm font-medium text-white transition-colors hover:bg-[#0B7F75]"
+              >
+                <Plus className="h-4 w-4" />
+                New budget
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* ── Month Navigation ─────────────────────────────────────── */}
-        <div className="mb-0 flex items-center justify-center gap-4 lg:justify-end">
-          <button
-            onClick={goPrev}
-            disabled={prevDisabled}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              prevDisabled
-                ? 'bg-gray-100 text-gray-300 opacity-30 cursor-not-allowed pointer-events-none'
-                : 'bg-teal-50 hover:bg-teal-100 text-teal-600'
-            }`}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="text-base font-semibold text-gray-800 select-none">
-            {formatMonthLabel(selectedMonth)}
-          </span>
-          <button
-            onClick={goNext}
-            disabled={nextDisabled}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              nextDisabled
-                ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                : 'bg-teal-50 hover:bg-teal-100 text-teal-600'
-            }`}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-        </div>
-
-        {/* Two columns from lg: the summary card sits beside the budget
-            cards, which spread into a grid instead of one very wide column.
-            The hero spans both rows so the banner and list stack to its right
-            without any of the markup having to move. */}
-        <div className="lg:grid lg:grid-cols-3 lg:items-start lg:gap-6">
-
-        {/* ── Hero Summary Card (Concept D — segmented bar) ────────── */}
+        {/* ── Summary: three figures in one divided strip ───────────── */}
         {filtered.length > 0 && (() => {
-          const isOver       = totalSpent > totalBudget
-          const overAmount   = totalSpent - totalBudget
-          // Width of the teal (budget) segment as % of total spent
-          const budgetSegPct = isOver
-            ? Math.round((totalBudget / totalSpent) * 100)
-            : Math.round(overallPct)
-          const overSegPct   = isOver ? 100 - budgetSegPct : 0
+          const isOver   = totalSpent > totalBudget
+          const scaleMax = Math.max(totalSpent, totalBudget, 1)
+          const spentPct = (totalSpent / scaleMax) * 100
+          const budgetPct = (totalBudget / scaleMax) * 100
+          const delta    = Math.abs(totalBudget - totalSpent)
 
           return (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 lg:row-span-2 lg:col-span-1 lg:mb-0"
-            >
-              {/* Header row: amount + badge */}
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">
-                    {isOver ? 'Total spent · ' : 'Spent so far · '}
-                    {formatMonthLabel(selectedMonth)}
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900 tracking-tight leading-none">
+            <div className="mb-6 rounded-xl border border-gray-200 bg-white">
+              <div className="grid grid-cols-3 divide-x divide-gray-200">
+                <div className="px-4 py-3.5 sm:px-5">
+                  <p className="text-xs text-gray-500">Spent</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl">
                     {formatIndianCurrency(totalSpent)}
                   </p>
                 </div>
-                {isOver ? (
-                  <span className="shrink-0 text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 rounded-full px-3 py-1">
-                    {formatIndianCurrency(overAmount)} over
-                  </span>
-                ) : (
-                  <span className="shrink-0 text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-3 py-1">
-                    {Math.round(overallPct)}% used
-                  </span>
-                )}
-              </div>
-
-              {/* Segmented bar */}
-              <div className="h-2.5 rounded-full overflow-hidden flex mb-2.5"
-                style={{ background: isOver ? 'transparent' : '#f1f5f9' }}
-              >
-                {isOver ? (
-                  <>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${budgetSegPct}%` }}
-                      transition={{ duration: 0.5, ease: 'easeOut' }}
-                      className="h-full bg-teal-500"
-                      style={{ borderRadius: '9999px 0 0 9999px' }}
-                    />
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${overSegPct}%` }}
-                      transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
-                      className="h-full bg-red-500"
-                      style={{ borderRadius: '0 9999px 9999px 0' }}
-                    />
-                  </>
-                ) : (
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${budgetSegPct}%` }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                    className="h-full bg-teal-500 rounded-full"
-                  />
-                )}
-              </div>
-
-              {/* Legend */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-sm bg-teal-500 inline-block" />
-                  <span className="text-[11px] text-gray-500">
-                    Budget ({formatIndianCurrency(totalBudget)})
-                  </span>
-                </div>
-                {isOver && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-sm bg-red-500 inline-block" />
-                    <span className="text-[11px] text-gray-500">
-                      Overspend ({formatIndianCurrency(overAmount)})
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Stat cells */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[11px] text-gray-400 mb-1">{t('totalBudget')}</p>
-                  <p className="text-sm font-semibold text-gray-800">
+                <div className="px-4 py-3.5 sm:px-5">
+                  <p className="text-xs text-gray-500">Budget</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl">
                     {formatIndianCurrency(totalBudget)}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[11px] text-gray-400 mb-1">{t('activeBudgets')}</p>
-                  <p className={`text-sm font-semibold ${isOver ? 'text-red-600' : 'text-teal-600'}`}>
-                    {filtered.length}
+                <div className="px-4 py-3.5 sm:px-5">
+                  <p className="text-xs text-gray-500">{isOver ? 'Over by' : 'Left'}</p>
+                  <p
+                    className="mt-1 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl"
+                    style={{ color: isOver ? '#831C1E' : undefined }}
+                  >
+                    {formatIndianCurrency(delta)}
                   </p>
                 </div>
               </div>
-            </motion.div>
+
+              {/* True-ratio bar: the fill is what was actually spent, the tick is
+                  the budget, so an overrun visibly passes its own limit. */}
+              <div className="px-4 pb-4 pt-1 sm:px-5">
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
+                    style={{ width: `${spentPct}%`, background: isOver ? '#C4242A' : '#0D9488' }}
+                  />
+                  {isOver && (
+                    <div
+                      className="absolute inset-y-0 w-px bg-gray-900"
+                      style={{ left: `${budgetPct}%` }}
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
+                <div className="mt-1.5 flex items-center justify-between text-[11px] tabular-nums text-gray-500">
+                  <span>₹0</span>
+                  <span>{formatIndianCurrency(scaleMax)}</span>
+                </div>
+              </div>
+            </div>
           )
         })()}
 
-        {/* ── Over-budget Alert Banner ──────────────────────────────── */}
-        <AnimatePresence>
-          {overBudgetItems.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              className="mb-4 overflow-hidden lg:col-span-2"
-            >
-              <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3">
-                <div className="w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-3.5 h-3.5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-red-800 leading-snug">
-                    {overBudgetItems.length === 1
-                      ? `${overBudgetItems[0].category} is ${formatIndianCurrency(getSpentAmount(overBudgetItems[0]) - overBudgetItems[0].amount)} over budget`
-                      : `${overBudgetItems.length} categories are over budget`}
-                  </p>
-                  <p className="text-xs text-red-600 mt-0.5">
-                    Consider adjusting your limits or reducing spending
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Empty State ───────────────────────────────────────────── */}
+        {/* ── Budgets ──────────────────────────────────────────────── */}
         {filtered.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-2xl p-8 text-center shadow-sm lg:col-span-3"
+            className="rounded-xl border border-gray-200 bg-white p-10 text-center"
           >
-            <Wallet className="w-16 h-16 text-teal-300 mx-auto mb-4" />
-            <p className="font-semibold text-gray-700 text-base">
-              No budgets for {formatMonthLabel(selectedMonth)}
+            <Wallet className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+            <p className="text-base font-semibold text-gray-900">No budgets for {formatMonthLabel(selectedMonth)}</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-gray-600">
+              A budget is one monthly limit per category. Set one and this screen shows what is left each month.
             </p>
-            <p className="text-sm text-gray-400 leading-relaxed mt-1">
-              {isCurrentMonth
-                ? 'Create a budget to track your spending and stay on top of your finances.'
-                : 'No budget was set for this month.'}
-            </p>
-            {isCurrentMonth && (
-              <button
-                onClick={openCreate}
-                className="mt-4 inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-6 py-2.5 font-semibold text-sm transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Create Budget
-              </button>
-            )}
+            <button
+              onClick={openCreate}
+              className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0D9488] px-4 text-sm font-medium text-white transition-colors hover:bg-[#0B7F75]"
+            >
+              <Plus className="h-4 w-4" />
+              Create a budget
+            </button>
           </motion.div>
         ) : (
           <>
-            {/* Section label */}
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 ml-0.5">
-              All budgets
+            <p className="mb-2.5 text-xs text-gray-500">
+              {sortedFiltered.length} {sortedFiltered.length === 1 ? 'budget' : 'budgets'}
             </p>
 
-            {/* ── Budget Cards ─────────────────────────────────────── */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {sortedFiltered.map((budget, i) => {
-                const catData  = getCategoryByName(budget.category)
-                const spent    = getSpentAmount(budget)
+                const catData   = getCategoryByName(budget.category)
+                const spent     = getSpentAmount(budget)
                 const remaining = budget.amount - spent
-                const rawPct   = budget.amount > 0 ? (spent / budget.amount) * 100 : 0
-                const clampPct = Math.min(rawPct, 100)
-                const badge    = statusBadge(rawPct)
-                const progColor = pColor(rawPct)
-                const isOver   = rawPct > 100
-                const Icon     = categoryIconMap[budget.category] || categoryIconMap['Other']
-                const catColor = catData?.color ?? '#6b7280'
+                const rawPct    = budget.amount > 0 ? (spent / budget.amount) * 100 : 0
+                const isOver    = rawPct > 100
+                const isNear    = !isOver && rawPct >= 80
+                const Icon      = categoryIconMap[budget.category] || categoryIconMap['Other']
+                const catColor  = catData?.color ?? '#6B7280'
+
+                // Bullet scale: the fill is the spend, the tick is the limit, so
+                // an over-budget bar runs past the mark instead of flat-lining
+                // at 100% and telling you nothing about how far over it is.
+                const scaleMax  = Math.max(spent, budget.amount, 1)
+                const spentPct  = (spent / scaleMax) * 100
+                const limitPct  = (budget.amount / scaleMax) * 100
+                const fill      = isOver ? '#C4242A' : isNear ? '#B45309' : '#0D9488'
 
                 if (deletingId === budget.id) {
                   return (
@@ -551,109 +448,81 @@ export default function BudgetsPage() {
                 return (
                   <motion.div
                     key={budget.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: i * 0.05 }}
-                    className={`bg-white rounded-2xl shadow-sm overflow-hidden transition-shadow hover:shadow-md ${
-                      isOver ? 'border-[1.5px] border-red-200' : 'border border-gray-100'
-                    }`}
+                    transition={{ duration: 0.25, delay: i * 0.04 }}
+                    className="rounded-xl border border-gray-200 bg-white p-4"
                   >
-                    {/* Card Header */}
-                    <div className="flex items-center justify-between p-4 pb-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center"
-                          style={{ backgroundColor: isOver ? '#fee2e2' : iconBg(catColor) }}
-                        >
-                          <Icon
-                            className="w-4 h-4"
-                            style={{ color: isOver ? '#dc2626' : catColor }}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 truncate max-w-[160px]">
-                            {catData?.name || budget.category}
-                          </p>
-                          <p className="text-xs text-gray-400">{formatMonthLabel(budget.month)}</p>
-                        </div>
+                    {/* name · status · actions */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Icon className="h-4 w-4 shrink-0" style={{ color: catColor }} />
+                        <p className="truncate text-sm font-semibold text-gray-900">
+                          {catData?.name || budget.category}
+                        </p>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex shrink-0 items-center gap-1">
                         {isCurrentMonth ? (
                           <>
                             <button
                               onClick={() => handleEdit(budget)}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                              aria-label={`Edit ${catData?.name || budget.category} budget`}
+                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
                             >
-                              <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                              <Pencil className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => { setBudgetToDelete(budget); setDeleteOpen(true) }}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 transition-colors"
+                              aria-label={`Delete ${catData?.name || budget.category} budget`}
+                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </>
                         ) : (
-                          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
-                            View Only
-                          </span>
+                          <span className="text-[11px] text-gray-500">View only</span>
                         )}
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
-                    <div className="mx-4 mb-3">
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${clampPct}%` }}
-                          transition={{ duration: 0.5, ease: 'easeOut' }}
-                          className="h-full rounded-full"
-                          style={{ backgroundColor: progColor }}
+                    {/* spent of limit */}
+                    <p className="mt-2 text-xs tabular-nums text-gray-600">
+                      <span className="font-medium text-gray-900">{formatIndianCurrency(spent)}</span>
+                      {' of '}
+                      {formatIndianCurrency(budget.amount)}
+                    </p>
+
+                    {/* bullet bar */}
+                    <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full"
+                        style={{ width: `${spentPct}%`, background: fill }}
+                      />
+                      {isOver && (
+                        <div
+                          className="absolute inset-y-0 w-px bg-gray-900"
+                          style={{ left: `${limitPct}%` }}
+                          aria-hidden="true"
                         />
-                      </div>
+                      )}
                     </div>
 
-                    {/* Stat Cells */}
-                    <div className="grid grid-cols-3 gap-2 px-4 mb-3">
-                      <div className="bg-gray-50 rounded-xl p-2">
-                        <p className="text-[11px] text-gray-400 mb-1">{t('budget')}</p>
-                        <p className="text-xs font-semibold text-gray-800">
-                          {formatIndianCurrency(budget.amount)}
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-2">
-                        <p className="text-[11px] text-gray-400 mb-1">{t('spent')}</p>
-                        <p
-                          className="text-xs font-semibold"
-                          style={{ color: progColor }}
-                        >
-                          {formatIndianCurrency(spent)}
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-2">
-                        <p className="text-[11px] text-gray-400 mb-1">
-                          {remaining >= 0 ? 'Left' : 'Over by'}
-                        </p>
-                        <p
-                          className="text-xs font-semibold"
-                          style={{ color: progColor }}
-                        >
-                          {formatIndianCurrency(Math.abs(remaining))}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Card Footer: status pill + percentage */}
-                    <div className="flex items-center justify-between px-4 pb-4">
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${badge.pill}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                        {badge.label}
-                      </span>
-                      <span className="text-xs font-medium" style={{ color: progColor }}>
-                        {Math.round(rawPct)}% used
-                      </span>
+                    {/* status: colour only on the rows at risk or over */}
+                    <div className="mt-2.5">
+                      {isOver ? (
+                        <span className="inline-flex items-center rounded-md border border-[#F5C6C2] bg-[#FFEDEA] px-2 py-0.5 text-[11px] font-medium tabular-nums text-[#831C1E]">
+                          {formatIndianCurrency(Math.abs(remaining))} over
+                        </span>
+                      ) : isNear ? (
+                        <span className="inline-flex items-center rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-2 py-0.5 text-[11px] font-medium tabular-nums text-[#92400E]">
+                          {formatIndianCurrency(remaining)} left
+                        </span>
+                      ) : (
+                        <span className="text-[11px] tabular-nums text-gray-500">
+                          {formatIndianCurrency(remaining)} left
+                        </span>
+                      )}
                     </div>
                   </motion.div>
                 )
@@ -662,7 +531,7 @@ export default function BudgetsPage() {
           </>
         )}
 
-        </div>{/* end lg:grid */}
+
 
         {/* ── Create / Edit Modal ───────────────────────────────────── */}
         <AnimatePresence>
@@ -673,7 +542,7 @@ export default function BudgetsPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+                className="fixed inset-0 bg-black/40 z-50"
                 onClick={closeModal}
               />
 
@@ -688,7 +557,7 @@ export default function BudgetsPage() {
                     {/* Modal Header */}
                     <div
                       className="p-4 relative rounded-t-3xl md:rounded-t-2xl"
-                      style={{ background: 'linear-gradient(135deg, #0D9488, #059669)' }}
+                      style={{ background: '#0D9488' }}
                     >
                       <h2 className="text-white font-bold text-base">
                         {editingBudget ? t('editBudget') : t('createBudget')}
@@ -718,7 +587,7 @@ export default function BudgetsPage() {
                               whileTap={!dis && !sel ? { scale: 0.95 } : undefined}
                               onClick={() => { if (!dis) setCategory(c.name) }}
                               disabled={dis}
-                              className={`rounded-xl p-2 text-center transition-all ${
+                              className={`rounded-xl p-2 text-center transition-colors ${
                                 sel
                                   ? 'bg-teal-50 border-2 border-teal-500'
                                   : dis
@@ -741,7 +610,7 @@ export default function BudgetsPage() {
                     {/* Amount Field */}
                     <div className="mt-4 px-5">
                       <label className="text-sm font-semibold text-gray-700 mb-2 block">{t('budgetAmount')}</label>
-                      <div className="bg-gray-50 rounded-xl border border-gray-200 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100 flex items-center px-4 transition-all">
+                      <div className="bg-gray-50 rounded-xl border border-gray-200 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100 flex items-center px-4 transition-colors">
                         <span className="text-gray-500 font-semibold text-lg">₹</span>
                         <input
                           type="number"
@@ -785,7 +654,7 @@ export default function BudgetsPage() {
                       <button
                         onClick={handleSave}
                         disabled={!category || !amount || !month || saving}
-                        className={`flex-1 rounded-xl py-2.5 font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                        className={`flex-1 rounded-xl py-2.5 font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
                           !category || !amount || !month
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             : saving
@@ -816,7 +685,7 @@ export default function BudgetsPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+                className="fixed inset-0 bg-black/40 z-50"
                 onClick={() => setDeleteOpen(false)}
               />
               <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center pointer-events-none pb-8 px-4">
