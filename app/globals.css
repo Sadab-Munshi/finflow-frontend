@@ -989,7 +989,17 @@ html[data-ff-sidebar="collapsed"] {
    collapsing the panel reflows the canvas by one flex calculation instead of
    animating a matching padding value in lockstep. */
 .ff-main {
-  flex: 1 1 auto;
+  /* Grow to fill a short page, but NEVER shrink below its content.
+     With `flex: 1 1 auto` + `min-height: 0` the item was allowed to shrink to
+     the viewport height; its content then overflowed the box, and because
+     padding-bottom is attached to the (shrunken) box rather than to the
+     overflowing content, `pb-20` landed near the TOP of the scroll instead of
+     after the last element. Every page therefore ended flush at the bottom of
+     the scrollable area, and the fixed 64px bottom nav covered the final
+     control — the Sign Out button on /profile was the clearest case.
+     `flex-shrink: 0` makes the item size to its content, so the bottom padding
+     really is the last thing in the scroll and clears the nav. */
+  flex: 1 0 auto;
   min-height: 0;
 }
 
