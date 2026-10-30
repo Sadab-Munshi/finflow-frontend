@@ -12,5 +12,18 @@
   "stage3": "Writing your insights...",
   "stage4": "Almost done...",
   "noInsightsTitle": "No insights yet",
-  "noInsightsBody": "Generate AI insights to understand your spending patterns"
+  "noInsightsBody": "Generate AI insights to understand your spending patterns",
+  "txCountMeta": "{count, plural, one {# transaction} other {# transactions}}",
+  "updatedAt": "Updated",
+  "basisObserved": "Counted from your records",
+  "basisEstimate": "AI estimate",
+  "reworded": "Reworded for accuracy",
+  "insufficientTitle": "Not enough data to analyse",
+  "insufficientBody": "{count, plural, one {# transaction} other {# transactions}} in the last 30 days. At least {min} are needed across several days before any pattern is worth reporting.",
+  "errorTitle": "Couldn't refresh insights",
+  "showDetails": "Details",
+  "hideDetails": "Hide details",
+  "withheldTitle": "{count, plural, one {# AI suggestion withheld} other {# AI suggestions withheld}}",
+  "footerNote": "These insights are calculated from the transactions you have recorded in this window. They are not financial advice.",
+  "learnMore": "Learn More"
 }

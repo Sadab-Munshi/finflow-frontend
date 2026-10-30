@@ -12,5 +12,18 @@
   "stage3": "আপনার ইনসাইট লেখা হচ্ছে...",
   "stage4": "প্রায় হয়ে গেছে...",
   "noInsightsTitle": "এখনো কোনো ইনসাইট নেই",
-  "noInsightsBody": "আপনার খরচের ধরন বুঝতে AI ইনসাইট তৈরি করুন"
+  "noInsightsBody": "আপনার খরচের ধরন বুঝতে AI ইনসাইট তৈরি করুন",
+  "txCountMeta": "{count, plural, one {#টি লেনদেন} other {#টি লেনদেন}}",
+  "updatedAt": "হালনাগাদ",
+  "basisObserved": "আপনার রেকর্ড থেকে গণনা করা",
+  "basisEstimate": "AI অনুমান",
+  "reworded": "নির্ভুলতার জন্য পুনর্লিখিত",
+  "insufficientTitle": "বিশ্লেষণের জন্য যথেষ্ট তথ্য নেই",
+  "insufficientBody": "গত ৩০ দিনে {count, plural, one {#টি লেনদেন} other {#টি লেনদেন}}। কোনো ধরন জানানোর আগে কয়েক দিনে অন্তত {min}টি প্রয়োজন।",
+  "errorTitle": "ইনসাইট রিফ্রেশ করা যায়নি",
+  "showDetails": "বিস্তারিত",
+  "hideDetails": "বিস্তারিত লুকান",
+  "withheldTitle": "{count, plural, one {#টি AI পরামর্শ আটকে রাখা হয়েছে} other {#টি AI পরামর্শ আটকে রাখা হয়েছে}}",
+  "footerNote": "এই ইনসাইটগুলি এই সময়ের মধ্যে আপনার রেকর্ড করা লেনদেন থেকে গণনা করা। এটি আর্থিক পরামর্শ নয়।",
+  "learnMore": "আরও জানুন"
 }
