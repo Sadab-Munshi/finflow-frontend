@@ -171,6 +171,22 @@ export default function BudgetsPage() {
     })
   }, [filtered, transactions])
 
+  const getCategoryName = (slug: string) => getCategoryByName(slug)?.name || slug
+
+  /* ── Bar scale ──────────────────────────────────────────────────────
+     Every card's bar shares ONE percentage scale, set by the most-stretched
+     category and rounded up to the next 10. Per-card scaling made each
+     over-budget bar fill exactly 100% of its own track, so Food at 115%,
+     Entertainment at 110% and Rent at 105% all drew the same solid bar.
+     The limit therefore always sits at the same offset across a row, and
+     overruns are directly comparable side by side. */
+  const pctMax = useMemo(
+    () => sortedFiltered.reduce((m, b) => Math.max(m, b.amount > 0 ? (getSpentAmount(b) / b.amount) * 100 : 0), 0),
+    [sortedFiltered, transactions]
+  )
+  const barScale = Math.max(110, Math.ceil(pctMax / 10) * 10)
+  const limitPct = (100 / barScale) * 100
+
   /* ── Month navigation ───────────────────────────────────────────── */
 
   const goPrev = () => {
@@ -274,15 +290,20 @@ export default function BudgetsPage() {
 
   return (
     <Layout>
-      <div className="mx-auto w-full max-w-[1440px] pb-8">
+      <div className="mx-auto w-full max-w-[1440px] pb-36 md:pb-8">{/* pb-24 clears the floating add button on mobile */}
 
         {/* ── Page Header: title + the screen's one finding ────────── */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-gray-700">
               {overBudgetItems.length > 0
-                ? `${overBudgetItems.length} ${overBudgetItems.length === 1 ? 'category is' : 'categories are'} over their limit — ${overBudgetItems[0].category} by ${formatIndianCurrency(getSpentAmount(overBudgetItems[0]) - overBudgetItems[0].amount)}`
+                ? (() => {
+                    const worst = overBudgetItems.reduce((a, b) =>
+                      getSpentAmount(b) - b.amount > getSpentAmount(a) - a.amount ? b : a
+                    )
+                    return `${overBudgetItems.length} ${overBudgetItems.length === 1 ? 'category is' : 'categories are'} over — ${getCategoryName(worst.category)} is ${formatIndianCurrency(getSpentAmount(worst) - worst.amount)} over`
+                  })()
                 : filtered.length > 0
                   ? 'Every category is within its limit this month'
                   : 'Set a monthly limit for the categories you spend in'}
@@ -331,28 +352,27 @@ export default function BudgetsPage() {
         {/* ── Summary: three figures in one divided strip ───────────── */}
         {filtered.length > 0 && (() => {
           const isOver   = totalSpent > totalBudget
-          const scaleMax = Math.max(totalSpent, totalBudget, 1)
-          const spentPct = (totalSpent / scaleMax) * 100
-          const budgetPct = (totalBudget / scaleMax) * 100
+          const usedPct  = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0
+          const limitBar = Math.min(100, (totalBudget / Math.max(totalSpent, totalBudget)) * 100)
           const delta    = Math.abs(totalBudget - totalSpent)
 
           return (
             <div className="mb-6 rounded-xl border border-gray-200 bg-white">
               <div className="grid grid-cols-3 divide-x divide-gray-200">
                 <div className="px-4 py-3.5 sm:px-5">
-                  <p className="text-xs text-gray-500">Spent</p>
+                  <p className="text-xs font-medium text-gray-600">Spent</p>
                   <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl">
                     {formatIndianCurrency(totalSpent)}
                   </p>
                 </div>
                 <div className="px-4 py-3.5 sm:px-5">
-                  <p className="text-xs text-gray-500">Budget</p>
+                  <p className="text-xs font-medium text-gray-600">Budget</p>
                   <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl">
                     {formatIndianCurrency(totalBudget)}
                   </p>
                 </div>
                 <div className="px-4 py-3.5 sm:px-5">
-                  <p className="text-xs text-gray-500">{isOver ? 'Over by' : 'Left'}</p>
+                  <p className="text-xs font-medium text-gray-600">{isOver ? 'Over by' : 'Under budget'}</p>
                   <p
                     className="mt-1 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl"
                     style={{ color: isOver ? '#831C1E' : undefined }}
@@ -362,26 +382,33 @@ export default function BudgetsPage() {
                 </div>
               </div>
 
-              {/* True-ratio bar: the fill is what was actually spent, the tick is
-                  the budget, so an overrun visibly passes its own limit. */}
+              {/* Two-colour bar: teal is the part of the budget you used, red is
+                  the part that went past it. The bar is always full-width
+                  'budget + overrun', so no axis labels are needed — the colour
+                  change IS the limit. */}
               <div className="px-4 pb-4 pt-1 sm:px-5">
                 <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
-                    style={{ width: `${spentPct}%`, background: isOver ? '#C4242A' : '#0D9488' }}
-                  />
-                  {isOver && (
+                  {isOver ? (
+                    <>
+                      <div
+                        className="absolute inset-y-0 left-0 transition-[width] duration-500"
+                        style={{ width: `${limitBar}%`, background: '#0D9488' }}
+                      />
+                      <div
+                        className="absolute inset-y-0 right-0 transition-[width] duration-500"
+                        style={{ width: `${100 - limitBar}%`, background: '#C4242A' }}
+                      />
+                    </>
+                  ) : (
                     <div
-                      className="absolute inset-y-0 w-px bg-gray-900"
-                      style={{ left: `${budgetPct}%` }}
-                      aria-hidden="true"
+                      className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
+                      style={{ width: `${usedPct}%`, background: '#0D9488' }}
                     />
                   )}
                 </div>
-                <div className="mt-1.5 flex items-center justify-between text-[11px] tabular-nums text-gray-500">
-                  <span>₹0</span>
-                  <span>{formatIndianCurrency(scaleMax)}</span>
-                </div>
+                <p className="mt-1.5 text-[11px] tabular-nums text-gray-600">
+                  {Math.round(usedPct)}% of budget used
+                </p>
               </div>
             </div>
           )
@@ -397,7 +424,7 @@ export default function BudgetsPage() {
           >
             <Wallet className="mx-auto mb-3 h-10 w-10 text-gray-300" />
             <p className="text-base font-semibold text-gray-900">No budgets for {formatMonthLabel(selectedMonth)}</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-gray-600">
+            <p className="mx-auto mt-1 max-w-sm text-sm text-gray-700">
               A budget is one monthly limit per category. Set one and this screen shows what is left each month.
             </p>
             <button
@@ -410,7 +437,7 @@ export default function BudgetsPage() {
           </motion.div>
         ) : (
           <>
-            <p className="mb-2.5 text-xs text-gray-500">
+            <p className="mb-2.5 text-xs font-medium text-gray-600">
               {sortedFiltered.length} {sortedFiltered.length === 1 ? 'budget' : 'budgets'}
             </p>
 
@@ -425,13 +452,9 @@ export default function BudgetsPage() {
                 const Icon      = categoryIconMap[budget.category] || categoryIconMap['Other']
                 const catColor  = catData?.color ?? '#6B7280'
 
-                // Bullet scale: the fill is the spend, the tick is the limit, so
-                // an over-budget bar runs past the mark instead of flat-lining
-                // at 100% and telling you nothing about how far over it is.
-                const scaleMax  = Math.max(spent, budget.amount, 1)
-                const spentPct  = (spent / scaleMax) * 100
-                const limitPct  = (budget.amount / scaleMax) * 100
-                const fill      = isOver ? '#C4242A' : isNear ? '#B45309' : '#0D9488'
+                // Shared scale (see barScale above), so bars compare across the row.
+                const spentPct  = Math.min(100, (rawPct / barScale) * 100)
+                const withinPct = Math.min(spentPct, limitPct)
 
                 if (deletingId === budget.id) {
                   return (
@@ -481,29 +504,32 @@ export default function BudgetsPage() {
                             </button>
                           </>
                         ) : (
-                          <span className="text-[11px] text-gray-500">View only</span>
+                          <span className="text-[11px] text-gray-600">View only</span>
                         )}
                       </div>
                     </div>
 
                     {/* spent of limit */}
-                    <p className="mt-2 text-xs tabular-nums text-gray-600">
-                      <span className="font-medium text-gray-900">{formatIndianCurrency(spent)}</span>
-                      {' of '}
+                    <p className="mt-2 text-xs tabular-nums text-gray-700">
+                      <span className="font-semibold text-gray-900">{formatIndianCurrency(spent)}</span>
+                      {' spent of '}
                       {formatIndianCurrency(budget.amount)}
                     </p>
 
-                    {/* bullet bar */}
+                    {/* teal = spent inside the limit, red = the part past it */}
                     <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
                         className="absolute inset-y-0 left-0 rounded-full"
-                        style={{ width: `${spentPct}%`, background: fill }}
+                        style={{ width: `${withinPct}%`, background: '#0D9488' }}
                       />
                       {isOver && (
                         <div
-                          className="absolute inset-y-0 w-px bg-gray-900"
-                          style={{ left: `${limitPct}%` }}
-                          aria-hidden="true"
+                          className="absolute inset-y-0 rounded-r-full"
+                          style={{
+                            left: `${limitPct}%`,
+                            width: `${Math.max(0, spentPct - limitPct)}%`,
+                            background: '#C4242A',
+                          }}
                         />
                       )}
                     </div>
@@ -519,7 +545,7 @@ export default function BudgetsPage() {
                           {formatIndianCurrency(remaining)} left
                         </span>
                       ) : (
-                        <span className="text-[11px] tabular-nums text-gray-500">
+                        <span className="text-[11px] font-medium tabular-nums text-gray-700">
                           {formatIndianCurrency(remaining)} left
                         </span>
                       )}
