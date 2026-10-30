@@ -33,5 +33,6 @@
   "proBadge": "प्रो",
   "searchPlaceholder": "लेन-देन खोजें…",
   "searchTransactions": "लेन-देन खोजें",
-  "notifications": "सूचनाएँ"
+  "notifications": "सूचनाएँ",
+  "notificationsUnread": "सूचनाएँ, {count, plural, one {# अपठित} other {# अपठित}}"
 }

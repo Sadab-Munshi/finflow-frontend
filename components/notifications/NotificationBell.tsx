@@ -68,7 +68,13 @@ function getToastStyle(type: string) {
   }
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({
+  onPanelChange,
+}: {
+  /** Lets the shell keep its header controls on screen while this panel is
+      open; without it, scrolling the panel could slide its own trigger away. */
+  onPanelChange?: (open: boolean) => void
+} = {}) {
   const router = useRouter()
   const t = useTranslations('nav')
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -199,6 +205,10 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  useEffect(() => {
+    onPanelChange?.(isOpen)
+  }, [isOpen, onPanelChange])
+
   const handleMarkAsRead = async (notificationId: string) => {
     await markNotificationRead(notificationId).catch(() => {})
 
@@ -235,13 +245,19 @@ export default function NotificationBell() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="ff-icon-btn relative"
-        aria-label={t('notifications')}
+        // Screen readers get the count from the button itself rather than
+        // having to find the badge, which is aria-hidden decoration.
+        aria-label={
+          unreadCount > 0
+            ? t('notificationsUnread', { count: unreadCount })
+            : t('notifications')
+        }
         aria-haspopup="dialog"
         aria-expanded={isOpen}
       >
         <Bell className="w-[18px] h-[18px]" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 ring-2 ring-white">
+          <span aria-hidden="true" className="absolute -right-1 -top-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 ring-2 ring-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

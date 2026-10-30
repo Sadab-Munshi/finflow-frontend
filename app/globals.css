@@ -800,24 +800,45 @@ html[data-ff-sidebar="collapsed"] {
    It exists to separate global chrome from page chrome: previously the bell
    and the drawer trigger floated over the content, which is why the bell sat
    on top of the dashboard's "This Month / All Time" toggle at every width. */
+/* Phones: no bar at all — just two independent floating controls.
+   The layer itself is transparent, has no border/shadow/blur, and is
+   `pointer-events: none`, so taps, swipes and momentum scrolling all pass
+   straight through the empty middle to the page underneath. Only the two
+   buttons re-enable pointer events. */
 .ff-topbar {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
   z-index: 30;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  flex: 0 0 auto;
-  height: calc(64px + env(safe-area-inset-top));
-  padding-top: env(safe-area-inset-top);
-  padding-right: max(16px, env(safe-area-inset-right));
-  padding-left: max(16px, env(safe-area-inset-left));
-  background: rgba(255, 255, 255, 0.82);
-  -webkit-backdrop-filter: saturate(180%) blur(14px);
-  backdrop-filter: saturate(180%) blur(14px);
-  border-bottom: 1px solid var(--ff-line);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  pointer-events: none;
+  /* Only transform and opacity animate, and both are written from the scroll
+     handler's rAF — never from React state on every frame. */
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 200ms ease;
+  will-change: transform, opacity;
 }
+.ff-topbar > * { pointer-events: auto; }
+
+/* Fully off-screen — badges and shadows included — and inert to touch.
+   The extra safe-area term keeps it clear on notched devices. */
+.ff-topbar--hidden {
+  transform: translateY(calc(-100% - 28px - env(safe-area-inset-top)));
+  opacity: 0;
+}
+.ff-topbar--hidden > * { pointer-events: none; }
 
 .ff-topbar-side {
   display: flex;
@@ -827,11 +848,37 @@ html[data-ff-sidebar="collapsed"] {
 }
 .ff-topbar-side--end { flex: 0 0 auto; }
 
+/* Desktop/tablet keeps the original sticky bar — restored verbatim so the
+   ≥900px header is byte-for-byte the same surface it was before. Every mobile
+   floating-control rule is undone here, including the hide transform, so a
+   stale `--hidden` flag can never blank the desktop header. */
 @media (min-width: 900px) {
   .ff-topbar {
+    position: sticky;
+    top: 0;
+    left: auto;
+    right: auto;
+    flex: 0 0 auto;
+    align-items: center;
     height: calc(60px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
     padding-right: max(24px, env(safe-area-inset-right));
     padding-left: max(24px, env(safe-area-inset-left));
+    background: rgba(255, 255, 255, 0.82);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid var(--ff-line);
+    pointer-events: auto;
+    transform: none;
+    opacity: 1;
+    transition: none;
+    will-change: auto;
+  }
+  .ff-topbar--hidden,
+  .ff-topbar--hidden > * {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -839,17 +886,21 @@ html[data-ff-sidebar="collapsed"] {
    The hamburger and the notification bell share size, radius, surface, border,
    shadow, hover and focus ring by construction, so the two ends of the phone
    header are visually symmetric. 44px on touch, 38px on a pointer. */
+/* Phones: 48×48 floating discs. White surface, soft lift, near-black glyph —
+   the shadow is what separates them from the near-white page, so it carries a
+   touch more weight than a bordered control would need. */
 .ff-icon-btn {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  color: var(--ff-text);
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  color: #111827;
   background: #ffffff;
-  border: 1px solid var(--ff-line);
-  box-shadow: 0 1px 2px rgba(23, 43, 42, 0.05);
+  border: 1px solid rgba(17, 24, 39, 0.07);
+  box-shadow: 0 2px 8px -2px rgba(23, 43, 42, 0.18),
+              0 1px 2px rgba(23, 43, 42, 0.06);
   transition: background-color 150ms ease, border-color 150ms ease,
               box-shadow 150ms ease, color 150ms ease;
 }
@@ -940,6 +991,17 @@ html[data-ff-sidebar="collapsed"] {
 .ff-main {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Phones: the header no longer occupies flow, so the content needs a fixed
+   offset to clear the floating controls. 52px + the control's own 12px top
+   inset and 48px height leaves an 8px gap under the buttons — compact, and
+   constant, so showing/hiding the controls never moves the page. Replaced by
+   nothing at ≥900px, where the sticky bar reserves its own space again. */
+@media (max-width: 899px) {
+  .ff-main--clears-floating-top {
+    padding-top: calc(56px + env(safe-area-inset-top));
+  }
 }
 
 /* ── Overlay drawer (phone / tablet portrait) ────────────────────────────── */
@@ -1198,6 +1260,7 @@ body:has(.ff-shell) {
   .ff-nav-icon,
   .ff-profile,
   .ff-toggle,
+  .ff-topbar,
   .ff-brand-rail,
   .ff-menu-trigger,
   .ff-cta,

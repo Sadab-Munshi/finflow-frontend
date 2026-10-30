@@ -33,5 +33,6 @@
   "proBadge": "প্রো",
   "searchPlaceholder": "লেনদেন খুঁজুন…",
   "searchTransactions": "লেনদেন খুঁজুন",
-  "notifications": "বিজ্ঞপ্তি"
+  "notifications": "বিজ্ঞপ্তি",
+  "notificationsUnread": "বিজ্ঞপ্তি, {count, plural, one {#টি অপঠিত} other {#টি অপঠিত}}"
 }
