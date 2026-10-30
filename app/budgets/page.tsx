@@ -4,12 +4,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
-  Plus, Pencil, Trash2, X, Loader2,
+  Plus, Pencil, Trash2, X, Loader2, MoreHorizontal,
   ChevronLeft, ChevronRight, Wallet,
   Utensils, Car, ShoppingBag, Zap, Film, Heart,
   GraduationCap, Building, ShoppingCart, Sparkles,
   Briefcase, Gift, CircleDot, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownLeft,
 } from 'lucide-react'
+import Link from 'next/link'
 import Layout from '@/components/layout/Layout'
 import { useTranslations } from 'next-intl'
 import { getTransactions, getBudgets, saveBudget, updateBudget, deleteBudget } from '@/lib/db'
@@ -98,6 +99,7 @@ export default function BudgetsPage() {
 
   /* delete state */
   const [deleteOpen, setDeleteOpen]     = useState(false)
+  const [openMenuId, setOpenMenuId]     = useState<string | null>(null)
   const [budgetToDelete, setBudgetToDelete] = useState<Budget | null>(null)
   const [deletingId, setDeletingId]     = useState<string | null>(null)
 
@@ -173,19 +175,29 @@ export default function BudgetsPage() {
 
   const getCategoryName = (slug: string) => getCategoryByName(slug)?.name || slug
 
-  /* ── Bar scale ──────────────────────────────────────────────────────
-     Every card's bar shares ONE percentage scale, set by the most-stretched
-     category and rounded up to the next 10. Per-card scaling made each
-     over-budget bar fill exactly 100% of its own track, so Food at 115%,
-     Entertainment at 110% and Rent at 105% all drew the same solid bar.
-     The limit therefore always sits at the same offset across a row, and
-     overruns are directly comparable side by side. */
-  const pctMax = useMemo(
-    () => sortedFiltered.reduce((m, b) => Math.max(m, b.amount > 0 ? (getSpentAmount(b) / b.amount) * 100 : 0), 0),
-    [sortedFiltered, transactions]
-  )
-  const barScale = Math.max(110, Math.ceil(pctMax / 10) * 10)
-  const limitPct = (100 / barScale) * 100
+  /* Row menu: closes on Escape or a click anywhere outside it, so it can never
+     be left open behind another interaction or trap keyboard focus. */
+  useEffect(() => {
+    if (!openMenuId) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const trigger = document.querySelector<HTMLElement>(`[data-menu-trigger="${openMenuId}"]`)
+      setOpenMenuId(null)
+      trigger?.focus()
+    }
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement | null
+      if (!target?.closest('[data-budget-menu]')) setOpenMenuId(null)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('touchstart', onPointerDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('touchstart', onPointerDown)
+    }
+  }, [openMenuId])
 
   /* ── Month navigation ───────────────────────────────────────────── */
 
@@ -289,14 +301,19 @@ export default function BudgetsPage() {
   /* ── Render ─────────────────────────────────────────────────────── */
 
   return (
-    <Layout>
-      <div className="mx-auto w-full max-w-[1440px] pb-36 md:pb-8">{/* pb-24 clears the floating add button on mobile */}
+    <Layout hideFab>
+      <div
+        className="mx-auto w-full max-w-[1240px] pb-6 md:pb-8"
+        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+      >
 
-        {/* ── Page Header: title + the screen's one finding ────────── */}
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        {/* ── Heading · month · create ─────────────────────────────── */}
+        <div className="mb-3 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-            <p className="mt-1 text-sm text-gray-700">
+            <h1 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-2xl">
+              {t('title')}
+            </h1>
+            <p className="mt-1 text-sm leading-5 text-gray-700">
               {overBudgetItems.length > 0
                 ? (() => {
                     const worst = overBudgetItems.reduce((a, b) =>
@@ -310,27 +327,30 @@ export default function BudgetsPage() {
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <div className="flex items-center rounded-lg border border-gray-200 bg-white">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center rounded-lg border border-gray-300 bg-white">
               <button
                 onClick={goPrev}
                 disabled={prevDisabled}
                 aria-label="Previous month"
-                className={`flex h-8 w-8 items-center justify-center rounded-l-lg transition-colors ${
-                  prevDisabled ? 'cursor-not-allowed text-gray-300' : 'text-gray-600 hover:bg-gray-50'
+                className={`flex h-11 w-11 items-center justify-center rounded-l-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-inset ${
+                  prevDisabled ? 'cursor-not-allowed text-gray-300' : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="min-w-[124px] text-center text-sm font-medium tabular-nums text-gray-900">
+              <span
+                aria-live="polite"
+                className="min-w-[112px] px-1 text-center text-sm font-medium tabular-nums text-gray-900"
+              >
                 {formatMonthLabel(selectedMonth)}
               </span>
               <button
                 onClick={goNext}
                 disabled={nextDisabled}
                 aria-label="Next month"
-                className={`flex h-8 w-8 items-center justify-center rounded-r-lg transition-colors ${
-                  nextDisabled ? 'cursor-not-allowed text-gray-300' : 'text-gray-600 hover:bg-gray-50'
+                className={`flex h-11 w-11 items-center justify-center rounded-r-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-inset ${
+                  nextDisabled ? 'cursor-not-allowed text-gray-300' : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -340,77 +360,96 @@ export default function BudgetsPage() {
             {filtered.length > 0 && (
               <button
                 onClick={openCreate}
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-[#0D9488] px-3 text-sm font-medium text-white transition-colors hover:bg-[#0B7F75]"
+                className="flex h-11 items-center gap-1.5 rounded-lg bg-[#0D9488] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#0B7F75] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-offset-2"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4" aria-hidden="true" />
                 New budget
               </button>
             )}
           </div>
         </div>
 
-        {/* ── Summary: three figures in one divided strip ───────────── */}
+        {/* ── Summary ──────────────────────────────────────────────────
+             Phones get a 2-up row (Spent / Total budget) with Remaining
+            overall spanning the full width below, because three equal
+            columns forced "Remaining overall" to wrap and knocked the
+            amounts out of line. From sm up it is three columns. */}
         {filtered.length > 0 && (() => {
-          const isOver   = totalSpent > totalBudget
-          const usedPct  = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0
-          const limitBar = Math.min(100, (totalBudget / Math.max(totalSpent, totalBudget)) * 100)
-          const delta    = Math.abs(totalBudget - totalSpent)
+          const overCount = overBudgetItems.length
+          const atLimitCount = filtered.filter((b) => {
+            const lim = Math.round(b.amount * 100) / 100
+            return lim > 0 && Math.round(getSpentAmount(b) * 100) / 100 === lim
+          }).length
+          const remaining = totalBudget - totalSpent
+          const usedPct = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0
+          const fillPct = Math.min(100, usedPct)
+          const over = overCount > 0
+
+          const statusParts: string[] = []
+          if (overCount > 0) statusParts.push(`${overCount} over budget`)
+          if (atLimitCount > 0) statusParts.push(`${atLimitCount} at limit`)
+          const statusText = statusParts.length ? statusParts.join(' · ') : 'All budgets within limit'
 
           return (
-            <div className="mb-6 rounded-xl border border-gray-200 bg-white">
-              <div className="grid grid-cols-3 divide-x divide-gray-200">
-                <div className="px-4 py-3.5 sm:px-5">
+            <section
+              aria-label="Budget summary"
+              className="mb-5 rounded-xl border border-gray-300 bg-white"
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-3">
+                <div className="px-3 py-3 sm:px-5 sm:py-4">
                   <p className="text-xs font-medium text-gray-600">Spent</p>
                   <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl">
                     {formatIndianCurrency(totalSpent)}
                   </p>
                 </div>
-                <div className="px-4 py-3.5 sm:px-5">
-                  <p className="text-xs font-medium text-gray-600">Budget</p>
+                <div className="border-l border-gray-200 px-3 py-3 sm:px-5 sm:py-4">
+                  <p className="text-xs font-medium text-gray-600">Total budget</p>
                   <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-gray-900 sm:text-2xl">
                     {formatIndianCurrency(totalBudget)}
                   </p>
                 </div>
-                <div className="px-4 py-3.5 sm:px-5">
-                  <p className="text-xs font-medium text-gray-600">{isOver ? 'Over by' : 'Under budget'}</p>
+                <div className="col-span-2 border-t border-gray-200 px-3 py-3 sm:col-span-1 sm:border-l sm:border-t-0 sm:px-5 sm:py-4">
+                  <p className="text-xs font-medium text-gray-600">Remaining overall</p>
                   <p
                     className="mt-1 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl"
-                    style={{ color: isOver ? '#831C1E' : undefined }}
+                    style={{ color: remaining < 0 ? '#831C1E' : '#111827' }}
                   >
-                    {formatIndianCurrency(delta)}
+                    {formatIndianCurrency(Math.abs(remaining))}
+                    {remaining < 0 && <span className="ml-1 text-sm font-medium">over</span>}
                   </p>
                 </div>
               </div>
 
-              {/* Two-colour bar: teal is the part of the budget you used, red is
-                  the part that went past it. The bar is always full-width
-                  'budget + overrun', so no axis labels are needed — the colour
-                  change IS the limit. */}
-              <div className="px-4 pb-4 pt-1 sm:px-5">
-                <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                  {isOver ? (
-                    <>
-                      <div
-                        className="absolute inset-y-0 left-0 transition-[width] duration-500"
-                        style={{ width: `${limitBar}%`, background: '#0D9488' }}
-                      />
-                      <div
-                        className="absolute inset-y-0 right-0 transition-[width] duration-500"
-                        style={{ width: `${100 - limitBar}%`, background: '#C4242A' }}
-                      />
-                    </>
-                  ) : (
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-500"
-                      style={{ width: `${usedPct}%`, background: '#0D9488' }}
-                    />
-                  )}
+              <div className="px-3 pb-3 sm:px-5 sm:pb-4">
+                <div
+                  role="progressbar"
+                  aria-label="Total budget used"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(fillPct)}
+                  aria-valuetext={`${Math.round(usedPct)}% of total budget used`}
+                  className="h-2 w-full overflow-hidden rounded-full bg-gray-200"
+                >
+                  <div
+                    className="h-full rounded-full transition-[width] duration-500"
+                    style={{ width: `${fillPct}%`, background: '#0D9488' }}
+                  />
                 </div>
-                <p className="mt-1.5 text-[11px] tabular-nums text-gray-600">
-                  {Math.round(usedPct)}% of budget used
-                </p>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                  <p className="text-xs tabular-nums text-gray-600">
+                    {Math.round(usedPct)}% of budget used
+                  </p>
+                  <p
+                    className={`flex items-center gap-1.5 text-xs font-semibold ${
+                      over ? 'text-[#831C1E]' : 'text-gray-700'
+                    }`}
+                  >
+                    {over && <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+                    {statusText}
+                  </p>
+                </div>
               </div>
-            </div>
+            </section>
           )
         })()}
 
@@ -420,41 +459,54 @@ export default function BudgetsPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="rounded-xl border border-gray-200 bg-white p-10 text-center"
+            className="rounded-xl border border-gray-300 bg-white px-4 py-10 text-center sm:p-10"
           >
-            <Wallet className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-            <p className="text-base font-semibold text-gray-900">No budgets for {formatMonthLabel(selectedMonth)}</p>
+            <Wallet className="mx-auto mb-3 h-10 w-10 text-gray-400" aria-hidden="true" />
+            <p className="text-base font-semibold text-gray-900">
+              No budgets for {formatMonthLabel(selectedMonth)}
+            </p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-gray-700">
               A budget is one monthly limit per category. Set one and this screen shows what is left each month.
             </p>
             <button
               onClick={openCreate}
-              className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0D9488] px-4 text-sm font-medium text-white transition-colors hover:bg-[#0B7F75]"
+              className="mt-4 inline-flex h-11 items-center gap-1.5 rounded-lg bg-[#0D9488] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#0B7F75] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488] focus-visible:ring-offset-2"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
               Create a budget
             </button>
           </motion.div>
         ) : (
           <>
-            <p className="mb-2.5 text-xs font-medium text-gray-600">
+            <p className="mb-2 text-xs font-medium text-gray-600 sm:mb-2.5">
               {sortedFiltered.length} {sortedFiltered.length === 1 ? 'budget' : 'budgets'}
             </p>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {/* 1 col on phones, 2 from sm (tablet/large landscape), 3 only once
+                each card still has comfortable width (xl). */}
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
               {sortedFiltered.map((budget, i) => {
-                const catData   = getCategoryByName(budget.category)
-                const spent     = getSpentAmount(budget)
-                const remaining = budget.amount - spent
-                const rawPct    = budget.amount > 0 ? (spent / budget.amount) * 100 : 0
-                const isOver    = rawPct > 100
-                const isNear    = !isOver && rawPct >= 80
-                const Icon      = categoryIconMap[budget.category] || categoryIconMap['Other']
-                const catColor  = catData?.color ?? '#6B7280'
+                const catData  = getCategoryByName(budget.category)
+                const name     = catData?.name || budget.category
+                const spent    = getSpentAmount(budget)
+                const limit    = budget.amount
 
-                // Shared scale (see barScale above), so bars compare across the row.
-                const spentPct  = Math.min(100, (rawPct / barScale) * 100)
-                const withinPct = Math.min(spentPct, limitPct)
+                // Money is compared at paise precision so "exactly at the limit"
+                // is a real equality test, not a float coincidence.
+                const spentR   = Math.round(spent * 100) / 100
+                const limitR   = Math.round(limit * 100) / 100
+                const hasLimit = limitR > 0
+
+                // Track is always 100% of THIS category's budget.
+                const pct      = hasLimit ? (spent / limit) * 100 : 0
+                const isOver   = hasLimit && spentR > limitR
+                const atLimit  = hasLimit && spentR === limitR
+                const fill     = hasLimit ? Math.min(100, Math.max(0, pct)) : 0
+                const fillColor = isOver ? '#C4242A' : atLimit ? '#B45309' : '#0D9488'
+
+                const Icon     = categoryIconMap[budget.category] || categoryIconMap['Other']
+                const catColor = catData?.color ?? '#6B7280'
+                const menuOpen = openMenuId === budget.id
 
                 if (deletingId === budget.id) {
                   return (
@@ -469,94 +521,142 @@ export default function BudgetsPage() {
                 }
 
                 return (
-                  <motion.div
+                  <motion.article
                     key={budget.id}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, delay: i * 0.04 }}
-                    className="rounded-xl border border-gray-200 bg-white p-4"
+                    className="flex flex-col rounded-xl border border-gray-300 bg-white p-3.5 sm:p-4"
                   >
-                    {/* name · status · actions */}
+                    {/* 1 · category name + actions */}
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Icon className="h-4 w-4 shrink-0" style={{ color: catColor }} />
-                        <p className="truncate text-sm font-semibold text-gray-900">
-                          {catData?.name || budget.category}
-                        </p>
+                      <div className="flex min-w-0 items-start gap-2">
+                        <Icon
+                          className="mt-0.5 h-4 w-4 shrink-0"
+                          style={{ color: catColor }}
+                          aria-hidden="true"
+                        />
+                        <h2 className="text-sm font-semibold leading-5 text-gray-900 sm:text-[15px]">
+                          {name}
+                        </h2>
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-1">
+                      <div className="flex shrink-0 items-center">
                         {isCurrentMonth ? (
                           <>
                             <button
                               onClick={() => handleEdit(budget)}
-                              aria-label={`Edit ${catData?.name || budget.category} budget`}
-                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                              aria-label={`Edit ${name} budget`}
+                              className="-my-2 flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]"
                             >
-                              <Pencil className="h-3.5 w-3.5" />
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
                             </button>
-                            <button
-                              onClick={() => { setBudgetToDelete(budget); setDeleteOpen(true) }}
-                              aria-label={`Delete ${catData?.name || budget.category} budget`}
-                              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+
+                            <div className="relative -mr-1" data-budget-menu>
+                              <button
+                                onClick={() => setOpenMenuId(menuOpen ? null : budget.id)}
+                                aria-label={`More actions for ${name}`}
+                                aria-haspopup="menu"
+                                aria-expanded={menuOpen}
+                                data-menu-trigger={budget.id}
+                                className="-my-2 flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]"
+                              >
+                                <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                              </button>
+
+                              {menuOpen && (
+                                <div
+                                  role="menu"
+                                  aria-label={`Actions for ${name}`}
+                                  className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-xl border border-gray-300 bg-white py-1 shadow-lg"
+                                >
+                                  <button
+                                    role="menuitem"
+                                    autoFocus
+                                    onClick={() => {
+                                      setOpenMenuId(null)
+                                      setBudgetToDelete(budget)
+                                      setDeleteOpen(true)
+                                    }}
+                                    className="flex min-h-[44px] w-full items-center gap-2 px-3 text-left text-sm text-[#831C1E] transition-colors hover:bg-[#FFEDEA] focus-visible:outline-none focus-visible:bg-[#FFEDEA]"
+                                  >
+                                    <Trash2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                    Delete budget
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </>
                         ) : (
-                          <span className="text-[11px] text-gray-600">View only</span>
+                          <span className="text-xs text-gray-600">View only</span>
                         )}
                       </div>
                     </div>
 
-                    {/* spent of limit */}
-                    <p className="mt-2 text-xs tabular-nums text-gray-700">
+                    {/* 2 · spent against the limit */}
+                    <p className="mt-1.5 text-sm tabular-nums">
                       <span className="font-semibold text-gray-900">{formatIndianCurrency(spent)}</span>
-                      {' spent of '}
-                      {formatIndianCurrency(budget.amount)}
+                      <span className="text-gray-600"> spent of </span>
+                      <span className="text-gray-900">{formatIndianCurrency(limit)}</span>
                     </p>
 
-                    {/* teal = spent inside the limit, red = the part past it */}
-                    <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    {/* 3 · progress: always a 0-100% track of this budget */}
+                    <div
+                      role="progressbar"
+                      aria-label={`${name} budget used`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(fill)}
+                      aria-valuetext={
+                        !hasLimit
+                          ? 'No limit set'
+                          : isOver
+                            ? `${Math.round(pct)}% of budget used, ${formatIndianCurrency(spent - limit)} over`
+                            : atLimit
+                              ? 'Limit reached'
+                              : `${Math.round(pct)}% of budget used, ${formatIndianCurrency(limit - spent)} remaining`
+                      }
+                      className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-gray-200"
+                    >
                       <div
-                        className="absolute inset-y-0 left-0 rounded-full"
-                        style={{ width: `${withinPct}%`, background: '#0D9488' }}
+                        className="h-full rounded-full transition-[width] duration-500"
+                        style={{ width: `${fill}%`, background: fillColor }}
                       />
-                      {isOver && (
-                        <div
-                          className="absolute inset-y-0 rounded-r-full"
-                          style={{
-                            left: `${limitPct}%`,
-                            width: `${Math.max(0, spentPct - limitPct)}%`,
-                            background: '#C4242A',
-                          }}
-                        />
-                      )}
                     </div>
 
-                    {/* status: colour only on the rows at risk or over */}
-                    <div className="mt-2.5">
-                      {isOver ? (
-                        <span className="inline-flex items-center rounded-md border border-[#F5C6C2] bg-[#FFEDEA] px-2 py-0.5 text-[11px] font-medium tabular-nums text-[#831C1E]">
-                          {formatIndianCurrency(Math.abs(remaining))} over
+                    {/* 4 · status — always in words, never colour alone */}
+                    <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3">
+                      {!hasLimit ? (
+                        <span className="text-xs font-medium text-gray-700">No limit set</span>
+                      ) : isOver ? (
+                        <span className="inline-flex items-center rounded-md border border-[#F5C6C2] bg-[#FFEDEA] px-2 py-1 text-xs font-semibold tabular-nums text-[#831C1E]">
+                          {Math.round(pct)}% used · {formatIndianCurrency(spent - limit)} over
                         </span>
-                      ) : isNear ? (
-                        <span className="inline-flex items-center rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-2 py-0.5 text-[11px] font-medium tabular-nums text-[#92400E]">
-                          {formatIndianCurrency(remaining)} left
+                      ) : atLimit ? (
+                        <span className="inline-flex items-center rounded-md border border-[#FDE68A] bg-[#FFFBEB] px-2 py-1 text-xs font-semibold tabular-nums text-[#92400E]">
+                          Limit reached
                         </span>
                       ) : (
-                        <span className="text-[11px] font-medium tabular-nums text-gray-700">
-                          {formatIndianCurrency(remaining)} left
+                        <span className="text-xs font-medium tabular-nums text-gray-700">
+                          {formatIndianCurrency(limit - spent)} remaining
                         </span>
                       )}
+
+                      {/* Real drill-down: /history filters by ?category= already. */}
+                      <Link
+                        href={`/history?category=${encodeURIComponent(budget.category)}`}
+                        className="-my-2.5 inline-flex min-h-[44px] items-center gap-0.5 rounded-md px-1 text-xs font-semibold text-[#0B7F75] transition-colors hover:text-[#0D9488] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]"
+                      >
+                        View spending
+                        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      </Link>
                     </div>
-                  </motion.div>
+                  </motion.article>
                 )
               })}
             </div>
           </>
         )}
-
 
 
         {/* ── Create / Edit Modal ───────────────────────────────────── */}
