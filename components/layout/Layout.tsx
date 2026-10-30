@@ -149,6 +149,10 @@ export default function Layout({
         <main
           className={cn(
             'ff-main',
+            // The floating header no longer reserves space in flow on phones,
+            // so the content carries a fixed compact offset instead. Skipped on
+            // subscription screens, which have no global header at all.
+            !isSubscriptionRoute && 'ff-main--clears-floating-top',
             isSubscriptionRoute
               ? 'pb-[calc(5rem+env(safe-area-inset-bottom))] min-[900px]:pb-8'
               : 'pb-20 min-[900px]:pb-0'

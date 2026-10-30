@@ -33,5 +33,6 @@
   "proBadge": "Pro",
   "searchPlaceholder": "Search transactions…",
   "searchTransactions": "Search transactions",
-  "notifications": "Notifications"
+  "notifications": "Notifications",
+  "notificationsUnread": "Notifications, {count, plural, one {# unread} other {# unread}}"
 }
