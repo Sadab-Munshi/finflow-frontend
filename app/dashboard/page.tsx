@@ -89,7 +89,6 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading]           = useState(true)
   const [pieChartHeight, setPieChartHeight] = useState(250)
-  const [isDesktop, setIsDesktop]       = useState(false)
   const [dashboardView, setDashboardView] = useState<'month' | 'all'>('month')
   const [hideBalance, setHideBalance]   = useState(false)
 
@@ -113,18 +112,18 @@ export default function DashboardPage() {
   }, [])
 
   // ── Responsive pie chart height ──────────────────────────────────────────
+  // The donut now always stacks above its legend (CSS handles the arrangement),
+  // so this only needs to size the box. 260px is enough for the 170px ring plus
+  // breathing room inside the narrower desktop column.
   useEffect(() => {
     const updateSize = () => {
       const w = window.innerWidth
       if (w >= 1024) {
-        setPieChartHeight(380)
-        setIsDesktop(true)
+        setPieChartHeight(260)
       } else if (w >= 768) {
         setPieChartHeight(320)
-        setIsDesktop(false)
       } else {
         setPieChartHeight(250)
-        setIsDesktop(false)
       }
     }
     updateSize()
@@ -279,10 +278,10 @@ export default function DashboardPage() {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <Layout>
-      <div className="space-y-4 md:space-y-6">
+      <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-6 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
 
         {/* 1. Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between lg:order-1 lg:col-span-3">
           <h1 className="text-2xl font-bold text-[#0F172A]">{t('title')}</h1>
           <div className="flex items-center bg-white border border-[#E2E8F0] rounded-full p-0.5">
             <button
@@ -307,7 +306,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 2. Hero Card */}
-        <div className="bg-gradient-to-br from-[#0A7B7B] to-[#0D5C5C] rounded-2xl p-5 md:p-6 shadow-lg overflow-hidden relative">
+        <div className="bg-gradient-to-br from-[#0A7B7B] to-[#0D5C5C] rounded-2xl p-5 md:p-6 shadow-lg overflow-hidden relative lg:order-2 lg:col-span-1">
           <svg
             className="absolute right-0 top-0 h-full w-48 opacity-10 pointer-events-none"
             viewBox="0 0 200 200"
@@ -335,7 +334,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 3. Summary Cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 items-stretch">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 items-stretch lg:order-2 lg:col-span-2">
           {/* Income */}
           <div className="bg-gradient-to-b from-[#f4fbf7] to-white border border-[#e2f5ec] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between h-full items-center text-center">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 bg-[#10B981]/10">
@@ -376,7 +375,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => router.push('/insights')}
-            className="w-full bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow text-left"
+            className="w-full bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow text-left lg:order-3 lg:col-span-3"
           >
             <div className="w-10 h-10 rounded-full bg-[#0A7B7B]/10 flex items-center justify-center flex-shrink-0">
               <Lightbulb className="w-5 h-5 text-[#0A7B7B]" />
@@ -405,7 +404,7 @@ export default function DashboardPage() {
         )}
 
         {/* 5. Recent Transactions */}
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5 lg:order-5 lg:col-span-3">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-[#0F172A]">{t('recentTransactions')}</h2>
             <button
@@ -463,7 +462,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 6. Weekly Activity Chart */}
-        <div className="bg-white rounded-[28px] shadow-[0_10px_40px_rgba(15,23,42,0.06)] border border-[#EEF2F7] p-4 sm:p-6 md:p-8">
+        <div className="bg-white rounded-[28px] shadow-[0_10px_40px_rgba(15,23,42,0.06)] border border-[#EEF2F7] p-4 sm:p-6 md:p-8 lg:order-4 lg:col-span-2">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-[#0F172A]">{t('weeklyActivity')}</h2>
@@ -497,7 +496,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="h-[220px] sm:h-[260px] md:h-[340px] mt-6 w-full">
+          <div className="h-[220px] sm:h-[260px] md:h-[340px] lg:h-[360px] mt-6 w-full">
             <ResponsiveContainer width="100%" height="100%">
               {/* Fix #1: removed redundant `weeklyData || []` */}
               <AreaChart data={weeklyData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
@@ -563,16 +562,13 @@ export default function DashboardPage() {
 
         {/* 7. Expense Breakdown */}
         {pieExpenseTotal > 0 && pieData.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 md:p-5 lg:order-4 lg:col-span-1">
             <h2 className="text-base font-semibold text-[#0F172A]">{t('expenseBreakdown')}</h2>
             <p className="text-xs text-[#64748B] mb-3">
               {dashboardView === 'month' ? t('thisMonthByCategory') : t('allTimeByCategory')}
             </p>
-            <div className={cn("flex items-center gap-4", isDesktop ? "flex-row" : "flex-col")}>
-              <div
-                className="relative flex-shrink-0"
-                style={{ height: pieChartHeight, width: isDesktop ? pieChartHeight : '100%' }}
-              >
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-full" style={{ height: pieChartHeight }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
