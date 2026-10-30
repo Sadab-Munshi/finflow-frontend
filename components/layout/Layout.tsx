@@ -26,7 +26,16 @@ const fabInputMethods = [
   { icon: FileText, labelKey: "fabPdf", color: "bg-red-500", tab: "scan", feature: "receipt_scan" },
 ]
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({
+  children,
+  hideFab = false,
+}: {
+  children: React.ReactNode
+  /** Opt out of the floating add button on pages that own their own labelled
+      create action (Budgets has "+ New budget" in the header). Default keeps
+      the FAB everywhere else. */
+  hideFab?: boolean
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const t = useTranslations('nav')
@@ -174,7 +183,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* ======================================================= */}
       {/* EXACT DEMO FAB - FAST ANIMATION & THUMB-FRIENDLY ORDER */}
       {/* ======================================================= */}
-      {!isSubscriptionRoute && (
+      {!isSubscriptionRoute && !hideFab && (
       <div className="fixed bottom-20 right-5 z-[55] no-print min-[900px]:hidden">
         {/* Input Method Options. The list is capped to the visible viewport so a
             five-item dial on a 360px-tall landscape phone stays fully reachable
