@@ -258,14 +258,20 @@ export default function InsightsPage() {
                 className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3"
                 aria-busy={refreshing}
               >
-                {findings.map((f) => {
+                {findings.map((f, index) => {
                   const s = KIND_STYLE[f.kind]
                   const Icon = s.icon
                   const isOpen = expanded.has(f.id)
+                  // An odd number of findings leaves the last grid cell empty on
+                  // desktop. Rather than a hole, that card takes the full row and
+                  // caps its prose measure so it does not stretch into a ribbon.
+                  const fillsRow = findings.length % 2 === 1 && index === findings.length - 1
                   return (
                     <article
                       key={f.id}
-                      className="flex flex-col rounded-xl border border-[#E2E8F0] bg-white p-3.5 sm:p-4"
+                      className={`flex h-full flex-col rounded-xl border border-[#E2E8F0] bg-white p-3.5 sm:p-4 xl:p-5${
+                        fillsRow ? ' md:col-span-2' : ''
+                      }`}
                       style={{ borderLeft: `3px solid ${s.dot}` }}
                     >
                       {/* 1 · label + icon (and basis, which never hides) */}
@@ -289,23 +295,29 @@ export default function InsightsPage() {
                       </div>
 
                       {/* 2 · headline */}
-                      <h2 className="mt-1.5 text-[15px] font-semibold leading-5 text-[#0F172A]">
+                      <h2 className="mt-1.5 text-[15px] font-semibold leading-5 text-[#0F172A] xl:text-base xl:leading-6">
                         {f.headline}
                       </h2>
 
                       {/* 3 · the number */}
                       <p className="mt-1 flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold tabular-nums tracking-tight text-[#0F172A]">
+                        <span className="text-2xl font-bold tabular-nums tracking-tight text-[#0F172A] xl:text-[28px]">
                           {f.metric.value}
                         </span>
                         <span className="text-xs font-medium text-[#64748B]">{f.metric.label}</span>
                       </p>
 
                       {/* 4 · body, full width on phones — no indent under the icon */}
-                      <p className="mt-1 text-sm leading-5 text-[#475569]">{f.body}</p>
+                      <p
+                        className={`mt-1 text-sm leading-5 text-[#475569]${
+                          fillsRow ? ' md:max-w-[72ch]' : ''
+                        }`}
+                      >
+                        {f.body}
+                      </p>
 
                       {/* 5 · action + 6 · details, wrapping rather than colliding */}
-                      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-2">
                         {f.action ? (
                           <Link
                             href={f.action.href}
