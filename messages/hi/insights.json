@@ -12,18 +12,5 @@
   "stage3": "आपकी अंतर्दृष्टि लिखी जा रही है...",
   "stage4": "बस हो गया...",
   "noInsightsTitle": "अभी कोई अंतर्दृष्टि नहीं",
-  "noInsightsBody": "अपने खर्च के पैटर्न समझने के लिए AI अंतर्दृष्टि जनरेट करें",
-  "txCountMeta": "{count, plural, one {# लेनदेन} other {# लेनदेन}}",
-  "updatedAt": "अपडेट",
-  "basisObserved": "आपके रिकॉर्ड से गणना",
-  "basisEstimate": "AI अनुमान",
-  "reworded": "सटीकता के लिए पुनर्लिखित",
-  "insufficientTitle": "विश्लेषण के लिए पर्याप्त डेटा नहीं",
-  "insufficientBody": "पिछले 30 दिनों में {count, plural, one {# लेनदेन} other {# लेनदेन}}। कोई पैटर्न बताने से पहले कई दिनों में कम से कम {min} आवश्यक हैं।",
-  "errorTitle": "इनसाइट्स रीफ़्रेश नहीं हो सके",
-  "showDetails": "विवरण",
-  "hideDetails": "विवरण छिपाएँ",
-  "withheldTitle": "{count, plural, one {# AI सुझाव रोका गया} other {# AI सुझाव रोके गए}}",
-  "footerNote": "ये इनसाइट्स इस अवधि में आपके दर्ज किए गए लेनदेन से गणना किए गए हैं। यह वित्तीय सलाह नहीं है।",
-  "learnMore": "और जानें"
+  "noInsightsBody": "अपने खर्च के पैटर्न समझने के लिए AI अंतर्दृष्टि जनरेट करें"
 }
