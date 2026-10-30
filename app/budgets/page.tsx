@@ -299,10 +299,11 @@ export default function BudgetsPage() {
 
   return (
     <Layout>
-      <div className="w-full pb-8">
+      <div className="mx-auto w-full max-w-[1440px] pb-8">
 
         {/* ── Page Header ──────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex flex-col gap-3 lg:mb-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
           {filtered.length > 0 && (
             <button
@@ -316,7 +317,7 @@ export default function BudgetsPage() {
         </div>
 
         {/* ── Month Navigation ─────────────────────────────────────── */}
-        <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="mb-0 flex items-center justify-center gap-4 lg:justify-end">
           <button
             onClick={goPrev}
             disabled={prevDisabled}
@@ -343,6 +344,13 @@ export default function BudgetsPage() {
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
+        </div>
+
+        {/* Two columns from lg: the summary card sits beside the budget
+            cards, which spread into a grid instead of one very wide column.
+            The hero spans both rows so the banner and list stack to its right
+            without any of the markup having to move. */}
+        <div className="lg:grid lg:grid-cols-3 lg:items-start lg:gap-6">
 
         {/* ── Hero Summary Card (Concept D — segmented bar) ────────── */}
         {filtered.length > 0 && (() => {
@@ -359,7 +367,7 @@ export default function BudgetsPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
+              className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 lg:row-span-2 lg:col-span-1 lg:mb-0"
             >
               {/* Header row: amount + badge */}
               <div className="flex items-start justify-between mb-4">
@@ -435,13 +443,13 @@ export default function BudgetsPage() {
               {/* Stat cells */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[10px] text-gray-400 mb-1">{t('totalBudget')}</p>
+                  <p className="text-[11px] text-gray-400 mb-1">{t('totalBudget')}</p>
                   <p className="text-sm font-semibold text-gray-800">
                     {formatIndianCurrency(totalBudget)}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[10px] text-gray-400 mb-1">{t('activeBudgets')}</p>
+                  <p className="text-[11px] text-gray-400 mb-1">{t('activeBudgets')}</p>
                   <p className={`text-sm font-semibold ${isOver ? 'text-red-600' : 'text-teal-600'}`}>
                     {filtered.length}
                   </p>
@@ -459,7 +467,7 @@ export default function BudgetsPage() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25 }}
-              className="mb-4 overflow-hidden"
+              className="mb-4 overflow-hidden lg:col-span-2"
             >
               <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3">
                 <div className="w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0">
@@ -486,7 +494,7 @@ export default function BudgetsPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-2xl p-8 text-center shadow-sm"
+            className="bg-white rounded-2xl p-8 text-center shadow-sm lg:col-span-3"
           >
             <Wallet className="w-16 h-16 text-teal-300 mx-auto mb-4" />
             <p className="font-semibold text-gray-700 text-base">
@@ -515,7 +523,7 @@ export default function BudgetsPage() {
             </p>
 
             {/* ── Budget Cards ─────────────────────────────────────── */}
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-2">
               {sortedFiltered.map((budget, i) => {
                 const catData  = getCategoryByName(budget.category)
                 const spent    = getSpentAmount(budget)
@@ -546,7 +554,7 @@ export default function BudgetsPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
-                    className={`bg-white rounded-2xl shadow-sm overflow-hidden ${
+                    className={`bg-white rounded-2xl shadow-sm overflow-hidden transition-shadow hover:shadow-md ${
                       isOver ? 'border-[1.5px] border-red-200' : 'border border-gray-100'
                     }`}
                   >
@@ -610,13 +618,13 @@ export default function BudgetsPage() {
                     {/* Stat Cells */}
                     <div className="grid grid-cols-3 gap-2 px-4 mb-3">
                       <div className="bg-gray-50 rounded-xl p-2">
-                        <p className="text-[10px] text-gray-400 mb-1">{t('budget')}</p>
+                        <p className="text-[11px] text-gray-400 mb-1">{t('budget')}</p>
                         <p className="text-xs font-semibold text-gray-800">
                           {formatIndianCurrency(budget.amount)}
                         </p>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-2">
-                        <p className="text-[10px] text-gray-400 mb-1">{t('spent')}</p>
+                        <p className="text-[11px] text-gray-400 mb-1">{t('spent')}</p>
                         <p
                           className="text-xs font-semibold"
                           style={{ color: progColor }}
@@ -625,7 +633,7 @@ export default function BudgetsPage() {
                         </p>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-2">
-                        <p className="text-[10px] text-gray-400 mb-1">
+                        <p className="text-[11px] text-gray-400 mb-1">
                           {remaining >= 0 ? 'Left' : 'Over by'}
                         </p>
                         <p
@@ -653,6 +661,8 @@ export default function BudgetsPage() {
             </div>
           </>
         )}
+
+        </div>{/* end lg:grid */}
 
         {/* ── Create / Edit Modal ───────────────────────────────────── */}
         <AnimatePresence>
