@@ -19,13 +19,18 @@ interface Insight {
   description: string
 }
 
-// Card type styles with left border colors, card bg, and icon color
-const insightStyles: Record<string, { bgColor: string; borderColor: string; iconColor: string; icon: React.ReactNode }> = {
-  tip:         { bgColor: '#f0fdf9', borderColor: '#00b894', iconColor: '#00b894', icon: <Lightbulb style={{ width: 20, height: 20 }} /> },
-  warning:     { bgColor: '#fff5f5', borderColor: '#ef4444', iconColor: '#ef4444', icon: <AlertTriangle style={{ width: 20, height: 20 }} /> },
-  achievement: { bgColor: '#f0fdf4', borderColor: '#10b981', iconColor: '#10b981', icon: <Trophy style={{ width: 20, height: 20 }} /> },
-  trend:       { bgColor: '#faf5ff', borderColor: '#8b5cf6', iconColor: '#8b5cf6', icon: <TrendingUp style={{ width: 20, height: 20 }} /> },
-  alert:       { bgColor: '#fff5f5', borderColor: '#ef4444', iconColor: '#ef4444', icon: <AlertOctagon style={{ width: 20, height: 20 }} /> },
+// Card presentation per insight type. The cards themselves are white; the
+// type is carried only by the 3px left edge, the round icon tile and the
+// badge — and those keep exactly the colours the page has always used.
+//  `color` – the left rule and the icon/badge ink
+// The tile and badge backdrops are that same colour at hex alpha `15` (8%),
+// the tint the page already shipped with, so no new hue is introduced.
+const insightStyles: Record<string, { color: string; icon: React.ReactNode }> = {
+  tip:         { color: '#00b894', icon: <Lightbulb style={{ width: 20, height: 20 }} /> },
+  warning:     { color: '#ef4444', icon: <AlertTriangle style={{ width: 20, height: 20 }} /> },
+  achievement: { color: '#10b981', icon: <Trophy style={{ width: 20, height: 20 }} /> },
+  trend:       { color: '#8b5cf6', icon: <TrendingUp style={{ width: 20, height: 20 }} /> },
+  alert:       { color: '#ef4444', icon: <AlertOctagon style={{ width: 20, height: 20 }} /> },
 }
 
 export default function InsightsPage() {
@@ -180,7 +185,9 @@ export default function InsightsPage() {
         }
       `}</style>
 
-      <div className="space-y-4 pb-6">
+      {/* Capped and centred on large displays: without this the cards ran the
+          full 1900px+ and each body line became an unreadably long measure. */}
+      <div className="mx-auto w-full max-w-[1280px] space-y-4 pb-6">
         {/* Page Header */}
         <div>
           <div className="flex items-center gap-2">
@@ -255,17 +262,20 @@ export default function InsightsPage() {
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"
-                  style={{ borderLeft: '3px solid #E2E8F0' }}
+                  className="rounded-2xl border border-[#E7EDEC] bg-white p-3.5 sm:p-4 md:p-[18px]"
+                  style={{
+                    borderLeft: '3px solid #E2E8F0',
+                    boxShadow: '0 1px 2px rgba(15,118,110,0.04), 0 4px 12px -6px rgba(15,118,110,0.10)',
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 animate-pulse flex-shrink-0" />
-                      <div className="h-4 rounded-md bg-slate-100 animate-pulse" style={{ width: `${110 + i * 25}px` }} />
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      <div className="h-9 w-9 shrink-0 rounded-full bg-slate-100 animate-pulse" />
+                      <div className="mt-1.5 h-4 rounded-md bg-slate-100 animate-pulse" style={{ width: `${110 + i * 25}px` }} />
                     </div>
-                    <div className="h-5 w-16 rounded-full bg-slate-100 animate-pulse" />
+                    <div className="h-5 w-16 shrink-0 rounded-full bg-slate-100 animate-pulse" />
                   </div>
-                  <div className="pl-10 space-y-2">
+                  <div className="mt-2 space-y-2 md:mt-2.5">
                     <div className="h-3 rounded-md bg-slate-100 animate-pulse" style={{ width: '92%' }} />
                     <div className="h-3 rounded-md bg-slate-100 animate-pulse" style={{ width: '78%' }} />
                     <div className="h-3 rounded-md bg-slate-100 animate-pulse" style={{ width: '55%' }} />
@@ -311,40 +321,53 @@ export default function InsightsPage() {
             ) : (
               <>
               {/* Insight cards */}
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2 xl:gap-4">
                 {insights.map((insight, i) => {
                   const style = insightStyles[insight.type] || insightStyles.tip
                   return (
                     <div
                       key={i}
-                      className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"
+                      className="rounded-2xl border border-[#E7EDEC] bg-white p-3.5 sm:p-4 md:p-[18px] xl:p-6"
                       style={{
-                        borderLeft: `3px solid ${style.borderColor}`,
+                        borderLeft: `3px solid ${style.color}`,
+                        boxShadow:
+                          '0 1px 2px rgba(15,118,110,0.04), 0 4px 12px -6px rgba(15,118,110,0.10)',
                         animation: `slideUp 0.4s ease forwards`,
                         animationDelay: `${i * 150}ms`,
                         opacity: 0,
                       }}
                     >
-                      {/* Top row */}
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
+                      {/* Top row — icon, title, badge. The title column is the
+                          only flexible one, so a long title wraps inside it and
+                          can never push into the badge. */}
+                      <div className="flex items-start justify-between gap-2.5">
+                        <div className="flex min-w-0 items-start gap-2.5">
                           <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: style.borderColor + '15', color: style.iconColor }}
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
+                            style={{ backgroundColor: `${style.color}15`, color: style.color }}
                           >
                             {style.icon}
                           </div>
-                          <p className="font-semibold text-[#0F172A] text-sm leading-snug">{insight.title}</p>
+                          <p className="min-w-0 flex-1 pt-0.5 text-[15px] font-semibold leading-snug text-[#0F172A] md:text-[17px] md:leading-6 xl:text-[18px] xl:leading-7">
+                            {insight.title}
+                          </p>
                         </div>
                         <span
-                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 capitalize"
-                          style={{ backgroundColor: style.borderColor + '15', color: style.iconColor }}
+                          className="mt-1 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize md:text-[12px]"
+                          style={{
+                            backgroundColor: `${style.color}15`,
+                            color: style.color,
+                          }}
                         >
                           {insight.type}
                         </span>
                       </div>
-                      {/* Description */}
-                      <p className="text-xs text-[#475569] leading-relaxed pl-10">{insight.description}</p>
+                      {/* Description — full card width at every size. The old
+                          pl-10 indent pushed the text into a narrow column and
+                          cost several extra lines on phones and landscape. */}
+                      <p className="mt-2 text-[13px] leading-relaxed text-[#475569] md:mt-2.5 md:text-[15px] md:leading-6 xl:mt-3 xl:text-base xl:leading-[26px]">
+                        {insight.description}
+                      </p>
                     </div>
                   )
                 })}
@@ -354,7 +377,7 @@ export default function InsightsPage() {
               <div className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-3 flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-[#9CA3AF] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[#9CA3AF] leading-relaxed">
-                  These insights are generated from your recorded transactions and are intended to help you identify spending patterns. They should not be considered financial advice.{' '}
+                  These insights are generated from your recorded transactions and are not financial advice.{' '}
                   <a
                     href="/disclaimer"
                     className="text-[#0A7B7B] font-medium underline-offset-2 hover:underline"
