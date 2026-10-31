@@ -31,6 +31,13 @@ export interface SubscriptionSettingsConfig {
   id: number
   subscriptions_enabled: boolean
   payments_enabled: boolean
+  /**
+   * Discovery switch for the plan entry points (the "Pro Plans" nav row and
+   * the Profile upgrade CTA). It never changes what anyone is entitled to —
+   * `subscriptions_enabled` governs the rules and `payments_enabled` governs
+   * checkout. Absent or anything other than `false` means "visible".
+   */
+  subscription_ui_enabled: boolean
   trial_enabled: boolean
   trial_days: number
   updated_by?: string | null
@@ -82,6 +89,7 @@ export const DEFAULT_SUBSCRIPTION_SETTINGS: SubscriptionSettingsConfig = {
   id: 1,
   subscriptions_enabled: true,
   payments_enabled: true,
+  subscription_ui_enabled: true,
   trial_enabled: true,
   trial_days: 7,
   updated_by: null,

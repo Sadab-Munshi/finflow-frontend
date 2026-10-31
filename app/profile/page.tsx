@@ -904,14 +904,10 @@ export default function ProfilePage() {
                         />
                       </div>
                       <p className="text-xs text-[#64748B]">{t('aiReset')}</p>
-                      <div className="pt-2">
-                        <Link
-                          href="/subscription"
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#0F766E] to-[#059669] hover:from-[#115E59] hover:to-[#047857] text-white text-xs font-bold transition-all shadow-sm whitespace-nowrap"
-                        >
-                          {isProMember ? 'Manage Subscription →' : 'Upgrade to Pro →'}
-                        </Link>
-                      </div>
+                      {/* No plan CTA in this card by design: the only entry
+                          point is the sidebar row, and a buy/manage link
+                          sitting under the user's own usage numbers reads as an
+                          ad. Entitlement feedback above stays untouched. */}
                     </div>
                   ) : (
                     <p className="text-sm text-[#64748B]">{t('loadingUsage')}</p>

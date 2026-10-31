@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { Dialog } from 'radix-ui'
 import { PanelLeftClose } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useSubscriptionGate } from '@/hooks/useSubscriptionGate'
 import AccountMenu from './AccountMenu'
 import SidebarNavList from './SidebarNavList'
-import { SIDEBAR_ACCOUNT_NAV, SIDEBAR_PRIMARY_NAV } from './sidebar-nav'
+import { SIDEBAR_ACCOUNT_NAV, SIDEBAR_PRIMARY_NAV, navItemsForSubscriptionUi } from './sidebar-nav'
 
 interface MobileNavDrawerProps {
   open: boolean
@@ -45,6 +46,7 @@ export default function MobileNavDrawer({
   loading,
 }: MobileNavDrawerProps) {
   const t = useTranslations('nav')
+  const { subscriptionUiEnabled } = useSubscriptionGate()
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -87,7 +89,10 @@ export default function MobileNavDrawer({
 
           <nav id="ff-drawer-nav" className="ff-nav" aria-label={t('primaryNav')}>
             <p className="ff-section-label">{t('sectionMain')}</p>
-            <SidebarNavList items={SIDEBAR_PRIMARY_NAV} onNavigate={() => onOpenChange(false)} />
+            <SidebarNavList
+              items={navItemsForSubscriptionUi(SIDEBAR_PRIMARY_NAV, subscriptionUiEnabled)}
+              onNavigate={() => onOpenChange(false)}
+            />
             <p className="ff-section-label">{t('sectionAccount')}</p>
             <SidebarNavList items={SIDEBAR_ACCOUNT_NAV} onNavigate={() => onOpenChange(false)} />
           </nav>

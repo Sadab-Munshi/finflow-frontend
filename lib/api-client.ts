@@ -180,6 +180,8 @@ export interface BootstrapPayload {
   settings: {
     subscriptionsEnabled: boolean
     paymentsEnabled: boolean
+    /** Plan entry points (nav row + Profile CTA). Omitted ⇒ visible. */
+    subscriptionUiEnabled: boolean
     trialEnabled: boolean
     trialDays: number
   }

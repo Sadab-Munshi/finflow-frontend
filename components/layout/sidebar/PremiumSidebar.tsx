@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { Tooltip } from 'radix-ui'
 import { useTranslations } from 'next-intl'
+import { useSubscriptionGate } from '@/hooks/useSubscriptionGate'
 import AccountMenu from './AccountMenu'
 import BrandHeader from './BrandHeader'
 import SidebarNavList from './SidebarNavList'
-import { SIDEBAR_ACCOUNT_NAV, SIDEBAR_PRIMARY_NAV } from './sidebar-nav'
+import { SIDEBAR_ACCOUNT_NAV, SIDEBAR_PRIMARY_NAV, navItemsForSubscriptionUi } from './sidebar-nav'
 import { useSidebarRail } from './useSidebarRail'
 
 interface PremiumSidebarProps {
@@ -34,6 +35,8 @@ export default function PremiumSidebar({
 }: PremiumSidebarProps) {
   const t = useTranslations('nav')
   const { collapsed, toggle } = useSidebarRail()
+  const { subscriptionUiEnabled } = useSubscriptionGate()
+  const primaryNav = navItemsForSubscriptionUi(SIDEBAR_PRIMARY_NAV, subscriptionUiEnabled)
 
   const addLink = (
     <Link href="/add?tab=manual" prefetch={false} className="ff-cta">
@@ -64,7 +67,7 @@ export default function PremiumSidebar({
 
         <nav id="ff-sidebar-nav" className="ff-nav" aria-label={t('primaryNav')}>
           <p className="ff-section-label">{t('sectionMain')}</p>
-          <SidebarNavList items={SIDEBAR_PRIMARY_NAV} tooltips={collapsed} />
+          <SidebarNavList items={primaryNav} tooltips={collapsed} />
           <p className="ff-section-label">{t('sectionAccount')}</p>
           <SidebarNavList items={SIDEBAR_ACCOUNT_NAV} tooltips={collapsed} />
         </nav>
