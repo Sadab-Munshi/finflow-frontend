@@ -1,102 +1,90 @@
+/**
+ * Loading skeleton for /budgets.
+ *
+ * Mirrors the live page box-for-box: max-w-[1240px], heading row with the month
+ * stepper and the create button (both 44px tall so the row height does not
+ * change on load), the bordered summary block, then the 1 / 2 / 3-column card
+ * grid with the same card anatomy (category row, spent-of line, 8px track,
+ * status row).
+ *
+ * Neutral only: white surfaces, gray placeholders. No category colours, no
+ * progress-bar accent colours — the real card is the only thing that should
+ * carry colour.
+ */
 export default function BudgetsSkeleton() {
   return (
-    <div className="w-full pb-8 animate-pulse">
+    <div className="mx-auto w-full max-w-[1240px] pb-6 md:pb-8 animate-pulse">
 
-      {/* ── Page Header ───────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-8 w-28 bg-gray-200 rounded-xl" />
-        <div className="h-9 w-36 bg-gray-200 rounded-xl" />
-      </div>
-
-      {/* ── Month Navigation ──────────────────────────────────────── */}
-      <div className="flex items-center justify-center gap-4 mb-4">
-        <div className="w-8 h-8 rounded-full bg-gray-200" />
-        <div className="h-5 w-28 bg-gray-200 rounded-lg" />
-        <div className="w-8 h-8 rounded-full bg-gray-200" />
-      </div>
-
-      {/* ── Hero Summary Card (Concept D shape) ───────────────────── */}
-      <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        {/* Header row: amount + badge */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="h-3 w-32 bg-gray-200 rounded mb-2" />
-            <div className="h-8 w-40 bg-gray-200 rounded-lg" />
-          </div>
-          <div className="h-6 w-20 bg-gray-200 rounded-full" />
+      {/* ── Heading · month · create ─────────────────────────────────── */}
+      <div className="mb-1.5 flex flex-col gap-1.5 sm:mb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <div className="h-[22px] w-28 rounded bg-gray-200 sm:h-8 sm:w-32" />
+          <div className="mt-1.5 h-3.5 w-52 max-w-full rounded bg-gray-200" />
         </div>
 
-        {/* Segmented bar */}
-        <div className="h-2.5 w-full bg-gray-200 rounded-full mb-2.5" />
-
-        {/* Legend */}
-        <div className="flex items-center gap-4 mb-4">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-sm bg-gray-200" />
-            <div className="h-2.5 w-24 bg-gray-200 rounded" />
-          </div>
+        {/* Month stepper + create share one row, same 44px height as the live controls */}
+        <div className="flex items-center gap-2 sm:shrink-0">
+          <div className="h-11 flex-1 rounded-lg border border-gray-300 bg-white sm:w-44 sm:flex-none" />
+          <div className="h-11 w-24 rounded-lg bg-gray-200 sm:w-32" />
         </div>
+      </div>
 
-        {/* Stat cells */}
-        <div className="grid grid-cols-2 gap-2">
-          {[1, 2].map(i => (
-            <div key={i} className="bg-gray-50 rounded-xl p-3">
-              <div className="h-2.5 w-16 bg-gray-200 rounded mb-2" />
-              <div className="h-4 w-20 bg-gray-200 rounded" />
+      {/* ── Summary: Spent / Total budget / Remaining ────────────────── */}
+      <section className="mb-2.5 rounded-xl border border-gray-300 bg-white sm:mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className={
+                'px-3 py-1.5 sm:px-5 sm:py-4' +
+                (i === 1 ? ' border-l border-gray-200' : '') +
+                (i === 2 ? ' col-span-2 border-t border-gray-200 sm:col-span-1 sm:border-l sm:border-t-0' : '')
+              }
+            >
+              <div className="h-3 w-16 rounded bg-gray-200" />
+              <div className="mt-1.5 h-6 w-24 rounded bg-gray-200 sm:mt-2" />
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* ── Section label ─────────────────────────────────────────── */}
-      <div className="h-3 w-20 bg-gray-200 rounded mb-3 ml-0.5" />
+      {/* ── Count label ──────────────────────────────────────────────── */}
+      <div className="mb-1 h-3 w-16 rounded bg-gray-200 sm:mb-2" />
 
-      {/* ── Budget Cards ──────────────────────────────────────────── */}
-      <div className="space-y-3">
-        {[1, 2, 3].map(i => (
+      {/* ── Budget cards: 1 col, 2 from sm, 3 only at xl ─────────────── */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100"
+            className="flex flex-col rounded-xl border border-gray-300 bg-white p-3 sm:p-4"
           >
-            {/* Card header */}
-            <div className="flex items-center justify-between p-4 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gray-100 shrink-0" />
-                <div>
-                  <div className="h-4 w-28 bg-gray-200 rounded mb-1.5" />
-                  <div className="h-3 w-16 bg-gray-100 rounded" />
-                </div>
+            {/* Category name + actions */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 items-start gap-2">
+                <div className="mt-1 h-4 w-4 shrink-0 rounded bg-gray-200" />
+                <div className="h-4 w-24 max-w-full rounded bg-gray-200" />
               </div>
-              <div className="flex gap-1.5">
-                <div className="w-7 h-7 rounded-lg bg-gray-100" />
-                <div className="w-7 h-7 rounded-lg bg-gray-100" />
+              <div className="flex shrink-0 items-center gap-1">
+                <div className="h-8 w-8 rounded-lg bg-gray-100" />
+                <div className="h-8 w-8 rounded-lg bg-gray-100" />
               </div>
             </div>
 
-            {/* Progress bar */}
-            <div className="mx-4 mb-3">
-              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gray-200"
-                  style={{ width: `${30 + i * 18}%` }}
-                />
-              </div>
+            {/* Spent of limit */}
+            <div className="mt-2 h-4 w-40 max-w-full rounded bg-gray-200" />
+
+            {/* Progress track */}
+            <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+              <div
+                className="h-full rounded-full bg-gray-300"
+                style={{ width: `${34 + i * 11}%` }}
+              />
             </div>
 
-            {/* Stat cells */}
-            <div className="grid grid-cols-3 gap-2 px-4 mb-3">
-              {[1, 2, 3].map(j => (
-                <div key={j} className="bg-gray-50 rounded-xl p-2">
-                  <div className="h-2 w-8 bg-gray-200 rounded mb-1.5" />
-                  <div className="h-3.5 w-14 bg-gray-200 rounded" />
-                </div>
-              ))}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between px-4 pb-4">
-              <div className="h-5 w-20 bg-gray-100 rounded-full" />
-              <div className="h-3 w-12 bg-gray-100 rounded" />
+            {/* Status + drill-down */}
+            <div className="mt-1.5 flex items-center justify-between gap-3">
+              <div className="h-3 w-28 max-w-full rounded bg-gray-200" />
+              <div className="h-3 w-16 rounded bg-gray-100" />
             </div>
           </div>
         ))}
