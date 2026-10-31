@@ -45,6 +45,21 @@ export const SIDEBAR_PRIMARY_NAV: SidebarNavItem[] = [
   { path: '/subscription', icon: Crown, labelKey: 'subscription' },
 ]
 
+/**
+ * Destinations that exist only to sell or manage a plan. They are filtered out
+ * of both navs when a super admin hides the subscription entry points in
+ * Vertex; the routes themselves stay mounted, so a direct URL still works.
+ */
+export const PLAN_ONLY_PATHS: ReadonlySet<string> = new Set(['/subscription'])
+
+export function navItemsForSubscriptionUi(
+  items: SidebarNavItem[],
+  subscriptionUiEnabled: boolean
+): SidebarNavItem[] {
+  if (subscriptionUiEnabled) return items
+  return items.filter((item) => !PLAN_ONLY_PATHS.has(item.path))
+}
+
 export const SIDEBAR_ACCOUNT_NAV: SidebarNavItem[] = [
   { path: '/settings', icon: Settings, labelKey: 'settings' },
 ]

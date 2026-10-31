@@ -44,6 +44,12 @@ interface SubscriptionGateContextValue {
   override: SubscriptionOverrideRecord | null
   subscriptionsEnabled: boolean
   paymentsEnabled: boolean
+  /**
+   * False when a super admin hid the plan entry points in Vertex. Consumers use
+   * it to drop the "Pro Plans" nav row and the Profile upgrade button; it never
+   * changes what a user is entitled to.
+   */
+  subscriptionUiEnabled: boolean
   trialEnabled: boolean
   trialDays: number
   checkFeature: (featureKey: string) => GateCheckResult
@@ -60,6 +66,8 @@ const SubscriptionGateContext = createContext<SubscriptionGateContextValue>({
   override: null,
   subscriptionsEnabled: true,
   paymentsEnabled: true,
+  // Default context is what renders before the bootstrap lands: visible.
+  subscriptionUiEnabled: true,
   trialEnabled: true,
   trialDays: 7,
   checkFeature: (featureKey: string) =>
@@ -90,6 +98,9 @@ export function SubscriptionGateProvider({ children }: { children: React.ReactNo
       id: 1,
       subscriptions_enabled: s.subscriptionsEnabled,
       payments_enabled: s.paymentsEnabled,
+      // Fail open: only an explicit `false` hides the plan entry points, so an
+      // API that does not send the field yet cannot blank the navigation.
+      subscription_ui_enabled: s.subscriptionUiEnabled !== false,
       trial_enabled: s.trialEnabled,
       trial_days: s.trialDays,
       updated_by: null,
@@ -168,6 +179,7 @@ export function SubscriptionGateProvider({ children }: { children: React.ReactNo
       override,
       subscriptionsEnabled: settings.subscriptions_enabled,
       paymentsEnabled: settings.payments_enabled,
+      subscriptionUiEnabled: settings.subscription_ui_enabled,
       trialEnabled: settings.trial_enabled,
       trialDays: settings.trial_days,
       checkFeature,
